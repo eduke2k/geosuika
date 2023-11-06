@@ -1,5 +1,4 @@
 import Phaser from 'phaser'
-import FontFaceObserver from 'fontfaceobserver';
 import { MenuItem } from '../types';
 const MENU_PADDING = 36;
 const MENU_ITEM_GAP = 0;
@@ -12,12 +11,7 @@ export default class MainMenuScene extends Phaser.Scene {
   ];
 
 	constructor() {
-		super({ key: 'main-menu', active: true })
-	}
-
-	public preload () {
-		this.load.setBaseURL('https://labs.phaser.io')
-		this.load.image('sky', 'assets/skies/space3.png')
+		super({ key: 'main-menu' })
 	}
 
   private handleAction (key: string): void {
@@ -28,9 +22,6 @@ export default class MainMenuScene extends Phaser.Scene {
   }
 
 	public async create () {
-    const font = new FontFaceObserver('Coiny');
-    await font.load();
-
     this.menuContainer = this.add.container(0, 0);
 
     let y = 0;
