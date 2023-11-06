@@ -18,7 +18,10 @@ const config: Phaser.Types.Core.GameConfig = {
 			gravity: {
 				y: 2
 			},
-			debug: true
+			debug: {
+				showCollisions: true,
+				showVelocity: true
+			}
 		}
 	},
 	scene: [BootScene, MainMenuScene, GameScene],
