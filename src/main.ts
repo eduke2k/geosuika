@@ -1,22 +1,26 @@
 import Phaser from 'phaser'
 
-import HelloWorldScene from './HelloWorldScene'
+import MainMenuScene from './scenes/MainMenuScene'
+import GameScene from './scenes/GameScene'
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
 	parent: 'app',
-	width: 800,
-	height: 600,
+	width: 1280,
+	height: 720,
+	fps: {
+		limit: 60,
+	},
 	physics: {
 		default: 'matter',
 		matter: {
-				gravity: {
-						y: 1
-				},
-				debug: true
+			gravity: {
+				y: 2
+			},
+			debug: true
 		}
 	},
-	scene: [HelloWorldScene],
+	scene: [MainMenuScene, GameScene],
 }
 
 export default new Phaser.Game(config)

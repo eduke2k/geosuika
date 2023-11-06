@@ -1,9 +1,9 @@
-import { Body, BodyType, Collision } from 'matter'
+import { BodyType, Collision } from 'matter'
 import Phaser from 'phaser'
 
-export default class HelloWorldScene extends Phaser.Scene {
+export default class GameScene extends Phaser.Scene {
 	constructor() {
-		super('hello-world')
+		super({ key: 'game-scene' })
 	}
 
 	addItem (x: number, y: number) {
@@ -22,9 +22,9 @@ export default class HelloWorldScene extends Phaser.Scene {
 
 	create() {
 		this.matter.world.setBounds(0, 0, this.game.canvas.width, this.game.canvas.height);
-		this.add.image(400, 300, 'sky')
+		this.add.image(400, 300, 'sky');
 
-		this.matter.world.on('collisionstart', (event: Collision, bodyA: BodyType, bodyB: BodyType) =>	{
+		this.matter.world.on('collisionstart', (_event: Collision, bodyA: BodyType, bodyB: BodyType) =>	{
 			if (bodyA.gameObject?.name === 'item' && bodyB.gameObject?.name === 'item') {
 				bodyA.gameObject.destroy();
 				bodyB.gameObject.destroy();
