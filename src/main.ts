@@ -16,7 +16,7 @@ const config: Phaser.Types.Core.GameConfig = {
 		default: 'matter',
 		matter: {
 			gravity: {
-				y: 2
+				y: 1
 			},
 			debug: {
 				showCollisions: true,
