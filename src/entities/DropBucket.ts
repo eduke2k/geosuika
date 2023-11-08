@@ -41,7 +41,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.setBounce(0);
     this.setPosition(x, y);
   
-    this.nextDroppable = new Droppable(this.scene, randomIntFromInterval(1, 3), true, this, this.dropSensor.position.x, this.dropSensor.position.y, 'kirby');
+    this.nextDroppable = new Droppable(this.scene, randomIntFromInterval(1, 3), true, this, this.dropSensor.position.x, this.dropSensor.position.y, 'flags');
 
 		// scene.input.on('pointerdown', (pointer: PointerEvent) => {
 		// 	new Droppable(this, 1, pointer.x, pointer.y, 'kirby');
@@ -95,7 +95,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
       }
     });
 
-    const droppable = new Droppable(this.scene, randomIntFromInterval(1, 3), true, this, this.dropSensor.position.x, this.dropSensor.position.y, 'kirby');
+    const droppable = new Droppable(this.scene, randomIntFromInterval(1, 3), true, this, this.dropSensor.position.x, this.dropSensor.position.y, 'flags');
     this.nextDroppable = droppable;
     // if (this.highestDroppablePoint < 200) {
     //   this.scene.cameras.main.zoomTo(0.8, 500);

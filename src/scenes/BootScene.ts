@@ -1,7 +1,15 @@
 import Phaser from 'phaser'
 import FontFaceObserver from 'fontfaceobserver';
-import KirbyPNG from './../assets/kirby.png';
-import KirbyJSON from './../assets/kirby.json';
+import YatoPNG from './../assets/yato.png';
+import YatoJSON from './../assets/yato.json';
+import DogPNG from './../assets/dog.png';
+import DogJSON from './../assets/dog.json';
+import FlagsPNG from './../assets/flags.png';
+import FlagsJSON from './../assets/flags.json';
+
+
+import TilesPNG from './../assets/tilesets/tilesheet_complete.png';
+import TilesJSON from './../assets/tilesets/map.json';
 
 export default class MainMenuScene extends Phaser.Scene {
 
@@ -10,7 +18,16 @@ export default class MainMenuScene extends Phaser.Scene {
 	}
 
 	public preload () {
-    this.load.aseprite('kirby', KirbyPNG, KirbyJSON);
+		this.load.aseprite('yato', YatoPNG, YatoJSON);
+		this.load.aseprite('dog', DogPNG, DogJSON);
+		this.load.aseprite('flags', FlagsPNG, FlagsJSON);
+	
+		// load the PNG file
+		this.load.image('tileset', TilesPNG)
+
+		// load the JSON file
+		this.load.tilemapTiledJSON('tilemap', TilesJSON)
+
 		// this.load.setBaseURL('https://labs.phaser.io')
 		// this.load.image('sky', 'assets/skies/space3.png')
 		// this.load.image('logo', 'assets/sprites/phaser3-logo.png')
