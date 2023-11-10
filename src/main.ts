@@ -21,10 +21,10 @@ const config: Phaser.Types.Core.GameConfig = {
 			"plugins.attractors": true,
 			debug: {
 				showSensors: true,
-				showCollisions: true,
-				showVelocity: true,
-				showBounds: true,
-				showSeparation: true,
+				showCollisions: false,
+				showVelocity: false,
+				showBounds: false,
+				showSeparation: false,
 				showBody: true
 			}
 		}

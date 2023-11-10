@@ -6,7 +6,12 @@ import DogPNG from './../assets/dog.png';
 import DogJSON from './../assets/dog.json';
 import FlagsPNG from './../assets/flags.png';
 import FlagsJSON from './../assets/flags.json';
-
+import ProgressArrowPNG from './../assets/progressArrow.png';
+import ProgressArrowJSON from './../assets/progressArrow.json';
+import ScoreLabelPNG from './../assets/scoreLabel.png';
+import ScoreLabelJSON from './../assets/scoreLabel.json';
+import FlaresPNG from './../assets/flares.png';
+import FlaresJSON from './../assets/flares.json';
 
 import TilesPNG from './../assets/tilesets/tilesheet_complete.png';
 import TilesJSON from './../assets/tilesets/map.json';
@@ -18,10 +23,14 @@ export default class MainMenuScene extends Phaser.Scene {
 	}
 
 	public preload () {
+		// IMPORTANT: When adding new aseprite sprites, don't forget to load their animations in the create-method.
 		this.load.aseprite('yato', YatoPNG, YatoJSON);
 		this.load.aseprite('dog', DogPNG, DogJSON);
 		this.load.aseprite('flags', FlagsPNG, FlagsJSON);
-	
+		this.load.aseprite('progressArrow', ProgressArrowPNG, ProgressArrowJSON);
+		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
+		this.load.aseprite('flares', FlaresPNG, FlaresJSON);
+
 		// load the PNG file
 		this.load.image('tileset', TilesPNG)
 
@@ -41,7 +50,11 @@ export default class MainMenuScene extends Phaser.Scene {
     await font.load();
     console.log('--- Finished Loading Fonts ---');
 
-		this.anims.createFromAseprite('kirby');
+		this.anims.createFromAseprite('dog');
+		this.anims.createFromAseprite('flags');
+		this.anims.createFromAseprite('progressArrow');
+		this.anims.createFromAseprite('scoreLabel');
+		this.anims.createFromAseprite('flares');
 		console.log('--- Finished Creating Animations from Spritesheets ---');
 
     this.scene.start('main-menu');

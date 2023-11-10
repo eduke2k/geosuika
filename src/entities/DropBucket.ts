@@ -1,89 +1,113 @@
-import { getNumberInRange, randomIntFromInterval } from "../functions/helper";
+import { flagSet } from "../config/flags";
+import { getNumberInRange, randomIntFromInterval, shuffleArray } from "../functions/helper";
 import GameScene from "../scenes/GameScene";
+import { DroppableSet } from "../types";
 import Droppable from "./Droppable";
+import ScoreLabel from "./ScoreLabel";
+
+export const GAME_OVER_TIME = 3000;
+
+export type DropBocketOptions = {
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  thickness: number,
+  scoreLabel: ScoreLabel,
+  noBottom?: boolean,
+  gameOverThreshold: number;
+}
 
 export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   public nextDroppable: Droppable | null = null;
   public dropSensor: MatterJS.BodyType;
+  public leftWall: MatterJS.BodyType;
+  public rightWall: MatterJS.BodyType;
+  public floor: MatterJS.BodyType;
   public droppables: Droppable[] = [];
+  public droppableSet: DroppableSet | null = null;
+  public scoreLabel: ScoreLabel;
 
   public highestDroppablePoint = this.scene.game.canvas.height;
   public lowestDroppablePoint = 0;
 
-  public constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    thickness: number
-  ) {
-    super(scene.matter.world, x, y, '');
+  public gameOverThreshold = 0;
+  public isDanger = false;
+  public dangerTime = GAME_OVER_TIME;
+  public isGameOver = false;
 
-    const Bodies = new Phaser.Physics.Matter.MatterPhysics(scene).bodies;
-    const Body = new Phaser.Physics.Matter.MatterPhysics(scene).body;
+  public constructor(options: DropBocketOptions) {
+    super(options.scene.matter.world, options.x, options.y, '');
+    this.scoreLabel = options.scoreLabel;
+    this.gameOverThreshold = options.gameOverThreshold;
+    const Bodies = new Phaser.Physics.Matter.MatterPhysics(options.scene).bodies;
+    const Body = new Phaser.Physics.Matter.MatterPhysics(options.scene).body;
 
     // Create collision boxes
-    const rectA = Bodies.rectangle((-width / 2) + (thickness / 2), 0, thickness, height, { chamfer: { radius: thickness / 2 } });
-    const rectB = Bodies.rectangle((width / 2) - (thickness / 2), 0, thickness, height, { chamfer: { radius: thickness / 2 } });
-    const rectC = Bodies.rectangle(0, (height / 2) - (thickness / 2), width, thickness, { chamfer: { radius: thickness / 2 } });
+    this.leftWall = Bodies.rectangle((-options.width / 2) - (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
+    this.rightWall = Bodies.rectangle((options.width / 2) + (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
+    this.floor = Bodies.rectangle(0, (options.height / 2) + (options.thickness / 2), options.width + (options.thickness * 2), options.thickness, { mass: 0, isSensor: options.noBottom, chamfer: { radius: options.thickness / 2 } });
+    this.dropSensor = Bodies.rectangle(0, (-options.height / 2) - options.thickness, options.width, 50, { mass: 0, isSensor: true });
 
-    this.dropSensor = Bodies.rectangle(0, (-height / 2) - (thickness / 2), width - (thickness * 2), 10, { isSensor: true });
+    const parts = [this.leftWall, this.rightWall, this.floor, this.dropSensor];
+    // if (!noBottom) parts.push(rectC);
 
-    // const rectC = Bodies.rectangle(width, 0, thickness, height);
-
-    const compoundBody = Body.create({
-      parts: [ rectA, rectB, rectC, this.dropSensor ]
-    });
+    const compoundBody = Body.create({ parts });
 
     this.setExistingBody(compoundBody);
     this.setFrictionAir(0.001);
     this.setBounce(0);
-    this.setPosition(x, y);
+    this.setPosition(options.x, options.y);
   
-    this.nextDroppable = new Droppable(this.scene, randomIntFromInterval(1, 3), true, this, this.dropSensor.position.x, this.dropSensor.position.y, 'flags');
+    options.scene.add.existing(this);
 
-		// scene.input.on('pointerdown', (pointer: PointerEvent) => {
-		// 	new Droppable(this, 1, pointer.x, pointer.y, 'kirby');
-		// }, this);
+    // Add click listener that will only trigger if the click is within the body's bounds
+    this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (this.isDanger) return;
 
-    scene.add.existing(this);
-    this.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height), Phaser.Geom.Rectangle.Contains);
+      const rect = this.getBodyBounds();
+      if (!rect) return;
 
-    this.on('pointerover', this.handlePointerOver);
-    this.on('pointerout', this.handlePointerOut);
-    this.on('pointerdown', this.handlePointerDown);
-    this.on('pointerup', this.handlePointerUp);
+      const x = pointer.worldX;
+      const y = pointer.worldY;
+
+      if (Phaser.Geom.Rectangle.Contains(rect, x, y)) {
+        this.handleLeftClick();
+      }
+    });
 
     // Call internal update function if scene updates. Extended classes not update automatically
-    scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
+    options.scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
   }
 
-  public handlePointerOver (): void {
+  /**
+   * Assigns a droppable set (as deep clone) to the bucket. The next droppable will be initialized
+   * immeditely afterwards and the bucket will be ready to play.
+   * @param set the target DroppableSet config
+   */
+  public assignDroppableSet (set: DroppableSet): void {
+    this.droppableSet = JSON.parse(JSON.stringify(set)) as DroppableSet;
+    if (this.droppableSet.randomizeOrder) {
+      shuffleArray(this.droppableSet.droppableConfigs);
+    }
+    this.initNextDroppable();
   }
 
-  public handlePointerOut (): void {
+  public getDroppableSet (): DroppableSet {
+    return this.droppableSet ?? flagSet;
   }
 
-  public handlePointerDown (): void {
-  }
-
-  public handlePointerUp (): void {
+  public handleLeftClick (): void {
     if (this.nextDroppable) this.nextDroppable.untether();
   }
 
   public handleDrop (): void {
-    if (this.nextDroppable) {
-      this.droppables.push(this.nextDroppable);
-      console.log('droppable has been dropped', this.nextDroppable);
-    }
+    if (this.nextDroppable) this.droppables.push(this.nextDroppable);
     this.nextDroppable = null;
   }
 
-  public initNextDroppable (): void {
-    if (this.nextDroppable) return;
-
-    // Calculate highest and lowest point of dropables in this bucket
+  private calculateHighestAndLowestPoint (): void {
     this.highestDroppablePoint = this.getBody().bounds.max.y;
     this.lowestDroppablePoint = this.getBody().bounds.min.y;
 
@@ -95,16 +119,88 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
       }
     });
 
-    const droppable = new Droppable(this.scene, randomIntFromInterval(1, 3), true, this, this.dropSensor.position.x, this.dropSensor.position.y, 'flags');
+    this.highestDroppablePoint = Math.abs(this.highestDroppablePoint - this.leftWall.bounds.max.y);
+    this.lowestDroppablePoint = this.lowestDroppablePoint - this.leftWall.bounds.max.y;
+  }
+
+  public initNextDroppable (): void {
+    if (this.nextDroppable || !this.droppableSet) return;
+
+    const randomIndex = randomIntFromInterval(0, 3);
+    const droppable = new Droppable({
+      bucket: this,
+      scene: this.scene,
+      tethered: true,
+      tierIndex: randomIndex,
+      x: this.dropSensor.position.x,
+      y: this.dropSensor.position.y
+    });
+
+    // const droppable = new Droppable(this.scene, randomIndex, true, this, this.dropSensor.position.x, this.dropSensor.position.y, 'flags');
     this.nextDroppable = droppable;
-    // if (this.highestDroppablePoint < 200) {
-    //   this.scene.cameras.main.zoomTo(0.8, 500);
-    // } else {
-    //   this.scene.cameras.main.zoomTo(1, 500);
-    //   this.scene.cameras.main.zoomTo
-    // }
-    // this.scene.cameras.main.setVi
-    // this.scene.cameras.main.zoomTo(Phaser.Math.Clamp(this.scene.cameras.main.zoom, this.highestDroppablePoint, this.lowestDroppablePoint));
+  }
+
+  public mergeDroppables (a: Droppable, b: Droppable): void {
+    if (!this.droppableSet) return;
+
+    // Collect data for new spawn before destroying both bodies
+    const tier = b.getTier();
+
+    const nextTier = tier + 1;
+    const nextDroppableConfig = this.droppableSet.droppableConfigs[nextTier];
+    const nextDroppableScale = this.droppableSet.tierScles[nextTier] ?? 1;
+    if (!nextDroppableConfig) return;
+
+    const spawnPosition = b.getBody().position;
+
+    // Get rid of them
+    this.droppables.splice(this.droppables.findIndex(d => d === a), 1);
+    this.droppables.splice(this.droppables.findIndex(d => d === b), 1);
+    a.destroy();
+    b.destroy();
+
+    // Add a explosion!
+    // Too buggy yet
+    // new ExplosionForce('', this, spawnPosition.x, spawnPosition.y, 1, 0.0001, 10);
+    this.scene.cameras.main.shake(100, 0.005);
+
+    // Spawn new body, one tier higher!
+    const droppable = new Droppable({
+      bucket: this,
+      scene: this.scene,
+      tethered: false,
+      tierIndex: nextTier,
+      x: spawnPosition.x,
+      y: spawnPosition.y
+    });
+
+    this.droppables.push(droppable);
+
+    // const droppable = new Droppable(this, tier + 1, false, parentBucket, spawnPosition.x, spawnPosition.y, 'flags');
+    droppable.hasCollided = true;
+
+    // Do Score calculation
+    this.scoreLabel.grantScore(nextTier);
+
+    // Add particles explosion
+    const quantity = nextTier * 10;
+    const emitter = this.scene.add.particles(spawnPosition.x, spawnPosition.y, 'flares', {
+      frame: [0,1,2,3],
+      lifespan: 1000,
+      speed: { min: (nextTier * 10), max: (nextTier * 30) },
+      scale: { start: (nextTier * 0.1) + 0.5, end: 0 },
+      gravityY: 200,
+      rotate: { min: 0, max: 360 },
+      blendMode: 'ADD',
+      emitting: false,
+    });
+    emitter.addEmitZone({ type: 'edge', source: new Phaser.Geom.Circle(0, 0, (nextDroppableConfig.bodyConfig.radius ?? 1) * nextDroppableScale), quantity, total: 1 })
+    emitter.particleBringToTop = true;
+    emitter.explode(quantity);
+
+    this.scene.time.delayedCall(5000, function() {
+      emitter.destroy();
+    });
   }
 
   public getBody (): MatterJS.BodyType {
@@ -122,23 +218,63 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     );
   }
 
-  public update (_time: number, _delta: number): void {
+  public triggerDanger (): void {
+    console.log('triggering danger');
+    this.isDanger = true;
+    // this.scene.cameras.main.zoomTo(1.1, 100, 'Power2');
+  }
+
+  public triggerSafe (): void {
+    console.log('triggering Safe');
+    this.isDanger = false;
+    this.dangerTime = GAME_OVER_TIME;
+    // this.scene.cameras.main.zoomTo(1, 100, 'Power2');
+  }
+
+  public triggerGameOver (): void {
+    console.log('triggeringGameOver');
+    this.isGameOver = true;
+  }
+
+  public update (_time: number, delta: number): void {
     // Handle next droppable position change with mouse position
-    if (this.nextDroppable && this.nextDroppable.isTethered()) {
+    if (!this.isGameOver && this.nextDroppable && this.nextDroppable.isTethered()) {
+
+      // const Body = new Phaser.Physics.Matter.MatterPhysics(this.scene).body;
+      // Body.translate(this.dropSensor, { x: 0, y: 1 });
+      // this.dropSensor. = { x: 0, y: 1 };
+      // console.log(this.dropSensor.position);
+
       const x = this.scene.game.input.mousePointer?.worldX;
-      if (!x) {
+      const y = this.scene.game.input.mousePointer?.worldY;
+      if (!x || !y) {
         this.nextDroppable.setX(this.dropSensor.position.x);
+        this.nextDroppable.setY(this.dropSensor.position.y);
       } else {
         this.nextDroppable.setX(getNumberInRange(this.dropSensor.bounds.min.x + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensor.bounds.max.x - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , x));
+        // this.nextDroppable.setX(getNumberInRange(this.dropSensor.bounds.min.x, this.dropSensor.bounds.max.x, x));
+        this.nextDroppable.setY(getNumberInRange(this.dropSensor.bounds.min.y, this.dropSensor.bounds.max.y, y));
       }
       // this.nextDroppable.setY(this.dropSensor.position.y);
-      this.nextDroppable.setY(Math.min(this.dropSensor.position.y, this.highestDroppablePoint - 100));
+      // this.nextDroppable.setY(Math.min(this.dropSensor.position.y, this.highestDroppablePoint - 100));
       this.nextDroppable.setVelocity(0, 0);
     }
 
-    (this.scene as GameScene).debugText.text = `${this.highestDroppablePoint}\n${this.lowestDroppablePoint}`;
+    this.calculateHighestAndLowestPoint();
+    (this.scene as GameScene).debugText.text = `Highest: ${this.highestDroppablePoint}\nLowest:  ${this.lowestDroppablePoint}`;
 
-    // move dropSensor
-    // this.dropSensor. = this.highestDroppablePoint - 100;
+    if (this.highestDroppablePoint > this.gameOverThreshold) {
+      if (!this.isDanger) {
+        this.triggerDanger();
+      } else {
+        this.dangerTime -= delta;
+        console.log('counting down...', this.dangerTime);
+        if (this.dangerTime <= 0) {
+          this.triggerGameOver();
+        }
+      }
+    } else if (this.highestDroppablePoint <= this.gameOverThreshold && this.isDanger) {
+      this.triggerSafe();
+    }
   }
 }
