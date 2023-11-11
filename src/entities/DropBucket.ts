@@ -17,6 +17,8 @@ export type DropBocketOptions = {
   scoreLabel: ScoreLabel,
   noBottom?: boolean,
   gameOverThreshold: number;
+  lastTierDestroy?: boolean;
+  maxTierToDrop?: number;
 }
 
 export default class DropBucket extends Phaser.Physics.Matter.Sprite {
@@ -28,6 +30,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   public droppables: Droppable[] = [];
   public droppableSet: DroppableSet | null = null;
   public scoreLabel: ScoreLabel;
+  public lastTierDestroy: boolean;
+  public maxTierToDrop: number | 'auto';
+
+  public rotateInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
   public highestDroppablePoint = this.scene.game.canvas.height;
   public lowestDroppablePoint = 0;
@@ -41,6 +47,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     super(options.scene.matter.world, options.x, options.y, '');
     this.scoreLabel = options.scoreLabel;
     this.gameOverThreshold = options.gameOverThreshold;
+    this.lastTierDestroy = options.lastTierDestroy ?? false;
+    this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
     const Bodies = new Phaser.Physics.Matter.MatterPhysics(options.scene).bodies;
     const Body = new Phaser.Physics.Matter.MatterPhysics(options.scene).body;
 
@@ -91,6 +99,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     if (this.droppableSet.randomizeOrder) {
       shuffleArray(this.droppableSet.droppableConfigs);
     }
+
     this.initNextDroppable();
   }
 
@@ -126,8 +135,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   public initNextDroppable (): void {
     if (this.nextDroppable || !this.droppableSet) return;
 
-    const randomIndex = randomIntFromInterval(0, 3);
-    const droppable = new Droppable({
+    const maxTierToDrop = this.maxTierToDrop === 'auto' ? Math.round(this.getDroppableSet().droppableConfigs.length * 0.28) : this.maxTierToDrop;
+    const randomIndex = randomIntFromInterval(0, maxTierToDrop);
+    const droppable = Droppable.create({
       bucket: this,
       scene: this.scene,
       tethered: true,
@@ -140,18 +150,51 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.nextDroppable = droppable;
   }
 
-  public mergeDroppables (a: Droppable, b: Droppable): void {
+  public getMaxTier (): number {
+    return this.getDroppableSet().droppableConfigs.length - 1;
+  }
+
+  public tryMergeDroppables (a: Droppable, b: Droppable): void {
+    // Early out
+    if (a.getTier() !== b.getTier()) return;
+
+    if (!a.getBody() && !b.getBody()) {
+      console.log('body a AND b are undefined. skipping');
+      return;
+    }
+
     if (!this.droppableSet) return;
 
     // Collect data for new spawn before destroying both bodies
     const tier = b.getTier();
+    console.log('current tier', tier);
+
+    // Early out on last tier. Nothing happens
+    if (this.getMaxTier() === tier && !this.lastTierDestroy) return;
+
+    if (this.getMaxTier() === tier && this.lastTierDestroy) {
+      this.droppables.splice(this.droppables.findIndex(d => d === a), 1);
+      this.droppables.splice(this.droppables.findIndex(d => d === b), 1);
+      a.destroy();
+      b.destroy();
+      return;
+    }
 
     const nextTier = tier + 1;
+    console.log('next tier', nextTier);
+
     const nextDroppableConfig = this.droppableSet.droppableConfigs[nextTier];
     const nextDroppableScale = this.droppableSet.tierScles[nextTier] ?? 1;
     if (!nextDroppableConfig) return;
 
-    const spawnPosition = b.getBody().position;
+    const bodyB = b.getBody();
+    const bodyA = a.getBody();
+
+    console.log('try to get position from body b', bodyB);
+    console.log('try to get position from body b', bodyA);
+  
+    const spawnPosition = bodyB ? bodyB.position : (bodyA.position ?? { x: this.dropSensor.position.x, y: this.dropSensor.position.y });
+    console.log('spawnPosition', spawnPosition);
 
     // Get rid of them
     this.droppables.splice(this.droppables.findIndex(d => d === a), 1);
@@ -165,7 +208,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.scene.cameras.main.shake(100, 0.005);
 
     // Spawn new body, one tier higher!
-    const droppable = new Droppable({
+    const droppable = Droppable.create({
       bucket: this,
       scene: this.scene,
       tethered: false,
@@ -194,7 +237,11 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
       blendMode: 'ADD',
       emitting: false,
     });
-    emitter.addEmitZone({ type: 'edge', source: new Phaser.Geom.Circle(0, 0, (nextDroppableConfig.bodyConfig.radius ?? 1) * nextDroppableScale), quantity, total: 1 })
+
+    if (nextDroppableConfig.bodyType === 'circle') {
+      emitter.addEmitZone({ type: 'edge', source: new Phaser.Geom.Circle(0, 0, (nextDroppableConfig.radius ?? 1) * nextDroppableScale), quantity, total: 1 })
+    }
+
     emitter.particleBringToTop = true;
     emitter.explode(quantity);
 
@@ -236,7 +283,18 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.isGameOver = true;
   }
 
+  private rotateNextDroppable (): void {
+    if (!this.nextDroppable) return;
+
+    this.nextDroppable.setRotation(this.nextDroppable.rotation + Phaser.Math.DegToRad(90));
+  }
+
   public update (_time: number, delta: number): void {
+    // Handle Input
+    if (Phaser.Input.Keyboard.JustDown(this.rotateInput)) {
+      this.rotateNextDroppable();
+    }
+
     // Handle next droppable position change with mouse position
     if (!this.isGameOver && this.nextDroppable && this.nextDroppable.isTethered()) {
 
@@ -247,6 +305,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
       const x = this.scene.game.input.mousePointer?.worldX;
       const y = this.scene.game.input.mousePointer?.worldY;
+
       if (!x || !y) {
         this.nextDroppable.setX(this.dropSensor.position.x);
         this.nextDroppable.setY(this.dropSensor.position.y);
@@ -261,14 +320,13 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     }
 
     this.calculateHighestAndLowestPoint();
-    (this.scene as GameScene).debugText.text = `Highest: ${this.highestDroppablePoint}\nLowest:  ${this.lowestDroppablePoint}`;
+    (this.scene as GameScene).debugText.text = `Highest: ${this.highestDroppablePoint}\nLowest:  ${this.lowestDroppablePoint}\nNext Droppable x: ${this.nextDroppable?.body?.position.x}\nNext Droppable y: ${this.nextDroppable?.body?.position.y}`;
 
     if (this.highestDroppablePoint > this.gameOverThreshold) {
       if (!this.isDanger) {
         this.triggerDanger();
       } else {
         this.dangerTime -= delta;
-        console.log('counting down...', this.dangerTime);
         if (this.dangerTime <= 0) {
           this.triggerGameOver();
         }

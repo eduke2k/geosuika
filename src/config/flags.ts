@@ -19,57 +19,68 @@ export const flagSet: DroppableSet = {
     {
       spriteKey: 'flags',
       animationKey: 'flags:de',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:gb',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:ni',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:jm',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:jp',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:it',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:br',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:ch',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:ca',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:bw',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     },
     {
       spriteKey: 'flags',
       animationKey: 'flags:td',
-      bodyConfig: { type: 'circle', radius: 64	}
+      bodyType: 'circle',
+      radius: 64
     }
   ]
 };

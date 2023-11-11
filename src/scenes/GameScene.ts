@@ -2,10 +2,10 @@ import Phaser from 'phaser'
 import Droppable from '../entities/Droppable';
 import DropBucket from '../entities/DropBucket';
 // import Dog from '../entities/Dog';
-import { flagSet } from '../config/flags';
 import ProgressCircle from '../entities/ProgressCircle';
 import ScoreLabel from '../entities/ScoreLabel';
 import { Score } from '../models/Score';
+import { flagSet } from '../config/flags';
 
 export default class GameScene extends Phaser.Scene {
 	public debugText!: Phaser.GameObjects.Text;
@@ -17,10 +17,8 @@ export default class GameScene extends Phaser.Scene {
 	// Todo: Move this to Droppable? or Bucket?
 	public handleCollision (bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType): void {
 		if (bodyA.gameObject instanceof Droppable && bodyB.gameObject instanceof Droppable) {
-			if (bodyA.gameObject.getTier() === bodyB.gameObject.getTier()) {
-				const parentBucket = bodyB.gameObject.getParentBucket();
-				parentBucket.mergeDroppables(bodyA.gameObject, bodyB.gameObject);
-			}
+			const parentBucket = bodyB.gameObject.getParentBucket();
+			parentBucket.tryMergeDroppables(bodyA.gameObject, bodyB.gameObject);
 		}
 	}
 
@@ -88,9 +86,11 @@ export default class GameScene extends Phaser.Scene {
 			height: 535,
 			thickness: 64,
 			scoreLabel: score,
-			gameOverThreshold: 200
+			gameOverThreshold: 535,
 		});
 		debugBucket.assignDroppableSet(flagSet);
+
+		// Camera Settings
 		this.cameras.main.startFollow(debugBucket, true, 0.05, 0.05);
 		this.cameras.main.fadeIn(1000);
 
@@ -104,8 +104,18 @@ export default class GameScene extends Phaser.Scene {
 		// dog.setRotation(90);
 		// dog.play({ key: 'idle', repeat: -1 });
 
-		// this.input.on('pointerdown', (pointer: PointerEvent) => {
-		// 	new Droppable(this, 1, false, bucket, pointer.x, pointer.y, 'kirby');
-		// }, this);
+		this.input.on('pointerdown', () => {
+			// const x = this.game.input.mousePointer?.worldX;
+      // const y = this.game.input.mousePointer?.worldY;
+
+			// Droppable.create({
+			// 	bucket: debugBucket,
+			// 	scene: this,
+			// 	tethered: false,
+			// 	tierIndex: 1,
+			// 	x: x ?? 0,
+			// 	y: y ?? 0
+			// });
+		}, this);
 	}
 }

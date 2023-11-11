@@ -1,10 +1,11 @@
+import { SingleDroppableConfig } from "../types";
 import DropBucket from "./DropBucket";
 
-export type SpawnDroppableOptions = {
+export type DroppableParams = {
   scene: Phaser.Scene,
   tierIndex: number;
   tethered: boolean;
-  bucket: DropBucket,
+  bucket: DropBucket;
   x: number;
   y: number;
 }
@@ -15,36 +16,71 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   private parentBucket: DropBucket;
   public hasCollided = false;
 
-  constructor(options: SpawnDroppableOptions) {
-    super(options.scene.matter.world, options.x, options.y, options.bucket.getDroppableSet().droppableConfigs[options.tierIndex].spriteKey);
-    this.tier = options.tierIndex;
-    this.parentBucket = options.bucket;
-    this.tethered = options.tethered;
+  private static generateBody (droppableConfig: SingleDroppableConfig, scene: Phaser.Scene, x: number, y: number): MatterJS.BodyType {
 
-    // Setup physics
-    this.setBody(options.bucket.getDroppableSet().droppableConfigs[options.tierIndex].bodyConfig);
-		this.play({ key: options.bucket.getDroppableSet().droppableConfigs[options.tierIndex].animationKey, repeat: -1 });
-		// this.setAngle(Math.random() * 180);
+    switch (droppableConfig.bodyType) {
+      case 'circle': {
+        return scene.matter.add.circle(x, y, droppableConfig.radius);
+      }
+      case 'fromVerts': {
+        const verts = droppableConfig.verts;
+        return scene.matter.add.fromVertices(x, y, verts);
+      }
+    }
+  }
+
+  public static create (options: DroppableParams): Droppable {
+    const droppableConfig = options.bucket.getDroppableSet().droppableConfigs[options.tierIndex];
+    if (!droppableConfig) throw new Error(`can not create droppable since droppableConfig for '${options.tierIndex}' does not exist`);
+
+    // Generate Body
+    const body = Droppable.generateBody(droppableConfig, options.scene, options.x, options.y);
+
+    // Setup sprite (as Droppable)
+    return new Droppable(options, body);
+  }
+
+  constructor(params: DroppableParams, body: MatterJS.BodyType) {
+    super(params.scene.matter.world, params.x, params.y, params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].spriteKey);
+    this.setExistingBody(body);
+    this.tier = params.tierIndex;
+    this.parentBucket = params.bucket;
+    this.tethered = params.tethered;
+		
+    // Trigger animation in sprite
+    this.play({ key: params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].animationKey, repeat: -1 });
+
 		this.setBounce(0.5);
     this.setFriction(0.1);
 
-    if (this.tethered) {
-      this.setCollidesWith(0);
-    }
+    // If the droppable is tethered, remove collision
+    if (this.tethered) this.setCollidesWith(0);
 
     // Setup size depending on tier (just for testing)
-    this.setScale(options.bucket.getDroppableSet().tierScles[options.tierIndex]);
+    this.setScale(params.bucket.getDroppableSet().tierScles[params.tierIndex]);
 
     // Add collide event to log first collision of this Droppable and init some Bucket logic (e.g. enable next Droppable)
-    this.setOnCollide((event: Phaser.Types.Physics.Matter.MatterCollisionData) => {
-      if (!this.hasCollided && !event.bodyA.isSensor) {
-        this.hasCollided = true;
-        this.parentBucket.initNextDroppable();
-      }
-    });
+    this.initCollideCallbacks(body);
 
     // Add to scene render list
-    options.scene.add.existing(this);
+    params.scene.add.existing(this);
+  }
+
+  private initCollideCallbacks (body: MatterJS.BodyType): void {
+    if (body.parts.length > 1) {
+      body.parts.forEach(p => {
+        p.onCollideCallback  = this.handleCollision.bind(this);
+      })
+    } else {
+      this.setOnCollide(this.handleCollision.bind(this));
+    }
+  }
+
+  private handleCollision (event: Phaser.Types.Physics.Matter.MatterCollisionData): void {
+    if (!this.hasCollided && !event.bodyA.isSensor) {
+      this.hasCollided = true;
+      this.parentBucket.initNextDroppable();
+    }
   }
 
   /** Typescript is kinda dumb in this case. Let's force the return type */

@@ -9,8 +9,20 @@ export type DroppableSet = {
   droppableConfigs: SingleDroppableConfig[];
 }
 
-export type SingleDroppableConfig = {
+export type BaseSingleDroppableConfig = {
   spriteKey: string;
   animationKey: string;
-  bodyConfig: Phaser.Types.Physics.Matter.MatterSetBodyConfig
+  bodyType: 'fromVerts' | 'circle'
 }
+
+export type SingleCircleDroppableConfig = BaseSingleDroppableConfig & {
+  bodyType: 'circle';
+  radius: number;
+}
+
+export type SingleCustomDroppableConfig = BaseSingleDroppableConfig & {
+  bodyType: 'fromVerts';
+  verts: any[];
+}
+
+export type SingleDroppableConfig = SingleCircleDroppableConfig | SingleCustomDroppableConfig

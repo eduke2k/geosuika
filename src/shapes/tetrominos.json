@@ -1,0 +1,176 @@
+{
+	"generator_info": "Shape definitions generated with PhysicsEditor. Visit https://www.codeandweb.com/physicseditor",
+	"tetrominos:long": {
+		"type": "fromPhysicsEditor",
+		"label": "tetrominos:long",
+		"isStatic": false,
+		"density": 0.10000000149011612,
+		"restitution": 0,
+		"friction": 0.10000000149011612,
+		"frictionAir": 0.009999999776482582,
+		"frictionStatic": 0.5,
+		"collisionFilter": {
+			"group": 0,
+			"category": 1,
+			"mask": 255
+		},
+		"fixtures": [
+			{
+				"label": "",
+				"isSensor": false,
+				"vertices": [
+					[ { "x":16, "y":0 }, { "x":16, "y":64 }, { "x":32, "y":64 }, { "x":32, "y":0 } ]
+				]
+			}
+		]
+	},
+	"tetrominos:L1": {
+		"type": "fromPhysicsEditor",
+		"label": "tetrominos:L1",
+		"isStatic": false,
+		"density": 0.10000000149011612,
+		"restitution": 0,
+		"friction": 0.10000000149011612,
+		"frictionAir": 0.009999999776482582,
+		"frictionStatic": 0.5,
+		"collisionFilter": {
+			"group": 0,
+			"category": 1,
+			"mask": 255
+		},
+		"fixtures": [
+			{
+				"label": "",
+				"isSensor": false,
+				"vertices": [
+					[ { "x":0, "y":32 }, { "x":0, "y":48 }, { "x":32, "y":48 }, { "x":16, "y":32 } ],
+					[ { "x":32, "y":48 }, { "x":32, "y":0 }, { "x":16, "y":0 }, { "x":16, "y":32 } ]
+				]
+			}
+		]
+	},
+	"tetrominos:L2": {
+		"type": "fromPhysicsEditor",
+		"label": "tetrominos:L2",
+		"isStatic": false,
+		"density": 0.10000000149011612,
+		"restitution": 0,
+		"friction": 0.10000000149011612,
+		"frictionAir": 0.009999999776482582,
+		"frictionStatic": 0.5,
+		"collisionFilter": {
+			"group": 0,
+			"category": 1,
+			"mask": 255
+		},
+		"fixtures": [
+			{
+				"label": "",
+				"isSensor": false,
+				"vertices": [
+					[ { "x":48, "y":32 }, { "x":32, "y":32 }, { "x":16, "y":48 }, { "x":48, "y":48 } ],
+					[ { "x":32, "y":0 }, { "x":16, "y":0 }, { "x":16, "y":48 }, { "x":32, "y":32 } ]
+				]
+			}
+		]
+	},
+	"tetrominos:sq": {
+		"type": "fromPhysicsEditor",
+		"label": "tetrominos:sq",
+		"isStatic": false,
+		"density": 0.10000000149011612,
+		"restitution": 0,
+		"friction": 0.10000000149011612,
+		"frictionAir": 0.009999999776482582,
+		"frictionStatic": 0.5,
+		"collisionFilter": {
+			"group": 0,
+			"category": 1,
+			"mask": 255
+		},
+		"fixtures": [
+			{
+				"label": "",
+				"isSensor": false,
+				"vertices": [
+					[ { "x":32, "y":48 }, { "x":32, "y":16 }, { "x":0, "y":16 }, { "x":0, "y":48 } ]
+				]
+			}
+		]
+	},
+	"tetrominos:Z1": {
+		"type": "fromPhysicsEditor",
+		"label": "tetrominos:Z1",
+		"isStatic": false,
+		"density": 0.10000000149011612,
+		"restitution": 0,
+		"friction": 0.10000000149011612,
+		"frictionAir": 0.009999999776482582,
+		"frictionStatic": 0.5,
+		"collisionFilter": {
+			"group": 0,
+			"category": 1,
+			"mask": 255
+		},
+		"fixtures": [
+			{
+				"label": "",
+				"isSensor": false,
+				"vertices": [
+					[ { "x":0, "y":32 }, { "x":0, "y":48 }, { "x":32, "y":48 }, { "x":32, "y":32 } ],
+					[ { "x":48, "y":32 }, { "x":48, "y":16 }, { "x":16, "y":16 }, { "x":16, "y":32 } ]
+				]
+			}
+		]
+	},
+	"tetrominos:T": {
+		"type": "fromPhysicsEditor",
+		"label": "tetrominos:T",
+		"isStatic": false,
+		"density": 0.10000000149011612,
+		"restitution": 0,
+		"friction": 0.10000000149011612,
+		"frictionAir": 0.009999999776482582,
+		"frictionStatic": 0.5,
+		"collisionFilter": {
+			"group": 0,
+			"category": 1,
+			"mask": 255
+		},
+		"fixtures": [
+			{
+				"label": "",
+				"isSensor": false,
+				"vertices": [
+					[ { "x":48, "y":32 }, { "x":48, "y":16 }, { "x":0, "y":16 }, { "x":0, "y":32 } ],
+					[ { "x":32, "y":48 }, { "x":32, "y":32 }, { "x":16, "y":32 }, { "x":16, "y":48 } ]
+				]
+			}
+		]
+	},
+	"tetrominos:Z2": {
+		"type": "fromPhysicsEditor",
+		"label": "tetrominos:Z2",
+		"isStatic": false,
+		"density": 0.10000000149011612,
+		"restitution": 0,
+		"friction": 0.10000000149011612,
+		"frictionAir": 0.009999999776482582,
+		"frictionStatic": 0.5,
+		"collisionFilter": {
+			"group": 0,
+			"category": 1,
+			"mask": 255
+		},
+		"fixtures": [
+			{
+				"label": "",
+				"isSensor": false,
+				"vertices": [
+					[ { "x":0, "y":32 }, { "x":32, "y":32 }, { "x":32, "y":16 }, { "x":0, "y":16 } ],
+					[ { "x":16, "y":32 }, { "x":16, "y":48 }, { "x":48, "y":48 }, { "x":48, "y":32 } ]
+				]
+			}
+		]
+	}
+}

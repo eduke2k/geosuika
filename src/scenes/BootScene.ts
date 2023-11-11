@@ -6,6 +6,9 @@ import DogPNG from './../assets/dog.png';
 import DogJSON from './../assets/dog.json';
 import FlagsPNG from './../assets/flags.png';
 import FlagsJSON from './../assets/flags.json';
+import TetrominosPNG from './../assets/tetrominos.png';
+import TetrominosJSON from './../assets/tetrominos.json';
+import TetrominosShapesJSON from './../shapes/tetrominos.json';
 import ProgressArrowPNG from './../assets/progressArrow.png';
 import ProgressArrowJSON from './../assets/progressArrow.json';
 import ScoreLabelPNG from './../assets/scoreLabel.png';
@@ -27,9 +30,13 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.aseprite('yato', YatoPNG, YatoJSON);
 		this.load.aseprite('dog', DogPNG, DogJSON);
 		this.load.aseprite('flags', FlagsPNG, FlagsJSON);
+		this.load.aseprite('tetrominos', TetrominosPNG, TetrominosJSON);
 		this.load.aseprite('progressArrow', ProgressArrowPNG, ProgressArrowJSON);
 		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
 		this.load.aseprite('flares', FlaresPNG, FlaresJSON);
+
+    // Load body shapes from JSON file generated using PhysicsEditor
+    this.load.json('shapes', TetrominosShapesJSON);
 
 		// load the PNG file
 		this.load.image('tileset', TilesPNG)
@@ -52,6 +59,7 @@ export default class MainMenuScene extends Phaser.Scene {
 
 		this.anims.createFromAseprite('dog');
 		this.anims.createFromAseprite('flags');
+		this.anims.createFromAseprite('tetrominos');
 		this.anims.createFromAseprite('progressArrow');
 		this.anims.createFromAseprite('scoreLabel');
 		this.anims.createFromAseprite('flares');
