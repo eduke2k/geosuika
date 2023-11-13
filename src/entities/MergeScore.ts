@@ -19,7 +19,6 @@ export default class MergeScore extends Phaser.GameObjects.Container {
     super(scene, x, y);
     scene.add.existing(this);
 
-    console.log('added merge score', this);
     this.score = score;
     this.multiplier = multiplier;
 
@@ -46,12 +45,10 @@ export default class MergeScore extends Phaser.GameObjects.Container {
   }
 
   private triggerFlash (): void {
-    console.log('trigger flash');
     this.setVisible(!this.visible);
   }
 
   public update (_time: number, delta: number): void {
-    console.log('update merge score', delta);
     if (this.flashing) {
       if (this.currentFlashingDelayTime <= 0) {
         this.triggerFlash();

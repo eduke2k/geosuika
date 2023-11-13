@@ -36,7 +36,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   public lastTierDestroy: boolean;
   public maxTierToDrop: number | 'auto';
   private mergeDisabled: boolean;
-  private dangerZoom = 1;
+  private targetZoom = 1;
+  private baseZoom = 1;
 
   public rotateInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
@@ -92,8 +93,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
         this.handleLeftClick();
       }
     });
-
-    this.dangerZoom = 2;
 
     // Call internal update function if scene updates. Extended classes not update automatically
     options.scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
@@ -206,6 +205,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     // Too buggy yet
     // new ExplosionForce('', this, spawnPosition.x, spawnPosition.y, 1, 0.0001, 10);
     this.scene.cameras.main.shake(100, 0.005);
+    this.scene.cameras.main.setAngle(Math.PI);
 
     // Spawn new body, one tier higher!
     const droppable = Droppable.create({
@@ -230,6 +230,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
     // Add particles explosion
     this.triggerExplodeParticles(droppable);
+
+    // Trigger thrilling zoom
+    this.scene.cameras.main.setZoom(1 + (nextTier * 0.01));
   }
 
   private triggerExplodeParticles (droppable: Droppable): void {
@@ -318,10 +321,11 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
   public update (_time: number, delta: number): void {
     // Handle automatic danger zoom
-    if ((this.dangerZoom - this.scene.cameras.main.zoom) > 0.01) {
+    if (Math.abs((this.targetZoom - this.scene.cameras.main.zoom)) > 0.01) {
       const currentZoom = this.scene.cameras.main.zoom;
-      const increment = ((this.dangerZoom - currentZoom) / 500 * delta);
-      this.scene.cameras.main.setZoom(Math.min(currentZoom + increment, this.dangerZoom));
+      const increment = ((this.targetZoom - currentZoom) / 500 * delta);
+      console.log(`currentZoom: ${currentZoom} | increment ${increment}`);
+      this.scene.cameras.main.setZoom(currentZoom + increment);
     }
 
     // Handle Input
