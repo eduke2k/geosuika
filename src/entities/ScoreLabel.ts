@@ -40,18 +40,32 @@ export default class ScoreLabel extends Phaser.GameObjects.Container {
     scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
   }
 
+  public restart (): void {
+    this.score = 0;
+    this.multiplier = 1;
+    this.multiplierTime = 0;
+  }
+
   private calculateScore (tier: number, multiplier: number): number {
     return BASE_SCORE * tier * multiplier;
   }
 
-  public grantScore (tier: number): void {
+  public grantScore (tier: number): { totalScore: number; scoreIncrement: number; currentMultiplier: number } {
+    const scoreIncrement = Math.round(this.calculateScore(tier, this.multiplier));
     this.score += this.calculateScore(tier, this.multiplier);
-    this.grantMultiplier();
+    const currentMultiplier = this.grantMultiplier();
+
+    return {
+      totalScore: this.score,
+      scoreIncrement,
+      currentMultiplier
+    }
   }
 
-  private grantMultiplier (): void {
+  private grantMultiplier (): number {
     this.multiplierTime = MULTIPLIER_DURATION;
     this.multiplier += MULTIPLIER_INCREMENT;
+    return this.multiplier;
   }
 
   public resetMultiplier (): void {

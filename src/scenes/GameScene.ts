@@ -6,6 +6,7 @@ import ProgressCircle from '../entities/ProgressCircle';
 import ScoreLabel from '../entities/ScoreLabel';
 import { Score } from '../models/Score';
 import { flagSet } from '../config/flags';
+import { sizeFromVertices } from '../functions/helper';
 
 export default class GameScene extends Phaser.Scene {
 	public debugText!: Phaser.GameObjects.Text;
@@ -34,25 +35,27 @@ export default class GameScene extends Phaser.Scene {
 		map.createLayer('Foreground', tileset);
 
 		// "Ground" layer will be on top of "Background" layer
-		const terrainLayer = map.createLayer('Terrain', tileset);
+		map.createLayer('Terrain', tileset);
 
-		if (terrainLayer){
-			terrainLayer.setCollisionByProperty({ collides: true });
-			this.matter.world.convertTilemapLayer(terrainLayer);
-		}
-
-		// const collisionObjects = map.objects.find(o => o.name === 'Collisions')?.objects;
-		// if (collisionObjects) {
-		// 	const Bodies = new Phaser.Physics.Matter.MatterPhysics(this).bodies;
-		// 	collisionObjects.forEach(o => {
-		// 		if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-		// 			this.matter.add.rectangle(o.x + (o.width / 2), o.y + (o.height / 2), o.width, o.height, { isStatic: true });
-		// 		} else if (o.polygon && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-		// 			Bodies.fromVertices(0, 0, [o.polygon]);
-		// 			this.matter.add.fromVertices(o.x + (o.width / 2), o.y + (o.height / 2), tiledVertsToMatterVert(o.polygon), { isStatic: true });
-		// 		}
-		// 	});
+		// if (terrainLayer){
+		// 	terrainLayer.setCollisionByProperty({ collides: true });
+		// 	this.matter.world.convertTilemapLayer(terrainLayer);
 		// }
+
+		const Body = new Phaser.Physics.Matter.MatterPhysics(this).body;
+
+		const collisionObjects = map.objects.find(o => o.name === 'Collisions')?.objects;
+		if (collisionObjects) {
+			// const Bodies = new Phaser.Physics.Matter.MatterPhysics(this).bodies;
+			collisionObjects.forEach(o => {
+				if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
+					this.matter.add.rectangle(o.x + (o.width / 2), o.y + (o.height / 2), o.width, o.height, { isStatic: true });
+				} else if (o.polygon && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
+					const body = this.matter.add.fromVertices(0, 0, o.polygon, { isStatic: true, frictionStatic: 1, friction: 1 });
+					Body.setPosition(body, { x: o.x + body.centerOffset.x, y: o.y + body.centerOffset.y}, false);
+				}
+			});
+		}
 	}
 
 	create() {
@@ -80,13 +83,15 @@ export default class GameScene extends Phaser.Scene {
 		// const debugBucket = new DropBucket(this, 1212, 200, 470, 535, 50, score, true);
 		const debugBucket = new DropBucket({
 			scene: this,
-			x: 1212,
+			x: 284,
 			y: 200,
 			width: 470,
 			height: 535,
 			thickness: 64,
 			scoreLabel: score,
 			gameOverThreshold: 535,
+			// maxTierToDrop: 10,
+			// disableMerge: false
 		});
 		debugBucket.assignDroppableSet(flagSet);
 
@@ -104,18 +109,18 @@ export default class GameScene extends Phaser.Scene {
 		// dog.setRotation(90);
 		// dog.play({ key: 'idle', repeat: -1 });
 
-		this.input.on('pointerdown', () => {
-			// const x = this.game.input.mousePointer?.worldX;
-      // const y = this.game.input.mousePointer?.worldY;
+		// this.input.on('pointerdown', () => {
+		// 	const x = this.game.input.mousePointer?.worldX;
+    //   const y = this.game.input.mousePointer?.worldY;
 
-			// Droppable.create({
-			// 	bucket: debugBucket,
-			// 	scene: this,
-			// 	tethered: false,
-			// 	tierIndex: 1,
-			// 	x: x ?? 0,
-			// 	y: y ?? 0
-			// });
-		}, this);
+		// 	Droppable.create({
+		// 		bucket: debugBucket,
+		// 		scene: this,
+		// 		tethered: false,
+		// 		tierIndex: 1,
+		// 		x: x ?? 0,
+		// 		y: y ?? 0
+		// 	});
+		// }, this);
 	}
 }

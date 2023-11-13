@@ -1,11 +1,13 @@
 import { flagSet } from "../config/flags";
-import { getNumberInRange, randomIntFromInterval, shuffleArray } from "../functions/helper";
+import { getNumberInRange, pickRandom, randomIntFromInterval, shuffleArray } from "../functions/helper";
 import GameScene from "../scenes/GameScene";
 import { DroppableSet } from "../types";
 import Droppable from "./Droppable";
+import MergeScore from "./MergeScore";
 import ScoreLabel from "./ScoreLabel";
 
 export const GAME_OVER_TIME = 3000;
+export const DROPPABLE_REMOVE_TIME = 250;
 
 export type DropBocketOptions = {
   scene: Phaser.Scene,
@@ -19,6 +21,7 @@ export type DropBocketOptions = {
   gameOverThreshold: number;
   lastTierDestroy?: boolean;
   maxTierToDrop?: number;
+  disableMerge?: boolean;
 }
 
 export default class DropBucket extends Phaser.Physics.Matter.Sprite {
@@ -32,6 +35,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   public scoreLabel: ScoreLabel;
   public lastTierDestroy: boolean;
   public maxTierToDrop: number | 'auto';
+  private mergeDisabled: boolean;
+  private dangerZoom = 1;
 
   public rotateInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
@@ -43,19 +48,22 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   public dangerTime = GAME_OVER_TIME;
   public isGameOver = false;
 
+  private droppableRemoveTime = DROPPABLE_REMOVE_TIME;
+
   public constructor(options: DropBocketOptions) {
     super(options.scene.matter.world, options.x, options.y, '');
     this.scoreLabel = options.scoreLabel;
     this.gameOverThreshold = options.gameOverThreshold;
     this.lastTierDestroy = options.lastTierDestroy ?? false;
     this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
+    this.mergeDisabled = options.disableMerge ?? false;
     const Bodies = new Phaser.Physics.Matter.MatterPhysics(options.scene).bodies;
     const Body = new Phaser.Physics.Matter.MatterPhysics(options.scene).body;
 
     // Create collision boxes
     this.leftWall = Bodies.rectangle((-options.width / 2) - (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
     this.rightWall = Bodies.rectangle((options.width / 2) + (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
-    this.floor = Bodies.rectangle(0, (options.height / 2) + (options.thickness / 2), options.width + (options.thickness * 2), options.thickness, { mass: 0, isSensor: options.noBottom, chamfer: { radius: options.thickness / 2 } });
+    this.floor = Bodies.rectangle(0, (options.height / 2) + (options.thickness / 2), options.width + (options.thickness * 2), options.thickness, { isSensor: options.noBottom, chamfer: { radius: options.thickness / 2 } });
     this.dropSensor = Bodies.rectangle(0, (-options.height / 2) - options.thickness, options.width, 50, { mass: 0, isSensor: true });
 
     const parts = [this.leftWall, this.rightWall, this.floor, this.dropSensor];
@@ -84,6 +92,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
         this.handleLeftClick();
       }
     });
+
+    this.dangerZoom = 2;
 
     // Call internal update function if scene updates. Extended classes not update automatically
     options.scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
@@ -156,7 +166,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
   public tryMergeDroppables (a: Droppable, b: Droppable): void {
     // Early out
-    if (a.getTier() !== b.getTier()) return;
+    if (this.mergeDisabled || this.isGameOver || a.getTier() !== b.getTier()) return;
 
     if (!a.getBody() && !b.getBody()) {
       console.log('body a AND b are undefined. skipping');
@@ -167,7 +177,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
     // Collect data for new spawn before destroying both bodies
     const tier = b.getTier();
-    console.log('current tier', tier);
 
     // Early out on last tier. Nothing happens
     if (this.getMaxTier() === tier && !this.lastTierDestroy) return;
@@ -181,20 +190,11 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     }
 
     const nextTier = tier + 1;
-    console.log('next tier', nextTier);
-
-    const nextDroppableConfig = this.droppableSet.droppableConfigs[nextTier];
-    const nextDroppableScale = this.droppableSet.tierScles[nextTier] ?? 1;
-    if (!nextDroppableConfig) return;
 
     const bodyB = b.getBody();
     const bodyA = a.getBody();
-
-    console.log('try to get position from body b', bodyB);
-    console.log('try to get position from body b', bodyA);
   
     const spawnPosition = bodyB ? bodyB.position : (bodyA.position ?? { x: this.dropSensor.position.x, y: this.dropSensor.position.y });
-    console.log('spawnPosition', spawnPosition);
 
     // Get rid of them
     this.droppables.splice(this.droppables.findIndex(d => d === a), 1);
@@ -223,23 +223,34 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     droppable.hasCollided = true;
 
     // Do Score calculation
-    this.scoreLabel.grantScore(nextTier);
+    const scoreObject = this.scoreLabel.grantScore(nextTier);
+
+    // Spawn score visualizer
+    new MergeScore(this.scene, scoreObject.scoreIncrement, scoreObject.currentMultiplier, spawnPosition.x, spawnPosition.y);
 
     // Add particles explosion
-    const quantity = nextTier * 10;
-    const emitter = this.scene.add.particles(spawnPosition.x, spawnPosition.y, 'flares', {
+    this.triggerExplodeParticles(droppable);
+  }
+
+  private triggerExplodeParticles (droppable: Droppable): void {
+    const body = droppable.body;
+    if (!body) return;
+
+    const quantity = (droppable.getTier() + 1) * 10;
+    const emitter = this.scene.add.particles(droppable.getBody().position.x, droppable.getBody().position.y, 'flares', {
       frame: [0,1,2,3],
       lifespan: 1000,
-      speed: { min: (nextTier * 10), max: (nextTier * 30) },
-      scale: { start: (nextTier * 0.1) + 0.5, end: 0 },
+      speed: { min: (droppable.getTier() * 10), max: (droppable.getTier() * 30) },
+      scale: { start: (droppable.getTier() * 0.1) + 0.5, end: 0 },
       gravityY: 200,
       rotate: { min: 0, max: 360 },
       blendMode: 'ADD',
       emitting: false,
     });
 
-    if (nextDroppableConfig.bodyType === 'circle') {
-      emitter.addEmitZone({ type: 'edge', source: new Phaser.Geom.Circle(0, 0, (nextDroppableConfig.radius ?? 1) * nextDroppableScale), quantity, total: 1 })
+    const droppableConfig = droppable.getConfig();
+    if (droppableConfig.bodyType === 'circle') {
+      emitter.addEmitZone({ type: 'edge', source: new Phaser.Geom.Circle(0, 0, (droppableConfig.radius ?? 1) * (droppable.scale ?? 1)), quantity, total: 1 })
     }
 
     emitter.particleBringToTop = true;
@@ -279,7 +290,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   }
 
   public triggerGameOver (): void {
-    console.log('triggeringGameOver');
+    console.log('triggeringGameOver', this.droppables.length);
     this.isGameOver = true;
   }
 
@@ -289,24 +300,64 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.nextDroppable.setRotation(this.nextDroppable.rotation + Phaser.Math.DegToRad(90));
   }
 
+  private explode (droppable: Droppable): void {
+    const index = this.droppables.findIndex(d => d === droppable);
+    if (index > -1) this.droppables.splice(index, 1);
+    this.triggerExplodeParticles(droppable);
+    droppable.destroy();
+  }
+
+  public restartBucket (): void {
+    this.nextDroppable = null;
+    this.droppables.forEach(d => { d.destroy(); });
+    this.droppables = [];
+    this.scoreLabel.restart();
+    this.isGameOver = false;
+    this.initNextDroppable();
+  }
+
   public update (_time: number, delta: number): void {
+    // Handle automatic danger zoom
+    if ((this.dangerZoom - this.scene.cameras.main.zoom) > 0.01) {
+      const currentZoom = this.scene.cameras.main.zoom;
+      const increment = ((this.dangerZoom - currentZoom) / 500 * delta);
+      this.scene.cameras.main.setZoom(Math.min(currentZoom + increment, this.dangerZoom));
+    }
+
     // Handle Input
     if (Phaser.Input.Keyboard.JustDown(this.rotateInput)) {
       this.rotateNextDroppable();
     }
 
+    // Remove droppables on game over
+    if (this.isGameOver && this.droppables.length > 0) {
+      if (this.droppableRemoveTime <= 0) {
+
+        if (this.nextDroppable) {
+          this.explode(this.nextDroppable);
+          this.nextDroppable = null;
+        } else {
+          const randomDroppable = pickRandom(this.droppables);
+          this.explode(randomDroppable);
+        }
+
+        if (this.droppables.length > 0) {
+          this.droppableRemoveTime = DROPPABLE_REMOVE_TIME;
+        }
+      } else {
+        this.droppableRemoveTime -= delta;
+      }
+    } else if (this.isGameOver && this.droppables.length === 0) {
+      // Clean up finished, do something!
+      this.restartBucket();
+    }
+
     // Handle next droppable position change with mouse position
     if (!this.isGameOver && this.nextDroppable && this.nextDroppable.isTethered()) {
-
-      // const Body = new Phaser.Physics.Matter.MatterPhysics(this.scene).body;
-      // Body.translate(this.dropSensor, { x: 0, y: 1 });
-      // this.dropSensor. = { x: 0, y: 1 };
-      // console.log(this.dropSensor.position);
-
       const x = this.scene.game.input.mousePointer?.worldX;
       const y = this.scene.game.input.mousePointer?.worldY;
 
-      if (!x || !y) {
+      if (x == undefined || y == undefined) {
         this.nextDroppable.setX(this.dropSensor.position.x);
         this.nextDroppable.setY(this.dropSensor.position.y);
       } else {

@@ -12,12 +12,12 @@ export type DroppableParams = {
 
 export default class Droppable extends Phaser.Physics.Matter.Sprite {
   private tier: number;
+  private config: SingleDroppableConfig;
   private tethered = false;
   private parentBucket: DropBucket;
   public hasCollided = false;
 
   private static generateBody (droppableConfig: SingleDroppableConfig, scene: Phaser.Scene, x: number, y: number): MatterJS.BodyType {
-
     switch (droppableConfig.bodyType) {
       case 'circle': {
         return scene.matter.add.circle(x, y, droppableConfig.radius);
@@ -37,15 +37,16 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     const body = Droppable.generateBody(droppableConfig, options.scene, options.x, options.y);
 
     // Setup sprite (as Droppable)
-    return new Droppable(options, body);
+    return new Droppable(options, droppableConfig, body);
   }
 
-  constructor(params: DroppableParams, body: MatterJS.BodyType) {
+  constructor(params: DroppableParams, droppableConfig: SingleDroppableConfig, body: MatterJS.BodyType) {
     super(params.scene.matter.world, params.x, params.y, params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].spriteKey);
     this.setExistingBody(body);
     this.tier = params.tierIndex;
     this.parentBucket = params.bucket;
     this.tethered = params.tethered;
+    this.config = droppableConfig;
 		
     // Trigger animation in sprite
     this.play({ key: params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].animationKey, repeat: -1 });
@@ -64,6 +65,10 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
 
     // Add to scene render list
     params.scene.add.existing(this);
+  }
+
+  public getConfig (): SingleDroppableConfig {
+    return this.config;
   }
 
   private initCollideCallbacks (body: MatterJS.BodyType): void {
