@@ -105,7 +105,8 @@ export default class GameScene extends Phaser.Scene {
 								gameOverThreshold: properties.gameOverThreshold ? parseInt(properties.gameOverThreshold.toString()) : 535,
 								maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
 								disableMerge: Boolean(properties.disableMerge),
-								droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet')
+								droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
+								targetScore: 2100,
 							}));
 							break;
 						}

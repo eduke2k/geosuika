@@ -31,6 +31,7 @@ export type DropBocketOptions = {
   lastTierDestroy?: boolean;
   maxTierToDrop?: number;
   disableMerge?: boolean;
+  targetScore: number;
 }
 
 export default class DropBucket extends Phaser.Physics.Matter.Sprite {
@@ -55,6 +56,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   private baseZoom = 1;
   private activeBucket = false;
   private collisionSoundWaitTime = 0;
+  private targetScore: number;
 
   private bgm: BackgroundMusic;
 
@@ -77,6 +79,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.lastTierDestroy = options.lastTierDestroy ?? false;
     this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
     this.mergeDisabled = options.disableMerge ?? false;
+    this.targetScore = options.targetScore;
 
     this.bucketWidth = options.width;
     this.bucketHeight = options.height;
@@ -91,12 +94,12 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     // Create Score Label
 		this.scoreLabel = new ScoreLabel(this.scene, 50, 50);
 		this.scoreLabel.setScrollFactor(0, 0);
-    this.scoreLabel.visible = false;
+    this.scoreLabel.visible = true;
 
     // Create progress circle
 		this.progressCircle = new ProgressCircle(this.scene, this, 1100, 500);
 		this.progressCircle.setScrollFactor(0, 0);
-    this.progressCircle.visible = false;
+    this.progressCircle.visible = true;
 
     // Create collision boxes
     this.leftWallBody = Bodies.rectangle((-options.width / 2) - (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
@@ -291,6 +294,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     // Do Score calculation
     const scoreObject = this.scoreLabel.grantScore(nextTier);
 
+    // Send score change to background music model
+    this.bgm.handleScoreChange(scoreObject.totalScore / this.targetScore);
+
     // Spawn score visualizer
     new MergeScore(this.scene, scoreObject.scoreIncrement, scoreObject.currentMultiplier, spawnPosition.x, spawnPosition.y);
 
@@ -368,6 +374,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.targetZoom = 1;
     this.scene.cameras.main.setFollowOffset(0, 0);
     this.isGameOver = true;
+    this.bgm.reset();
   }
 
   private rotateNextDroppable (): void {
@@ -419,7 +426,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     }
 
     // Handle automatic zoom
-    if (Math.abs((this.targetZoom - this.scene.cameras.main.zoom)) > 0.01) {
+    if (Math.abs((this.targetZoom - this.scene.cameras.main.zoom)) > 0.001) {
       const currentZoom = this.scene.cameras.main.zoom;
       const increment = ((this.targetZoom - currentZoom) / 500 * delta);
       this.scene.cameras.main.setZoom(currentZoom + increment);

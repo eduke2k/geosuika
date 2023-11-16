@@ -51,7 +51,35 @@ const generateChordProgressionFromPattern = (pattern: BGMPatternConfig): ChordPr
 }
 
 export const allTheDucksBGMConfig: BackgroundMusicConfig = {
-  audioKey: 'bgm01-chello-chord',
-  audioKeys: ['bgm01-chello-chord', 'bgm01-backing-voice', 'bgm01-bass', 'bgm01-chello-melody', 'bgm01-kamo-voice', 'bgm01-main-voice', 'bgm01-piano'],
+  audioKeys: [
+    {
+      key: 'bgm01-chello-chord',
+      minScoreRatio: 0.1
+    },
+    {
+      key: 'bgm01-backing-voice',
+      minScoreRatio: 0.2
+    },
+    {
+      key: 'bgm01-bass',
+      minScoreRatio: 0.3
+    },
+    {
+      key: 'bgm01-chello-melody',
+      minScoreRatio: 0.4
+    },
+    {
+      key: 'bgm01-kamo-voice',
+      minScoreRatio: 0.5
+    },
+    {
+      key: 'bgm01-main-voice',
+      minScoreRatio: 0.6
+    },
+    {
+      key: 'bgm01-piano',
+      minScoreRatio: 0.7
+    }
+  ],
   chordProgression: generateChordProgressionFromPattern(allTheDucksPattern)
 }

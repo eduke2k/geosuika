@@ -23,7 +23,7 @@ const config: Phaser.Types.Core.GameConfig = {
 				showSensors: true,
 				showCollisions: false,
 				showVelocity: false,
-				showBounds: true,
+				showBounds: false,
 				showSeparation: false,
 				showBody: true
 			}
