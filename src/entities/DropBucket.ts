@@ -54,7 +54,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   private mergeDisabled: boolean;
   private targetZoom = 1;
   private baseZoom = 1;
-  private activeBucket = false;
+  private bucketActive = false;
   private collisionSoundWaitTime = 0;
   private targetScore: number;
 
@@ -74,7 +74,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
   public constructor(options: DropBocketOptions) {
     super(options.scene.matter.world, options.x, options.y, '');
-    this.activeBucket = options.active;
+    this.bucketActive = options.active;
     this.gameOverThreshold = options.gameOverThreshold;
     this.lastTierDestroy = options.lastTierDestroy ?? false;
     this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
@@ -130,7 +130,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
     // Add click listener that will only trigger if the click is within the body's bounds
     this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (!this.activeBucket || this.isDanger) return;
+      if (!this.bucketActive || this.isDanger) return;
 
       const rect = this.getBodyBounds();
       if (!rect) return;
@@ -155,20 +155,26 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
       shuffleArray(this.droppableSet.droppableConfigs);
     }
 
-    if (this.active) {
-      // Start Music
-      this.bgm.play();
-      // this.scene.sound.play('bgm01-chello-chord', { loop: true })
-
-      // Init first drop
-      this.initNextDroppable();
-
-      // Map camera to the bucket
-      this.scene.cameras.main.startFollow(this, true, 0.05, 0.05);
+    if (options.active) {
+      this.activateBucket();
     }
 
     // Call internal update function if scene updates. Extended classes not update automatically
     options.scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
+  }
+
+  public activateBucket (): void {
+    // Start Music
+    this.bgm.play();
+    // this.scene.sound.play('bgm01-chello-chord', { loop: true })
+
+    // Init first drop
+    this.initNextDroppable();
+
+    // Map camera to the bucket
+    this.scene.cameras.main.startFollow(this, true, 0.05, 0.05);
+
+    this.bucketActive = true;
   }
 
   public getDroppableSet (): DroppableSet {
@@ -411,7 +417,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
   }
 
   public update (_time: number, delta: number): void {
-    if (!this.activeBucket) return;
+    if (!this.bucketActive) return;
     const dangerPercentage = this.getDangerPercentage();
 
     // Set danger visualization
