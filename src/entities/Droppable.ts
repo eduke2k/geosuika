@@ -109,7 +109,6 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     this.tethered = false;
     this.setCollidesWith(1);
     this.parentBucket.handleDrop();
-    this.parentBucket.scoreLabel.resetMultiplier();
   }
 
   public getParentBucket (): DropBucket {
@@ -126,5 +125,12 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
 
   public isTethered (): boolean {
     return this.tethered;
+  }
+
+  public static getFirstDroppableFromBodies (...bodies: MatterJS.BodyType[]): Droppable | undefined {
+    for (let i = 0; i < bodies.length; i++) {
+      if (bodies[i].gameObject instanceof Droppable) return bodies[i].gameObject;
+    }
+    return;
   }
 }
