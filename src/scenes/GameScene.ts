@@ -13,7 +13,7 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	// Todo: Move this to Droppable? or Bucket?
-	public handleCollision (bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType): void {
+	public handleCollision (bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType, event: Phaser.Physics.Matter.Events.CollisionStartEvent | Phaser.Physics.Matter.Events.CollisionActiveEvent): void {
 		if (bodyA.gameObject instanceof Droppable && bodyB.gameObject instanceof Droppable) {
 			const parentBucket = bodyB.gameObject.getParentBucket();
 			parentBucket.tryMergeDroppables(bodyA.gameObject, bodyB.gameObject);
@@ -29,7 +29,10 @@ export default class GameScene extends Phaser.Scene {
 			const v1 = new Phaser.Math.Vector2(bodyB.velocity).length();
 			const v2 = new Phaser.Math.Vector2(bodyA.velocity).length();
 			if ((!bodyA.isSensor && !bodyB.isSensor) && (v1 > 2 || v2 > 2)) {
-				parentBucket.playCollisionSound(droppable, Math.max(v1, v2));
+
+				// Get contact point. Typings of MatterJS are broken.
+				const contactVertex = (event.pairs[0] as any).contacts.filter((c: any) => c !== undefined)[0].vertex;
+				parentBucket.playCollisionSound(droppable, Math.max(v1, v2), contactVertex);
 			}
 		}
 	}
@@ -75,11 +78,11 @@ export default class GameScene extends Phaser.Scene {
 		this.initDebugTextField();
 
 		this.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) =>	{
-			event.pairs.forEach(c => { this.handleCollision(c.bodyA, c.bodyB) });
+			event.pairs.forEach(c => { this.handleCollision(c.bodyA, c.bodyB, event) });
 		});
 
-		this.matter.world.on('collisionstart', (_event: Phaser.Physics.Matter.Events.CollisionStartEvent, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
-			this.handleCollision(bodyA, bodyB);
+		this.matter.world.on('collisionstart', (event: Phaser.Physics.Matter.Events.CollisionStartEvent, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
+			this.handleCollision(bodyA, bodyB, event);
 		});
 
 		// Camera Settings

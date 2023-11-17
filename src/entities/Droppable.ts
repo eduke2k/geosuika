@@ -16,6 +16,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   private tethered = false;
   private parentBucket: DropBucket;
   public hasCollided = false;
+  public birthTime: number;
 
   private static generateBody (droppableConfig: SingleDroppableConfig, scene: Phaser.Scene, x: number, y: number): MatterJS.BodyType {
     switch (droppableConfig.bodyType) {
@@ -47,12 +48,15 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     this.parentBucket = params.bucket;
     this.tethered = params.tethered;
     this.config = droppableConfig;
+    this.birthTime = this.scene.time.now;
 		
     // Trigger animation in sprite
     this.play({ key: params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].animationKey, repeat: -1 });
 
 		this.setBounce(0.5);
-    this.setFriction(0.1);
+    this.setFriction(1);
+    this.setMass(params.bucket.getDroppableSet().tierScles[params.tierIndex]);
+    console.log(this.body?.mass)
 
     // If the droppable is tethered, remove collision
     if (this.tethered) this.setCollidesWith(0);

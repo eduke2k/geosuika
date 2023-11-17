@@ -96,11 +96,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 		this.scoreLabel.setScrollFactor(0, 0);
     this.scoreLabel.visible = true;
 
-    // Create progress circle
-		this.progressCircle = new ProgressCircle(this.scene, this, 1100, 500);
-		this.progressCircle.setScrollFactor(0, 0);
-    this.progressCircle.visible = true;
-
     // Create collision boxes
     this.leftWallBody = Bodies.rectangle((-options.width / 2) - (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
     this.rightWallBody = Bodies.rectangle((options.width / 2) + (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
@@ -122,7 +117,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
     // Set position from tilemap. Since the body origin is always the center of mass, putting the bottom of
     // the bucket the coordinates of the tilemap object, we need to calculate the actual body bottom position
-    // ourself.
+    // yourself.
     const bottomY = options.y - ((compoundBody.bounds.max.y - compoundBody.bounds.min.y) / 2) + compoundBody.centerOffset.y;
     this.setPosition(options.x, bottomY);
   
@@ -154,6 +149,11 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     if (this.droppableSet.randomizeOrder) {
       shuffleArray(this.droppableSet.droppableConfigs);
     }
+
+    // Create progress circle
+		this.progressCircle = new ProgressCircle(this.scene, this, 1100, 500);
+		this.progressCircle.setScrollFactor(0, 0);
+    this.progressCircle.visible = true;
 
     if (options.active) {
       this.activateBucket();
@@ -229,7 +229,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     return this.getDroppableSet().droppableConfigs.length - 1;
   }
 
-  public playCollisionSound (source: Droppable, force: number): void {
+  public playCollisionSound (source: Droppable, force: number, contactVertex?: { x: number; y: number }): void {
     if (!source.body || this.collisionSoundWaitTime > 0) return;
     const instrument = this.scene.registry.get('instument:harp') as Instrument | undefined;
     if (!instrument) return;
@@ -237,6 +237,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     const volume = scaleNumberRange(Math.min(force, 17), [0, 20], [0, 1]);
     instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, pan, volume);
     this.collisionSoundWaitTime = COLLISION_SOUND_WAIT_TIME;
+    console.log(contactVertex);
+    if (contactVertex) this.triggerSparkParticle(contactVertex);
   }
 
   public tryMergeDroppables (a: Droppable, b: Droppable): void {
@@ -266,10 +268,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
     const nextTier = tier + 1;
 
-    const bodyB = b.getBody();
-    const bodyA = a.getBody();
-  
-    const spawnPosition = bodyB ? bodyB.position : (bodyA.position ?? { x: this.dropSensorBody.position.x, y: this.dropSensorBody.position.y });
+    const olderDroppable = a.birthTime > b.birthTime ? b : a;
+    const spawnPosition = olderDroppable.body ? olderDroppable.body.position : { x: this.dropSensorBody.position.x, y: this.dropSensorBody.position.y };
 
     // Get rid of them
     this.droppables.splice(this.droppables.findIndex(d => d === a), 1);
@@ -318,17 +318,35 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     }
   }
 
+  private triggerSparkParticle (contactVertex: { x: number; y: number }): void {
+    const emitter = this.scene.add.particles(contactVertex.x, contactVertex.y, 'flares', {
+      frame: [0,1,2,3],
+      lifespan: 1000,
+      speed: { min: 25, max: 50 },
+      scale: { start: 0.5, end: 0 },
+      gravityY: 50,
+      rotate: { min: 0, max: 360 },
+      blendMode: 'ADD',
+      emitting: false,
+    });
+    emitter.explode(1);
+
+    this.scene.time.delayedCall(5000, function() {
+      emitter.destroy();
+    });
+  }
+
   private triggerExplodeParticles (droppable: Droppable): void {
     const body = droppable.body;
     if (!body) return;
 
     const quantity = (droppable.getTier() + 1) * 10;
     const emitter = this.scene.add.particles(droppable.getBody().position.x, droppable.getBody().position.y, 'flares', {
-      frame: [0,1,2,3],
+      frame: [4,5,6,7,8],
       lifespan: 1000,
       speed: { min: (droppable.getTier() * 10), max: (droppable.getTier() * 30) },
-      scale: { start: (droppable.getTier() * 0.1) + 0.5, end: 0 },
-      gravityY: 200,
+      scale: { start: (droppable.getTier() * 0.05) + 0.1, end: 0 },
+      gravityY: 100,
       rotate: { min: 0, max: 360 },
       blendMode: 'ADD',
       emitting: false,
@@ -385,7 +403,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
   private rotateNextDroppable (): void {
     if (!this.nextDroppable) return;
-
     this.nextDroppable.setRotation(this.nextDroppable.rotation + Phaser.Math.DegToRad(90));
   }
 

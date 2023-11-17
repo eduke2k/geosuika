@@ -1,38 +1,83 @@
 { "frames": [
    {
     "filename": "0",
-    "frame": { "x": 1, "y": 30, "w": 27, "h": 26 },
+    "frame": { "x": 184, "y": 1, "w": 29, "h": 53 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 3, "y": 5, "w": 25, "h": 24 },
-    "sourceSize": { "w": 32, "h": 32 },
+    "spriteSourceSize": { "x": 17, "y": 7, "w": 27, "h": 51 },
+    "sourceSize": { "w": 64, "h": 64 },
     "duration": 100
    },
    {
     "filename": "1",
-    "frame": { "x": 1, "y": 1, "w": 30, "h": 28 },
+    "frame": { "x": 184, "y": 55, "w": 29, "h": 53 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 2, "y": 1, "w": 28, "h": 26 },
-    "sourceSize": { "w": 32, "h": 32 },
+    "spriteSourceSize": { "x": 17, "y": 7, "w": 27, "h": 51 },
+    "sourceSize": { "w": 64, "h": 64 },
     "duration": 100
    },
    {
     "filename": "2",
-    "frame": { "x": 32, "y": 1, "w": 27, "h": 29 },
+    "frame": { "x": 123, "y": 64, "w": 29, "h": 53 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 2, "y": 3, "w": 25, "h": 27 },
-    "sourceSize": { "w": 32, "h": 32 },
+    "spriteSourceSize": { "x": 17, "y": 7, "w": 27, "h": 51 },
+    "sourceSize": { "w": 64, "h": 64 },
     "duration": 100
    },
    {
     "filename": "3",
-    "frame": { "x": 29, "y": 31, "w": 24, "h": 25 },
+    "frame": { "x": 153, "y": 64, "w": 29, "h": 53 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 6, "y": 6, "w": 22, "h": 23 },
-    "sourceSize": { "w": 32, "h": 32 },
+    "spriteSourceSize": { "x": 17, "y": 7, "w": 27, "h": 51 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "4",
+    "frame": { "x": 1, "y": 1, "w": 60, "h": 62 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 3, "y": 2, "w": 58, "h": 60 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "5",
+    "frame": { "x": 62, "y": 1, "w": 60, "h": 62 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 3, "y": 2, "w": 58, "h": 60 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "6",
+    "frame": { "x": 123, "y": 1, "w": 60, "h": 62 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 3, "y": 2, "w": 58, "h": 60 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "7",
+    "frame": { "x": 1, "y": 64, "w": 60, "h": 62 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 3, "y": 2, "w": 58, "h": 60 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "8",
+    "frame": { "x": 62, "y": 64, "w": 60, "h": 62 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 3, "y": 2, "w": 58, "h": 60 },
+    "sourceSize": { "w": 64, "h": 64 },
     "duration": 100
    }
  ],
@@ -41,13 +86,18 @@
   "version": "1.2.40-x64",
   "image": "flares.png",
   "format": "RGBA8888",
-  "size": { "w": 59, "h": 56 },
+  "size": { "w": 213, "h": 126 },
   "scale": "1",
   "frameTags": [
-   { "name": "flare_pink", "from": 0, "to": 0, "direction": "forward" },
-   { "name": "flare_cyan", "from": 1, "to": 1, "direction": "forward" },
-   { "name": "flare_green", "from": 2, "to": 2, "direction": "forward" },
-   { "name": "flare_red", "from": 3, "to": 3, "direction": "forward" }
+   { "name": "note_pink", "from": 0, "to": 0, "direction": "forward" },
+   { "name": "note_cyan", "from": 1, "to": 1, "direction": "forward" },
+   { "name": "note_green", "from": 2, "to": 2, "direction": "forward" },
+   { "name": "note_red", "from": 3, "to": 3, "direction": "forward" },
+   { "name": "petal_1", "from": 4, "to": 4, "direction": "forward" },
+   { "name": "petal_2", "from": 5, "to": 5, "direction": "forward" },
+   { "name": "petal_3", "from": 6, "to": 6, "direction": "forward" },
+   { "name": "petal_4", "from": 7, "to": 7, "direction": "forward" },
+   { "name": "petal_5", "from": 8, "to": 8, "direction": "forward" }
   ]
  }
 }
