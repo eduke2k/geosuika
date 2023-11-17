@@ -17,7 +17,7 @@ export const DROPPABLE_EXTRA_PADDING = 1;
 export const DANGER_VISUALIZATION_START = 0.8;
 export const COLLISION_SOUND_WAIT_TIME = 80;
 
-export type DropBocketOptions = {
+export type DropBucketOptions = {
   scene: Phaser.Scene;
   x: number;
   y: number;
@@ -34,7 +34,7 @@ export type DropBocketOptions = {
   targetScore: number;
 }
 
-export default class DropBucket extends Phaser.Physics.Matter.Sprite {
+export default class DropBucket extends Phaser.Physics.Matter.Image {
   public nextDroppable: Droppable | null = null;
   private bucketWidth: number;
   private bucketHeight: number;
@@ -72,14 +72,19 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
 
   private droppableRemoveTime = DROPPABLE_REMOVE_TIME;
 
-  public constructor(options: DropBocketOptions) {
-    super(options.scene.matter.world, options.x, options.y, '');
+  public constructor(options: DropBucketOptions) {
+    super(options.scene.matter.world, options.x, options.y, 'bucket:osaka-castle');
     this.bucketActive = options.active;
     this.gameOverThreshold = options.gameOverThreshold;
     this.lastTierDestroy = options.lastTierDestroy ?? false;
     this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
     this.mergeDisabled = options.disableMerge ?? false;
     this.targetScore = options.targetScore;
+
+    // Scale the bucket sprite to specifications before adding a body. We need the scale factor later for adjusting origin offsets
+    const targetPixelWidth = options.width + (options.thickness * 2);
+    const sourcePixelWidth = this.width;
+    this.setScale(targetPixelWidth / sourcePixelWidth);
 
     this.bucketWidth = options.width;
     this.bucketHeight = options.height;
@@ -97,9 +102,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.scoreLabel.visible = true;
 
     // Create collision boxes
-    this.leftWallBody = Bodies.rectangle((-options.width / 2) - (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
-    this.rightWallBody = Bodies.rectangle((options.width / 2) + (options.thickness / 2), 0, options.thickness, options.height, { chamfer: { radius: options.thickness / 2 } });
-    this.floorBody = Bodies.rectangle(0, (options.height / 2) + (options.thickness / 2), options.width + (options.thickness * 2), options.thickness, { isSensor: options.noBottom, chamfer: { radius: options.thickness / 2 } });
+    this.leftWallBody = Bodies.rectangle((-options.width / 2) - (options.thickness / 2), 0, options.thickness, options.height);
+    this.rightWallBody = Bodies.rectangle((options.width / 2) + (options.thickness / 2), 0, options.thickness, options.height);
+    this.floorBody = Bodies.rectangle(0, (options.height / 2) + (options.thickness / 2), options.width + (options.thickness * 2), options.thickness, { isSensor: options.noBottom });
     this.dropSensorBody = Bodies.rectangle(0, (-options.height / 2) - options.thickness, options.width, 50, { mass: 0, isSensor: true });
     this.dangerLineBody = Bodies.rectangle(0, this.leftWallBody.bounds.min.y, options.width, 10, { isSensor: true, isStatic: true });
 
@@ -113,8 +118,18 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
     this.setExistingBody(compoundBody);
     this.setFrictionAir(0.001);
     this.setBounce(0);
-    this.setOrigin(0.5, 0.5);
 
+    /**
+     * Move bucket sprite to correct position within the body bounds. Since center of mass
+     * can be drastically different from bucket design to bucket design, we need to take everything
+     * into account and calculate the new relative y origin to move the sprite to the bottom of the body perfectly.
+     */
+    const bodyHeight = compoundBody.bounds.max.y - compoundBody.bounds.min.y;
+    console.log(bodyHeight);
+    const relativeYOffset = this.centerOfMass.y - (1 - (this.height / bodyHeight * this.scale)) / 2;
+    this.setOrigin(0.5, relativeYOffset);
+
+    
     // Set position from tilemap. Since the body origin is always the center of mass, putting the bottom of
     // the bucket the coordinates of the tilemap object, we need to calculate the actual body bottom position
     // yourself.
@@ -137,6 +152,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Sprite {
         this.handleLeftClick();
       }
     });
+
+    // Add bucket sprite
+    // const sprite = this.scene.matter.scene.add.image(0, 0, 'bucket:osaka-castle');
+    // console.log(sprite);
 
     // Add Danger Line
     this.dangerLine = this.scene.matter.add.sprite(0, 0, 'dangerLine', undefined);

@@ -1,5 +1,7 @@
 import Phaser from 'phaser'
 import FontFaceObserver from 'fontfaceobserver';
+
+// Aseprite sprites
 import YatoPNG from './../assets/yato.png';
 import YatoJSON from './../assets/yato.json';
 import DogPNG from './../assets/dog.png';
@@ -17,6 +19,9 @@ import FlaresPNG from './../assets/flares.png';
 import FlaresJSON from './../assets/flares.json';
 import DangerLinePNG from './../assets/dangerLine.png';
 import DangerLineJSON from './../assets/dangerLine.json';
+
+// Images
+import OsakaCastleBucketPNG from './../assets/buckets/osaka_castle.png';
 
 // Audio SFX
 import HarpSFX from './../assets/sfx/harp.ogg';
@@ -52,6 +57,9 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
 		this.load.aseprite('flares', FlaresPNG, FlaresJSON);
 		this.load.aseprite('dangerLine', DangerLinePNG, DangerLineJSON);
+
+		// Images
+		this.load.image('bucket:osaka-castle', OsakaCastleBucketPNG);
 
 		// Audio SFX
 		// Don't forget to register the corresponsing instrument when adding new instrument sfx files
