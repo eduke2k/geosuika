@@ -32,7 +32,16 @@ export class BackgroundMusic {
   public constructor(scene: Phaser.Scene, config: BackgroundMusicConfig) {
     this.scene = scene;
     this.config = config;
-    this.audio = config.audioKeys.map(k => scene.sound.add(k.key, { loop: true, volume: 0 }) as Phaser.Sound.WebAudioSound) 
+    this.audio = config.audioKeys.map(k => scene.sound.add(k.key, { loop: true, volume: 0 }) as Phaser.Sound.WebAudioSound)
+    this.audio[0].on('looped', this.handleLoop, this);
+  }
+
+  private handleLoop (): void {
+    console.log('on looped triggered');
+    // Tracks might get out of sync after a while. Let's at least sync them once the first track loops
+    this.audio.forEach(a => {
+      a.setSeek(0);
+    });
   }
 
   public play (): void {

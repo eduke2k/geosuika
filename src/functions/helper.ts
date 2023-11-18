@@ -1,3 +1,4 @@
+import { BGMPatternConfig, ChordProgressionMarker } from "../models/BackgroundMusic";
 import { TiledPropertiesNative, TiledPropertiesParsed } from "../types";
 
 export function randomIntFromInterval (min: number, max: number): number {
@@ -57,4 +58,23 @@ export function parseTiledProperties (properties?: TiledPropertiesNative): Tiled
 
 export function round (value: number, precision: number) {
   return parseFloat(value.toFixed(precision));
+}
+
+export const generateChordProgressionFromPattern = (pattern: BGMPatternConfig): ChordProgressionMarker[] => {
+  let marker = 0;
+  const chordProgression: ChordProgressionMarker[] = [];
+
+  pattern.forEach(part => {
+    for(let i = 0; i <= part.repeats; i++) {
+      part.repeatablePattern.forEach(p => {
+        chordProgression.push({
+          chord: p.chord,
+          duration: p.duration,
+          start: marker
+        });
+        marker = round(marker + p.duration, 2);
+      });
+    }
+  });
+  return chordProgression;
 }

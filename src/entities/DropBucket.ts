@@ -1,6 +1,6 @@
 import { flagSet } from "../config/flags";
 import { tetrominosSet } from "../config/tetrominos";
-import { allTheDucksBGMConfig } from "../const/bgm";
+import { bgm02BGMConfig } from "../const/bgm02";
 import { getNumberInRange, pickRandom, randomIntFromInterval, scaleNumberRange, shuffleArray } from "../functions/helper";
 import { BackgroundMusic } from "../models/BackgroundMusic";
 import { Instrument } from "../models/Instrument";
@@ -94,7 +94,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     const Body = new Phaser.Physics.Matter.MatterPhysics(options.scene).body;
 
     // Init bgm
-    this.bgm = new BackgroundMusic(this.scene, allTheDucksBGMConfig);
+    this.bgm = new BackgroundMusic(this.scene, bgm02BGMConfig);
 
     // Create Score Label
 		this.scoreLabel = new ScoreLabel(this.scene, 50, 50);
@@ -329,7 +329,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.triggerExplodeParticles(droppable);
 
     // Trigger Sound Effect
-    const instrument = this.scene.registry.get('instument:bass') as Instrument | undefined;
+    const instrument = this.scene.registry.get('instument:merge') as Instrument | undefined;
     if (instrument) {
       const pan = (spawnPosition.x - this.getBounds().centerX) / (this.bucketWidth / 2);
       const volume = scaleNumberRange(Math.min(scoreObject.scoreIncrement, 20), [0, 20], [0, 1]);

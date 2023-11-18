@@ -2,7 +2,7 @@
 
 // export class SoundHelper {
 //   public static playHarpSound (chord: Chord, scene: Phaser.Scene, pan: number, volume: number): void {
-//     const randomNote = getRandomMarkerIndexFromChord('harp', chord);
+//     const randomNote = getRandomMarkerIndexFromChord('instrument:harp', chord);
 //     const markerConfig = scaleSoundMarkers[randomNote];
 
 //     const config: Phaser.Types.Sound.SoundMarker = {
@@ -10,7 +10,7 @@
 //       config: { pan, volume }
 //     };
 
-//     scene.sound.play('harp', config);
+//     scene.sound.play('instrument:harp', config);
 //   }
 
 //   public static playBassSound (chord: Chord, scene: Phaser.Scene, pan: number, volume: number): void {

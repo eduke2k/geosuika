@@ -96,7 +96,6 @@ export default class GameScene extends Phaser.Scene {
 					const properties = parseTiledProperties(o.properties);
 					switch (o.name) {
 						case 'bucket': {
-							console.log(o);
 							this.buckets.push(new DropBucket({
 								scene: this,
 								active: Boolean(properties.active),
@@ -109,7 +108,7 @@ export default class GameScene extends Phaser.Scene {
 								maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
 								disableMerge: Boolean(properties.disableMerge),
 								droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
-								targetScore: 2100,
+								targetScore: 2000,
 							}));
 							break;
 						}

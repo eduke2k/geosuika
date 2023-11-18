@@ -34,23 +34,3 @@ export type TiledPropertiesNative = {
 }[];
 
 export type TiledPropertiesParsed = Record<string, string | number | boolean>;
-
-// type MatterCollisionData = {
-//   collided: boolean;
-//   bodyA: MatterJS.BodyType;
-//   bodyB: MatterJS.BodyType;
-//   axisBody: MatterJS.BodyType;
-//   axisNumber: number;
-//   depth: number;
-//   parentA: MatterJS.BodyType;
-//   parentB: MatterJS.BodyType;
-//   normal: MatterJS.Vector;
-//   tangent: MatterJS.Vector;
-//   penetration: MatterJS.Vector;
-//   supports: MatterJS.Vector[];
-//   inverseMass: number;
-//   friction: number;
-//   frictionStatic: number;
-//   restitution: number;
-//   slop: number;
-// };
