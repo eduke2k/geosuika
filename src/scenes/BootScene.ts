@@ -20,6 +20,9 @@ import FlaresJSON from './../assets/flares.json';
 import DangerLinePNG from './../assets/dangerLine.png';
 import DangerLineJSON from './../assets/dangerLine.json';
 
+import BarPNG from './../assets/bar.png';
+import BarJSON from './../assets/bar.json';
+
 // Images
 import OsakaCastleBucketPNG from './../assets/buckets/osaka_castle.png';
 
@@ -69,6 +72,7 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
 		this.load.aseprite('flares', FlaresPNG, FlaresJSON);
 		this.load.aseprite('dangerLine', DangerLinePNG, DangerLineJSON);
+		this.load.atlas('bar', BarPNG, BarJSON);
 
 		// Images
 		this.load.image('bucket:osaka-castle', OsakaCastleBucketPNG);

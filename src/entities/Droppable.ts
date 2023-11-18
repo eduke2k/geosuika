@@ -56,7 +56,6 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
 		this.setBounce(0.5);
     this.setFriction(1);
     this.setMass(params.bucket.getDroppableSet().tierScles[params.tierIndex]);
-    console.log(this.body?.mass)
 
     // If the droppable is tethered, remove collision
     if (this.tethered) this.setCollidesWith(0);

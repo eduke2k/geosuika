@@ -16,6 +16,7 @@ export const DROPPABLE_REMOVE_TIME = 250;
 export const DROPPABLE_EXTRA_PADDING = 1;
 export const DANGER_VISUALIZATION_START = 0.8;
 export const COLLISION_SOUND_WAIT_TIME = 80;
+export const SCORE_BAR_WIDTH = 24;
 
 export type DropBucketOptions = {
   scene: Phaser.Scene;
@@ -70,6 +71,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public dangerTime = GAME_OVER_TIME;
   public isGameOver = false;
 
+  private scoreProgressBackground: Phaser.GameObjects.NineSlice;
+  private scoreProgressForeground: Phaser.GameObjects.NineSlice;
+
   private droppableRemoveTime = DROPPABLE_REMOVE_TIME;
 
   public constructor(options: DropBucketOptions) {
@@ -113,8 +117,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
     const compoundBody = Body.create({ parts });
 
-    // this.setDisplaySize(options.width + (options.thickness * 2), options.height);
-
     this.setExistingBody(compoundBody);
     this.setFrictionAir(0.001);
     this.setBounce(0);
@@ -125,11 +127,19 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
      * into account and calculate the new relative y origin to move the sprite to the bottom of the body perfectly.
      */
     const bodyHeight = compoundBody.bounds.max.y - compoundBody.bounds.min.y;
-    console.log(bodyHeight);
     const relativeYOffset = this.centerOfMass.y - (1 - (this.height / bodyHeight * this.scale)) / 2;
     this.setOrigin(0.5, relativeYOffset);
 
-    
+    const barHeight = this.bucketHeight - (this.bucketThickness - SCORE_BAR_WIDTH);
+    this.scoreProgressBackground = this.scene.add.nineslice(0, 0, 'bar', 'bar:bg', SCORE_BAR_WIDTH, barHeight, 14, 14, 14, 14);
+    this.scoreProgressBackground.setOrigin(0.5, 1)
+    this.scoreProgressBackground.depth = 1;
+
+    this.scoreProgressForeground = this.scene.add.nineslice(0, 0, 'bar', 'bar:fill', SCORE_BAR_WIDTH, 0, 14, 14, 14, 14);
+    this.scoreProgressForeground.setOrigin(0.5, 1);
+    this.scoreProgressForeground.depth = 2;
+
+
     // Set position from tilemap. Since the body origin is always the center of mass, putting the bottom of
     // the bucket the coordinates of the tilemap object, we need to calculate the actual body bottom position
     // yourself.
@@ -256,7 +266,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     const volume = scaleNumberRange(Math.min(force, 17), [0, 20], [0, 1]);
     instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, pan, volume);
     this.collisionSoundWaitTime = COLLISION_SOUND_WAIT_TIME;
-    console.log(contactVertex);
     if (contactVertex) this.triggerSparkParticle(contactVertex);
   }
 
@@ -328,6 +337,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // Add particles explosion
     this.triggerExplodeParticles(droppable);
 
+    // Increase score bar
+    this.updateScoreBar(scoreObject.totalScore);
+
     // Trigger Sound Effect
     const instrument = this.scene.registry.get('instument:merge') as Instrument | undefined;
     if (instrument) {
@@ -335,6 +347,15 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       const volume = scaleNumberRange(Math.min(scoreObject.scoreIncrement, 20), [0, 20], [0, 1]);
       instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, pan, volume);
     }
+  }
+
+  private updateScoreBar (score: number ): void {
+    this.scene.tweens.add({
+      targets: this.scoreProgressForeground,
+      height: this.scoreProgressBackground.height * (score / this.targetScore),
+      duration: 500,
+      ease: 'sine.out',
+    });
   }
 
   private triggerSparkParticle (contactVertex: { x: number; y: number }): void {
@@ -418,6 +439,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.scene.cameras.main.setFollowOffset(0, 0);
     this.isGameOver = true;
     this.bgm.reset();
+    this.updateScoreBar(0);
   }
 
   private rotateNextDroppable (): void {
@@ -456,11 +478,15 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     if (!this.bucketActive) return;
     const dangerPercentage = this.getDangerPercentage();
 
+    // Update score progress translation
+    this.scoreProgressBackground.setPosition(this.leftWallBody.position.x, this.leftWallBody.position.y + (this.bucketHeight / 2) - SCORE_BAR_WIDTH);
+    this.scoreProgressForeground.setPosition(this.leftWallBody.position.x, this.leftWallBody.position.y + (this.bucketHeight / 2) - SCORE_BAR_WIDTH);
+
     // Set danger visualization
-    if (!this.isGameOver) {
-      this.targetZoom = 1 + dangerPercentage * 0.3;
-      this.scene.cameras.main.setFollowOffset(0, dangerPercentage * 100)
-    }
+    // if (!this.isGameOver) {
+    //   this.targetZoom = 1 + dangerPercentage * 0.3;
+    //   this.scene.cameras.main.setFollowOffset(0, dangerPercentage * 100)
+    // }
 
     // Reduce collision sound wait time
     if (this.collisionSoundWaitTime > 0) {

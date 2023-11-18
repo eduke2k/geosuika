@@ -87,6 +87,7 @@ export default class GameScene extends Phaser.Scene {
 
 		// Camera Settings
 		this.cameras.main.fadeIn(1000);
+		this.cameras.main.setRoundPixels(false);
 
 		// Spawn entities of map
 		const collisionObjects = map.objects.find(o => o.name === 'Objects')?.objects;

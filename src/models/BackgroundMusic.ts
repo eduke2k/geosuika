@@ -37,7 +37,6 @@ export class BackgroundMusic {
   }
 
   private handleLoop (): void {
-    console.log('on looped triggered');
     // Tracks might get out of sync after a while. Let's at least sync them once the first track loops
     this.audio.forEach(a => {
       a.setSeek(0);
