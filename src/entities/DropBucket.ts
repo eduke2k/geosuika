@@ -10,6 +10,7 @@ import Droppable from "./Droppable";
 import MergeScore from "./MergeScore";
 import ProgressCircle from "./ProgressCircle";
 import ScoreLabel from "./ScoreLabel";
+import ScoreProgressBar from "./ScoreProgressBar";
 
 export const GAME_OVER_TIME = 3000;
 export const DROPPABLE_REMOVE_TIME = 250;
@@ -47,8 +48,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public dangerLineBody: MatterJS.BodyType;
   public droppables: Droppable[] = [];
   public droppableSet: DroppableSet;
-  public dangerLine: Phaser.Physics.Matter.Sprite;
+  public dangerLine: Phaser.GameObjects.Sprite;
   public scoreLabel: ScoreLabel;
+  public scoreProgressBar: ScoreProgressBar;
   public progressCircle: ProgressCircle;
   public lastTierDestroy: boolean;
   public maxTierToDrop: number | 'auto';
@@ -71,8 +73,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public dangerTime = GAME_OVER_TIME;
   public isGameOver = false;
 
-  private scoreProgressBackground: Phaser.GameObjects.NineSlice;
-  private scoreProgressForeground: Phaser.GameObjects.NineSlice;
+  // private scoreProgressBackground: Phaser.GameObjects.NineSlice;
+  // private scoreProgressForeground: Phaser.GameObjects.NineSlice;
+  // private scoreProgressForegroundMask: Phaser.GameObjects.NineSlice;
+  // private scoreProgressBarHeight = 0;
 
   private droppableRemoveTime = DROPPABLE_REMOVE_TIME;
 
@@ -110,7 +114,14 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.rightWallBody = Bodies.rectangle((options.width / 2) + (options.thickness / 2), 0, options.thickness, options.height);
     this.floorBody = Bodies.rectangle(0, (options.height / 2) + (options.thickness / 2), options.width + (options.thickness * 2), options.thickness, { isSensor: options.noBottom });
     this.dropSensorBody = Bodies.rectangle(0, (-options.height / 2) - options.thickness, options.width, 50, { mass: 0, isSensor: true });
-    this.dangerLineBody = Bodies.rectangle(0, this.leftWallBody.bounds.min.y, options.width, 10, { isSensor: true, isStatic: true });
+    this.dangerLineBody = Bodies.rectangle(0, this.leftWallBody.bounds.min.y, options.width, 10, { isSensor: true });
+
+    // Add Danger Line
+    this.dangerLine = this.scene.add.sprite(0, 0, 'dangerLine', undefined);
+    this.dangerLine.name = 'dangerLine';
+    this.dangerLine.play({ key: 'danger:idle', repeat: -1 });
+    // this.dangerLine.setExistingBody(this.dangerLineBody);
+    // this.dangerLine.setCollidesWith(0);
 
     const parts = [this.leftWallBody, this.rightWallBody, this.floorBody, this.dropSensorBody, this.dangerLineBody];
     // if (!noBottom) parts.push(rectC);
@@ -130,14 +141,23 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     const relativeYOffset = this.centerOfMass.y - (1 - (this.height / bodyHeight * this.scale)) / 2;
     this.setOrigin(0.5, relativeYOffset);
 
-    const barHeight = this.bucketHeight - (this.bucketThickness - SCORE_BAR_WIDTH);
-    this.scoreProgressBackground = this.scene.add.nineslice(0, 0, 'bar', 'bar:bg', SCORE_BAR_WIDTH, barHeight, 14, 14, 14, 14);
-    this.scoreProgressBackground.setOrigin(0.5, 1)
-    this.scoreProgressBackground.depth = 1;
 
-    this.scoreProgressForeground = this.scene.add.nineslice(0, 0, 'bar', 'bar:fill', SCORE_BAR_WIDTH, 0, 14, 14, 14, 14);
-    this.scoreProgressForeground.setOrigin(0.5, 1);
-    this.scoreProgressForeground.depth = 2;
+    // Create Score Progress
+    this.scoreProgressBar = new ScoreProgressBar(this.scene, 0, 0, this.bucketHeight, this.bucketThickness);
+
+    // this.scoreProgressBarHeight = this.bucketHeight - (this.bucketThickness - SCORE_BAR_WIDTH);
+    // this.scoreProgressBackground = this.scene.add.nineslice(0, 0, 'bar', 'bar:bg', SCORE_BAR_WIDTH, this.scoreProgressBarHeight, 14, 14, 14, 14);
+    // this.scoreProgressBackground.setOrigin(0.5, 1)
+    // this.scoreProgressBackground.depth = 1;
+
+    // this.scoreProgressForeground = this.scene.add.nineslice(0, 0, 'bar', 'bar:fill', SCORE_BAR_WIDTH, this.scoreProgressBarHeight, 14, 14, 14, 14);
+    // this.scoreProgressForeground.setOrigin(0.5, 1);
+    // this.scoreProgressForeground.depth = 2;
+
+    // this.scoreProgressForegroundMask = this.scene.make.nineslice({ x: 0, y: 0, key: 'bar', frame: 'bar:fill:mask', add: false, width: SCORE_BAR_WIDTH, height: this.scoreProgressBarHeight, leftWidth: 14, rightWidth: 14, topHeight: 14, bottomHeight: 14 });
+    // this.scoreProgressForegroundMask.setOrigin(0.5, 1);
+    // const mask = new Phaser.Display.Masks.BitmapMask(this.scene, this.scoreProgressForegroundMask);
+    // this.scoreProgressForeground.setMask(mask);
 
 
     // Set position from tilemap. Since the body origin is always the center of mass, putting the bottom of
@@ -167,12 +187,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // const sprite = this.scene.matter.scene.add.image(0, 0, 'bucket:osaka-castle');
     // console.log(sprite);
 
-    // Add Danger Line
-    this.dangerLine = this.scene.matter.add.sprite(0, 0, 'dangerLine', undefined);
-    this.dangerLine.play({ key: 'danger:idle', repeat: -1 });
-    this.dangerLine.setExistingBody(this.dangerLineBody);
-    this.dangerLine.setCollidesWith(0);
-
     // Assign set
     this.droppableSet = JSON.parse(JSON.stringify(options.droppableSet)) as DroppableSet;
     if (this.droppableSet.randomizeOrder) {
@@ -180,8 +194,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
 
     // Create progress circle
-		this.progressCircle = new ProgressCircle(this.scene, this, 1100, 500);
-		this.progressCircle.setScrollFactor(0, 0);
+		this.progressCircle = new ProgressCircle(this.scene, this, 0, 0, this.floorBody.bounds.max.x - this.floorBody.bounds.min.x);
+		// this.progressCircle.setScrollFactor(0, 0);
     this.progressCircle.visible = true;
 
     if (options.active) {
@@ -338,7 +352,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.triggerExplodeParticles(droppable);
 
     // Increase score bar
-    this.updateScoreBar(scoreObject.totalScore);
+    this.scoreProgressBar.setProgress(scoreObject.totalScore / this.targetScore);
 
     // Trigger Sound Effect
     const instrument = this.scene.registry.get('instument:merge') as Instrument | undefined;
@@ -349,14 +363,14 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
   }
 
-  private updateScoreBar (score: number ): void {
-    this.scene.tweens.add({
-      targets: this.scoreProgressForeground,
-      height: this.scoreProgressBackground.height * (score / this.targetScore),
-      duration: 500,
-      ease: 'sine.out',
-    });
-  }
+  // private updateScoreBar (score: number ): void {
+  //   this.scene.tweens.add({
+  //     targets: this.scoreProgressForeground,
+  //     height: this.scoreProgressBackground.height * (score / this.targetScore),
+  //     duration: 500,
+  //     ease: 'sine.out',
+  //   });
+  // }
 
   private triggerSparkParticle (contactVertex: { x: number; y: number }): void {
     const emitter = this.scene.add.particles(contactVertex.x, contactVertex.y, 'flares', {
@@ -439,7 +453,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.scene.cameras.main.setFollowOffset(0, 0);
     this.isGameOver = true;
     this.bgm.reset();
-    this.updateScoreBar(0);
+    this.scoreProgressBar.setProgress(0);
   }
 
   private rotateNextDroppable (): void {
@@ -474,13 +488,22 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     return 0xe31010;
   }
 
+  private syncTranslation (target: Phaser.GameObjects.Container, reference: MatterJS.BodyType, angle?: number): void {
+    target.setX(reference.position.x);
+    target.setY(reference.position.y);
+    target.rotation = angle ?? reference.angle;
+  }
+
   public update (_time: number, delta: number): void {
     if (!this.bucketActive) return;
     const dangerPercentage = this.getDangerPercentage();
 
     // Update score progress translation
-    this.scoreProgressBackground.setPosition(this.leftWallBody.position.x, this.leftWallBody.position.y + (this.bucketHeight / 2) - SCORE_BAR_WIDTH);
-    this.scoreProgressForeground.setPosition(this.leftWallBody.position.x, this.leftWallBody.position.y + (this.bucketHeight / 2) - SCORE_BAR_WIDTH);
+    // Phaser.Display.Align.In.Center(this.scoreProgressBar, this);
+
+    // this.scoreProgressBackground.setPosition(this.leftWallBody.position.x, this.leftWallBody.position.y + (this.bucketHeight / 2) - SCORE_BAR_WIDTH);
+    // this.scoreProgressForegroundMask.setPosition(this.leftWallBody.position.x, this.leftWallBody.position.y + (this.bucketHeight / 2) - SCORE_BAR_WIDTH);
+    // this.scoreProgressForeground.setPosition(this.leftWallBody.position.x, this.leftWallBody.position.y + (this.bucketHeight / 2) - SCORE_BAR_WIDTH + this.bucketHeight);
 
     // Set danger visualization
     // if (!this.isGameOver) {
@@ -530,9 +553,16 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       this.restartBucket();
     }
 
+    // Set score progress position
+    this.syncTranslation(this.scoreProgressBar, this.leftWallBody, this.getBody().angle);
+
+    // Set progress circle position
+    this.syncTranslation(this.progressCircle, this.floorBody, this.getBody().angle);
+
     // Set danger line position and appearneace
-    this.dangerLine.setX(this.dropSensorBody.position.x);
-    this.dangerLine.setY(this.leftWallBody.bounds.min.y);
+    this.dangerLine.setX(this.dangerLineBody.position.x);
+    this.dangerLine.setY(this.dangerLineBody.position.y);
+    this.dangerLine.rotation = this.getBody().angle;
     this.dangerLine.alpha = dangerPercentage;
     this.dangerLine.setTint(this.getDangerLineTint(dangerPercentage));
 
