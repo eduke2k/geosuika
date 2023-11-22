@@ -7,7 +7,7 @@ export default class MergeScore extends Phaser.GameObjects.Container {
   private currentFlashingDelayTime = TOTAL_FLASHING_TIME / 6;
   private remainingFlashingTime = TOTAL_FLASHING_TIME;
   private flashing = false;
-  private updateEmitter: Phaser.Events.EventEmitter | null = null;
+  // private updateEmitter: Phaser.Events.EventEmitter | null = null;
 
   public constructor(
     scene: Phaser.Scene,
@@ -42,6 +42,10 @@ export default class MergeScore extends Phaser.GameObjects.Container {
         this.triggerFlash();
       }
     });
+  }
+
+  public getMultiplier (): number {
+    return this.multiplier;
   }
 
   private triggerFlash (): void {

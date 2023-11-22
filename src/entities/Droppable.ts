@@ -49,7 +49,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     this.tethered = params.tethered;
     this.config = droppableConfig;
     this.birthTime = this.scene.time.now;
-		
+
     // Trigger animation in sprite
     this.play({ key: params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].animationKey, repeat: -1 });
 
@@ -111,6 +111,9 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     if (!this.tethered) return;
     this.tethered = false;
     this.setCollidesWith(1);
+
+    // Update birth time when untethered
+    this.birthTime = this.scene.time.now;
     this.parentBucket.handleDrop();
   }
 

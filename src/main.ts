@@ -10,7 +10,7 @@ const config: Phaser.Types.Core.GameConfig = {
 	width: 1280,
 	height: 720,
 	antialias: true,
-	roundPixels: false,
+	roundPixels: true,
 	fps: {
 		limit: 60,
 	},
@@ -20,15 +20,15 @@ const config: Phaser.Types.Core.GameConfig = {
 			gravity: {
 				y: 1
 			},
-			// "plugins.attractors": true,
-			debug: {
-				showSensors: true,
-				showCollisions: false,
-				showVelocity: false,
-				showBounds: true,
-				showSeparation: false,
-				showBody: true
-			}
+			"plugins.attractors": true,
+			// debug: {
+			// 	showSensors: true,
+			// 	showCollisions: false,
+			// 	showVelocity: false,
+			// 	showBounds: true,
+			// 	showSeparation: false,
+			// 	showBody: true
+			// }
 		}
 	},
 	scene: [BootScene, MainMenuScene, GameScene],

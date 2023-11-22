@@ -2,11 +2,14 @@ import Phaser from 'phaser'
 import Droppable from '../entities/Droppable';
 import DropBucket from '../entities/DropBucket';
 import { parseTiledProperties } from '../functions/helper';
+import { PetalEmitter } from '../models/PetalEmitter';
 // import Dog from '../entities/Dog';
 
 export default class GameScene extends Phaser.Scene {
 	public debugText!: Phaser.GameObjects.Text;
 	public buckets: DropBucket[] = [];
+	public petalEmitter = new PetalEmitter(this);
+	public tilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 
 	constructor() {
 		super({ key: 'game-scene' })
@@ -42,12 +45,25 @@ export default class GameScene extends Phaser.Scene {
 		const map = this.make.tilemap({ key: 'tilemap' });
 	
 		// add the tileset image we are using
-		const tileset = map.addTilesetImage('tileset');
+		const tileset = map.addTilesetImage('tilesheet_japan');
 		if (!tileset) throw new Error('tileset missing');
 
 		// Add layers from tileset
-		map.createLayer('Foreground', tileset);
-		map.createLayer('Terrain', tileset);
+		const terrain = map.createLayer('Terrain', tileset);
+		if (terrain) this.tilemapLayers.push(terrain);
+
+		const detail1 = map.createLayer('TerrainDetail2', tileset);
+		if (detail1) this.tilemapLayers.push(detail1);
+
+		const detail2 = map.createLayer('TerrainDetail1', tileset);
+		if (detail2) this.tilemapLayers.push(detail2);
+
+		const foreground = map.createLayer('Foreground', tileset);
+		if (foreground) this.tilemapLayers.push(foreground);
+
+		// terrain?.forEachTile(t => {
+		// 	t.alpha = 0.5;
+		// });
 
 		// Generate map collisions from tiled map
 		const Body = new Phaser.Physics.Matter.MatterPhysics(this).body;
@@ -69,8 +85,16 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	public initDebugTextField(): void {
-		this.debugText = this.add.text(0, 0, 'hello', { font: "12px Courier", align: "left" });
+		this.debugText = this.add.text(0, 0, 'Early Preview', { font: "12px Courier", align: "left" });
 		this.debugText.setScrollFactor(0, 0);
+	}
+
+	public getTilemapLayers ():  Phaser.Tilemaps.TilemapLayer[] {
+		return this.tilemapLayers;
+	}
+
+	update (time: number, delta: number): void {
+		this.petalEmitter.update(time, delta);
 	}
 
 	create() {
@@ -86,6 +110,7 @@ export default class GameScene extends Phaser.Scene {
 		});
 
 		// Camera Settings
+		this.cameras.main.setZoom(4);
 		this.cameras.main.fadeIn(1000);
 		this.cameras.main.setRoundPixels(false);
 
@@ -109,7 +134,8 @@ export default class GameScene extends Phaser.Scene {
 								maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
 								disableMerge: Boolean(properties.disableMerge),
 								droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
-								targetScore: 2000,
+								image: properties.image ? properties.image as string : '',
+								targetScore: 2100,
 							}));
 							break;
 						}
@@ -117,37 +143,9 @@ export default class GameScene extends Phaser.Scene {
 				}
 			});
 		}
-
-		// const debugBucket = new DropBucket({
-		// 	scene: this,
-		// 	x: 284,
-		// 	y: 200,
-		// 	width: 470,
-		// 	height: 535,
-		// 	thickness: 64,
-		// 	gameOverThreshold: 535,
-		// 	maxTierToDrop: 8,
-		// 	disableMerge: true,
-		// 	droppableSet: flagSet
-		// });
-
 		// const dog = new Dog(this, 400, 600);
 		// dog.setScale(0.3);
 		// dog.setRotation(90);
 		// dog.play({ key: 'idle', repeat: -1 });
-
-		// this.input.on('pointerdown', () => {
-		// 	const x = this.game.input.mousePointer?.worldX;
-    //   const y = this.game.input.mousePointer?.worldY;
-
-		// 	Droppable.create({
-		// 		bucket: debugBucket,
-		// 		scene: this,
-		// 		tethered: false,
-		// 		tierIndex: 1,
-		// 		x: x ?? 0,
-		// 		y: y ?? 0
-		// 	});
-		// }, this);
 	}
 }

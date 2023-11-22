@@ -58,6 +58,20 @@ export class BackgroundMusic {
     return chordMarker?.chord ?? Chord.C_MAJOR;
   }
 
+  public getProgress(level: number): number {
+    return level / this.config.audioKeys.length;
+  }
+
+  public getCurrentProgressLevel (scoreRatio: number): number {
+    let level = 0;
+    this.config.audioKeys.forEach((k, i) => {
+      if (scoreRatio > k.minScoreRatio) {
+        level = i + 1;
+      }
+    });
+    return level;
+  }
+
   public handleScoreChange (newScoreRatio: number) {
     this.config.audioKeys.forEach(k => {
       const audio = this.audio.find(a => a.key === k.key);
