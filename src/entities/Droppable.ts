@@ -70,6 +70,21 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     params.scene.add.existing(this);
   }
 
+  public setDestroyable (): void {
+    console.log('set destroybale');
+    this.setInteractive(this.body, Phaser.Geom.Circle.Contains);
+    this.on('pointerover', () => { this.setTint(0x7878ff); });
+    this.on('pointerout', () => { this.clearTint(); });
+    this.on('pointerdown', () => { this.setTint(0xff0000); });
+    this.on('pointerup', () => {
+      this.clearTint();
+      this.parentBucket.addEffectCircle(this.x, this.y, { effect: -2, toRadius: 960 })
+      this.parentBucket.explode(this, { drum: 'drum:taiko' });
+      this.parentBucket.updateElevatorPosition();
+      this.parentBucket.handleDestroyedPhaseProgress();
+    });
+  }
+
   public getConfig (): SingleDroppableConfig {
     return this.config;
   }

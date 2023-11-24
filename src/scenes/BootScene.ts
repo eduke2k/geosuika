@@ -31,6 +31,8 @@ import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
 import HarpSFX from './../assets/sfx/harp.ogg';
 import BassSFX from './../assets/sfx/bass.ogg';
 import MergeSFX from './../assets/sfx/merge.ogg';
+import GongSFX from './../assets/sfx/gong.ogg';
+import TaikoSFX from './../assets/sfx/taiko.ogg';
 
 // Audio BGM 01 All The Ducks
 // import Bgm01ChelloChord from './../assets/bgm/bgm01/chello-chord.ogg';
@@ -56,6 +58,7 @@ import Bgm02Voice from './../assets/bgm/bgm02/voice.ogg';
 import TilesPNG from './../assets/tilesets/tilesheet_japan.png';
 import TilesJSON from './../assets/tilesets/map.json';
 import { Instrument } from '../models/Instrument';
+import { Drum } from '../models/Drum';
 
 const LOADING_BAR_HEIGHT = 25;
 const LOADING_BAR_WIDTH = 240;
@@ -99,6 +102,8 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.audio('sfx:harp', HarpSFX);
 		this.load.audio('sfx:bass', BassSFX);
 		this.load.audio('sfx:merge', MergeSFX);
+		this.load.audio('sfx:gong', GongSFX);
+		this.load.audio('sfx:taiko', TaikoSFX);
 
 		// Audio BGM 01
 		// this.load.audio('bgm01-chello-chord', Bgm01ChelloChord);
@@ -142,10 +147,6 @@ export default class MainMenuScene extends Phaser.Scene {
 				(this.game.canvas.height / 2) - ((LOADING_BAR_HEIGHT - LOADING_BAR_PADDING) / 2),
 				(LOADING_BAR_WIDTH - LOADING_BAR_PADDING)  * value, LOADING_BAR_HEIGHT - LOADING_BAR_PADDING);
 		});
-	
-		this.load.on('fileprogress', function (file: any) {
-			console.log(file.src);
-		});
 
 		this.load.on('loaderror', (file: any) => {
 			console.error(file);
@@ -166,8 +167,10 @@ export default class MainMenuScene extends Phaser.Scene {
     console.log('--- Finished Loading Fonts ---');
 
 		this.registry.set('instument:harp', new Instrument({ key: 'sfx:harp', octaves: 3, audioMarkerDuration: 4 }));
-		this.registry.set('instument:bass', new Instrument({ key: 'sfx:bass', octaves: 2, audioMarkerDuration: 4 }));
+		// this.registry.set('instument:bass', new Instrument({ key: 'sfx:bass', octaves: 2, audioMarkerDuration: 4 }));
 		this.registry.set('instument:merge', new Instrument({ key: 'sfx:merge', octaves: 3, audioMarkerDuration: 4 }));
+		this.registry.set('instument:gong', new Instrument({ key: 'sfx:gong', octaves: 1, audioMarkerDuration: 8 }));
+		this.registry.set('drum:taiko', new Drum({ key: 'sfx:taiko', notes: 15, audioMarkerDuration: 4 }));
 		console.log('---finished loading instruments');
 
 		this.anims.createFromAseprite('dog');

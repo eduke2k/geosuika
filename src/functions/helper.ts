@@ -69,16 +69,17 @@ export const generateChordProgressionFromPattern = (pattern: BGMPatternConfig): 
   const chordProgression: ChordProgressionMarker[] = [];
 
   pattern.forEach(part => {
-    for(let i = 0; i <= part.repeats; i++) {
+    for(let i = 1; i <= part.plays; i++) {
       part.repeatablePattern.forEach(p => {
         chordProgression.push({
           chord: p.chord,
           duration: p.duration,
           start: marker
         });
-        marker = round(marker + p.duration, 2);
+        marker = round(marker + p.duration, 6);
       });
     }
   });
+
   return chordProgression;
 }

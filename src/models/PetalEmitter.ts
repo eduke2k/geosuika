@@ -23,7 +23,6 @@ export class PetalEmitter {
   }
 
   public triggerWind (x: number, y: number, strength: number): void {
-    console.log(`triggering wind for ${this.petals.length} petals`);
     this.petals.forEach(p => {
       const distance = Phaser.Math.Distance.BetweenPoints({ x, y }, { x: p.x, y: p.y });
       const effect = 1000 / Math.max(distance, 1);
@@ -48,6 +47,7 @@ export class PetalEmitter {
     const spawnX = [this.scene.cameras.main.worldView.left - 50, this.scene.cameras.main.worldView.right + (this.scene.cameras.main.width / 2)];
 
     const petal = new Petal(this.scene, randomIntFromInterval(spawnX[0], spawnX[1]), spawnY);
+    petal.setZ(10);
 
     this.petals.push(petal);
     petal.play({ key: 'petal:idle', repeat: -1 });

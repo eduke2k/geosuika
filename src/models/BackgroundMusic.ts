@@ -21,7 +21,7 @@ export type BGMPatternConfig = {
     duration: number;
     chord: Chord;
   }[];
-  repeats: number;
+  plays: number;
 }[];
 
 export class BackgroundMusic {
@@ -34,6 +34,12 @@ export class BackgroundMusic {
     this.config = config;
     this.audio = config.audioKeys.map(k => scene.sound.add(k.key, { loop: true, volume: 0 }) as Phaser.Sound.WebAudioSound)
     this.audio[0].on('looped', this.handleLoop, this);
+  }
+
+  public setPlaybackRate (rate: number): void {
+    this.audio.forEach(a => {
+      a.source.playbackRate.value = rate;
+    });
   }
 
   private handleLoop (): void {
@@ -58,6 +64,10 @@ export class BackgroundMusic {
     return chordMarker?.chord ?? Chord.C_MAJOR;
   }
 
+  public getTotalProgressLength () : number {
+    return this.config.audioKeys.length;
+  }
+
   public getProgress(level: number): number {
     return level / this.config.audioKeys.length;
   }
@@ -72,12 +82,13 @@ export class BackgroundMusic {
     return level;
   }
 
-  public handleScoreChange (newScoreRatio: number) {
+  public setProgress (progressLevel: number) {
+    const progressRatio = this.getProgress(progressLevel);
     this.config.audioKeys.forEach(k => {
       const audio = this.audio.find(a => a.key === k.key);
-      if (audio && audio.volume === 0 && k.minScoreRatio <= newScoreRatio) {
+      if (audio && audio.volume === 0 && k.minScoreRatio <= progressRatio) {
         this.fadeSound(audio, 1, 5000)
-      } else if (audio && audio.volume === 1 && k.minScoreRatio > newScoreRatio) {
+      } else if (audio && audio.volume === 1 && k.minScoreRatio > progressRatio) {
         this.fadeSound(audio, 0, 5000)
       }
     });
@@ -94,6 +105,11 @@ export class BackgroundMusic {
   public reset (): void {
     this.audio.forEach(a => {
       this.fadeSound(a, 0, 5000);
+    });
+
+    this.scene.time.delayedCall(5000, () => {
+      this.setPlaybackRate(1);
+      this.handleLoop();
     });
   }
 }

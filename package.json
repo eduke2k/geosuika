@@ -10,6 +10,7 @@
 		"preview": "vite preview"
 	},
 	"devDependencies": {
+		"@types/chroma-js": "^2.4.3",
 		"@types/fontfaceobserver": "^2.1.2",
 		"@types/md5": "^2.3.5",
 		"@types/node": "^20.8.10",
@@ -20,6 +21,7 @@
 		"vite": "^4.5.0"
 	},
 	"dependencies": {
+		"chroma-js": "^2.4.2",
 		"fontfaceobserver": "^2.3.0",
 		"md5": "^2.3.0",
 		"phaser": "^3.60.0"

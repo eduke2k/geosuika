@@ -40,7 +40,8 @@ export class Instrument {
   }
 
   public playRandomNoteInChord (chord: Chord, scene: Phaser.Scene, pan: number, volume: number): void {
-    const markerConfig = this.audioMarkerConfig[pickRandom(this.audioMarkerIndices[chord])];
+    const randomIndex = pickRandom(this.audioMarkerIndices[chord]);
+    const markerConfig = this.audioMarkerConfig[randomIndex];
 
     const config: Phaser.Types.Sound.SoundMarker = {
       ...markerConfig,
