@@ -1,3 +1,5 @@
+import { Depths } from "../const/depths";
+
 export type BlinkingTextOptions = {
   fontSize?: number;
   duration?: number;
@@ -5,6 +7,8 @@ export type BlinkingTextOptions = {
   movementY?: number;
   fadeInTime?: number;
   rotation?: number;
+  depth?: number;
+  manualStart?: boolean;
 }
 
 export default class BlinkingText extends Phaser.GameObjects.Container {
@@ -41,16 +45,35 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
       if (options.rotation) this.rotation = options.rotation;
     }
 
-    this.scoreText = this.scene.add.text(0, 0, this.text, { font: `${this.fontSize}px Coiny`, align: "center" })
+    this.setDepth(options?.depth ?? Depths.TEXT_LAYER);
+
+    this.scoreText = this.scene.add.text(0, 0, this.text, { align: "center" });
+    this.scoreText.setFontFamily('Coiny');
+    this.scoreText.setFontSize(`${options?.fontSize ?? 12}px`);
     this.scoreText.setShadow(0, 2, 'black', 2, false, true);
     this.scoreText.alpha = 0.2;
 
     this.add(this.scoreText);
     this.setX(this.x - (this.scoreText.width / 2));
 
+    if (!options || !options.manualStart) {
+      this.start();
+    }
+
     // Call internal update function if scene updates. Extended classes not update automatically
     scene.events.on('update', this.update, this);
+  }
 
+  public setFontSize (size: number): void {
+    this.scoreText.setFontSize(size);
+  }
+
+  public setMovementY (movementY: number): void {
+    this.movementY = movementY;
+    console.log(movementY);
+  }
+
+  public start (): void {
     this.scene.tweens.add({
       targets: this.scoreText,
       alpha: { value: 1, duration: this.fadeInTime, ease: 'Quad.easeOut' }

@@ -11,11 +11,13 @@ import { DroppableSet } from "../types";
 import BlinkingText from "./BlinkingText";
 // import BucketElevator from "./BucketElevator";
 import Droppable from "./Droppable";
-import MergeScore from "./MergeScore";
+// import MergeScore from "./MergeScore";
 import ProgressCircle from "./ProgressCircle";
 import ScoreLabel, { ScorePayload } from "./ScoreLabel";
 import ScoreProgressBar from "./ScoreProgressBar";
 import { EffectCircleOptions, TilemapLayerEffectCircle } from "./TilemapLayerEffectCircle";
+// import { Depths } from "../const/depths";
+import BlinkingScore from "./BlinkingScore";
 
 export const GAME_OVER_TIME = 3000;
 export const DROPPABLE_REMOVE_TIME = 500;
@@ -116,7 +118,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.mergeDisabled = options.disableMerge ?? false;
     this.targetScore = options.targetScore;
     this.elevatorDistance = options.elevatorDistance ?? 1000;
-    this.visible = true;
+    this.visible = false;
 
     // Scale the bucket sprite to specifications before adding a body. We need the scale factor later for adjusting origin offsets
     // const targetPixelWidth = options.width + (options.thickness * 2);
@@ -321,7 +323,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.bucketProgress = progressLevel;
     this.getGameScene()?.petalEmitter.setIntesity(this.bgm.getProgress(progressLevel));
 
-    new BlinkingText(this.scene, "Memory unveiled", this.x, this.y - 256, { fontSize: 48, duration: 1500, fadeInTime: 500, flashingDuration: 750, movementY: 200 });
+    new BlinkingText(this.scene, "Memory unveiled", this.x, this.y - 128, { fontSize: 48, duration: 1500, fadeInTime: 500, flashingDuration: 750, movementY: 200 });
     // this.elevator.moveRelativeY(-(this.elevatorDistance / this.bgm.getTotalProgressLength()) * this.bgm.getProgress(progressLevel));
     this.moveRelativeY(-(this.elevatorDistance / this.bgm.getTotalProgressLength()) * this.bgm.getProgress(progressLevel));
 
@@ -438,7 +440,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.addEffectCircle(spawnPosition.x, spawnPosition.y, { effect: 1, toRadius: 720 })
 
     // Spawn score visualizer
-    new MergeScore(this.scene, scoreObject.scoreIncrement, scoreObject.currentMultiplier, spawnPosition.x, spawnPosition.y);
+    new BlinkingScore(this.scene, scoreObject.scoreIncrement, scoreObject.currentMultiplier, spawnPosition.x, spawnPosition.y);
 
     // Add particles explosion
     this.triggerExplodeParticles(droppable);

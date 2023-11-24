@@ -1,0 +1,7 @@
+export enum Depths {
+  BACKGROUND_LAYER = 0,
+  OBJECT_LAYER = 100,
+  FOREGROUND_LAYER = 200,
+  TEXT_LAYER = 300,
+  HUD_LAYER = 400
+}

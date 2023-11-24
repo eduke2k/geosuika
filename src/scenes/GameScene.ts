@@ -200,7 +200,7 @@ export default class GameScene extends Phaser.Scene {
 								disableMerge: Boolean(properties.disableMerge),
 								droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
 								image: properties.image ? properties.image as string : '',
-								targetScore: 250,
+								targetScore: 2100,
 								elevatorDistance: properties.elevatorDistance ? parseInt(properties.elevatorDistance.toString()) : undefined,
 								elevatorBody: this.elevatorBodies.find(b => b.bucketName === o.name)?.body
 							}));
