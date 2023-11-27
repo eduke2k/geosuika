@@ -7,7 +7,7 @@ const bgm01Pattern: BGMPatternConfig = [
     repeatablePattern: [
       { chord: Chord.C_MAJOR, duration: 2.4 }, // silence
     ],
-    repeats: 0
+    plays: 0
   },
   {
     repeatablePattern: [
@@ -21,13 +21,13 @@ const bgm01Pattern: BGMPatternConfig = [
       { chord: Chord.C_MAJOR, duration: 1.2 },
       { chord: Chord.G_MAJOR, duration: 2.4 }
     ],
-    repeats: 5
+    plays: 5
   },
   {
     repeatablePattern: [
       { chord: Chord.G_MAJOR, duration: 4.8 }
     ],
-    repeats: 0
+    plays: 0
   }
 ]
 

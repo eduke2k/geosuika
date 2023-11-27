@@ -112,4 +112,32 @@ export class BackgroundMusic {
       this.handleLoop();
     });
   }
+
+  public static preloadByBGMKey (scene: Phaser.Scene, key: string, onProgress: (value: number) => void, onComplete: () => void): void {
+    console.log('preloadByBGMKey');
+    switch (key) {
+      case 'bgm02': {
+        scene.load.audio('bgm02-drums', '/bgm/bgm02/drums.ogg');
+        scene.load.audio('bgm02-bass', '/bgm/bgm02/bass.ogg');
+        scene.load.audio('bgm02-pads', '/bgm/bgm02/pads.ogg');
+        scene.load.audio('bgm02-melody', '/bgm/bgm02/melody.ogg');
+        scene.load.audio('bgm02-lofi01', '/bgm/bgm02/lofi01.ogg');
+        scene.load.audio('bgm02-lofi02', '/bgm/bgm02/lofi02.ogg');
+        scene.load.audio('bgm02-lofi03', '/bgm/bgm02/lofi03.ogg');
+        scene.load.audio('bgm02-lofi04', '/bgm/bgm02/lofi04.ogg');
+        scene.load.audio('bgm02-voice', '/bgm/bgm02/voice.ogg');
+        break;
+      }
+    }
+
+    scene.load.on('complete', () => {
+      onComplete();
+    });
+
+    scene.load.on('progress', (value: number) => {
+      onProgress(value);
+    });
+
+    scene.load.start();
+  }
 }

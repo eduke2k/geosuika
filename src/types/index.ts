@@ -4,7 +4,7 @@ export type MenuItem = {
 }
 
 export type DroppableSet = {
-  tierScles: number[];
+  tierScales: number[];
   randomizeOrder: boolean;
   droppableConfigs: SingleDroppableConfig[];
 }
@@ -18,6 +18,7 @@ export type BaseSingleDroppableConfig = {
 export type SingleCircleDroppableConfig = BaseSingleDroppableConfig & {
   bodyType: 'circle';
   radius: number;
+  offset: number;
 }
 
 export type SingleCustomDroppableConfig = BaseSingleDroppableConfig & {

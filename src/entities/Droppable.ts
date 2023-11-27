@@ -55,13 +55,29 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
 
 		this.setBounce(0.5);
     this.setFriction(1);
-    this.setMass(params.bucket.getDroppableSet().tierScles[params.tierIndex]);
+    this.setMass(params.bucket.getDroppableSet().tierScales[params.tierIndex]);
 
     // If the droppable is tethered, remove collision
     if (this.tethered) this.setCollidesWith(0);
 
     // Setup size depending on tier (just for testing)
-    this.setScale(params.bucket.getDroppableSet().tierScles[params.tierIndex]);
+    // this.setScale(params.bucket.getDroppableSet().tierScales[params.tierIndex]);
+    const config = params.bucket.getDroppableSet().droppableConfigs[params.tierIndex];
+
+    let offsetRatio = 0;
+    if (config.bodyType === 'circle') {
+      offsetRatio = config.offset / (config.radius * 2);
+    }
+
+    const absoluteOffset = Math.round(offsetRatio * params.bucket.getDroppableSet().tierScales[params.tierIndex]);
+
+    const ratio = this.width / this.height;
+    // console.log(this.width);
+    // console.log(params.bucket.getDroppableSet().tierScales[params.tierIndex]);
+    this.setDisplaySize(
+      (params.bucket.getDroppableSet().tierScales[params.tierIndex] + (absoluteOffset * 2)),
+      (params.bucket.getDroppableSet().tierScales[params.tierIndex] + (absoluteOffset * 2)) * ratio
+    );
 
     // Add collide event to log first collision of this Droppable and init some Bucket logic (e.g. enable next Droppable)
     this.initCollideCallbacks(body);
@@ -71,8 +87,13 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   }
 
   public setDestroyable (): void {
-    console.log('set destroybale');
-    this.setInteractive(this.body, Phaser.Geom.Circle.Contains);
+
+    const config: Phaser.Types.Input.InputConfiguration = {
+      useHandCursor: true,
+      pixelPerfect: true
+    }
+
+    this.setInteractive(config);
     this.on('pointerover', () => { this.setTint(0x7878ff); });
     this.on('pointerout', () => { this.clearTint(); });
     this.on('pointerdown', () => { this.setTint(0xff0000); });

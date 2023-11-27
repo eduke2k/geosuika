@@ -1,3 +1,4 @@
+import { Depths } from "../const/depths";
 import { Petal } from "../entities/Petal";
 import { randomIntFromInterval, scaleNumberRange } from "../functions/helper";
 
@@ -47,7 +48,7 @@ export class PetalEmitter {
     const spawnX = [this.scene.cameras.main.worldView.left - 50, this.scene.cameras.main.worldView.right + (this.scene.cameras.main.width / 2)];
 
     const petal = new Petal(this.scene, randomIntFromInterval(spawnX[0], spawnX[1]), spawnY);
-    petal.setZ(10);
+    petal.setDepth(Depths.FOREGROUND_LAYER);
 
     this.petals.push(petal);
     petal.play({ key: 'petal:idle', repeat: -1 });

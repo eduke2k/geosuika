@@ -16,7 +16,7 @@ export default class MainMenuScene extends Phaser.Scene {
 
   private handleAction (key: string): void {
     switch (key) {
-      case 'play': this.scene.start('game-scene'); break;
+      case 'play': this.scene.launch('game-scene').launch('hud-scene').remove(); break;
       case 'credits': console.log('implement me'); break;
     }
   }

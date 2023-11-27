@@ -2,6 +2,8 @@ import Phaser from 'phaser'
 import FontFaceObserver from 'fontfaceobserver';
 
 // Aseprite sprites
+import ArcadePNG from './../assets/arcade.png';
+import ArcadeJSON from './../assets/arcade.json';
 import YatoPNG from './../assets/yato.png';
 import YatoJSON from './../assets/yato.json';
 import DogPNG from './../assets/dog.png';
@@ -17,6 +19,8 @@ import ScoreLabelPNG from './../assets/scoreLabel.png';
 import ScoreLabelJSON from './../assets/scoreLabel.json';
 import FlaresPNG from './../assets/flares.png';
 import FlaresJSON from './../assets/flares.json';
+import JapanFoodPNG from './../assets/japanFood.png';
+import JapanFoodJSON from './../assets/japanFood.json';
 import DangerLinePNG from './../assets/dangerLine.png';
 import DangerLineJSON from './../assets/dangerLine.json';
 import PetalPNG from './../assets/petal.png';
@@ -44,15 +48,15 @@ import TaikoSFX from './../assets/sfx/taiko.ogg';
 // import Bgm01Piano from './../assets/bgm/bgm01/piano.ogg';
 
 // Audio BGM 02 Achan
-import Bgm02Drums from './../assets/bgm/bgm02/drums.ogg';
-import Bgm02Bass from './../assets/bgm/bgm02/bass.ogg';
-import Bgm02Pads from './../assets/bgm/bgm02/pads.ogg';
-import Bgm02Melody from './../assets/bgm/bgm02/melody.ogg';
-import Bgm02Lofi01 from './../assets/bgm/bgm02/lofi01.ogg';
-import Bgm02Lofi02 from './../assets/bgm/bgm02/lofi02.ogg';
-import Bgm02Lofi03 from './../assets/bgm/bgm02/lofi03.ogg';
-import Bgm02Lofi04 from './../assets/bgm/bgm02/lofi04.ogg';
-import Bgm02Voice from './../assets/bgm/bgm02/voice.ogg';
+// import Bgm02Drums from './../assets/bgm/bgm02/drums.ogg';
+// import Bgm02Bass from './../assets/bgm/bgm02/bass.ogg';
+// import Bgm02Pads from './../assets/bgm/bgm02/pads.ogg';
+// import Bgm02Melody from './../assets/bgm/bgm02/melody.ogg';
+// import Bgm02Lofi01 from './../assets/bgm/bgm02/lofi01.ogg';
+// import Bgm02Lofi02 from './../assets/bgm/bgm02/lofi02.ogg';
+// import Bgm02Lofi03 from './../assets/bgm/bgm02/lofi03.ogg';
+// import Bgm02Lofi04 from './../assets/bgm/bgm02/lofi04.ogg';
+// import Bgm02Voice from './../assets/bgm/bgm02/voice.ogg';
 
 // Tiles
 import TilesPNG from './../assets/tilesets/tilesheet_japan.png';
@@ -83,9 +87,11 @@ export default class MainMenuScene extends Phaser.Scene {
 		);
 
 		// IMPORTANT: When adding new aseprite sprites, don't forget to load their animations in the create-method.
+		this.load.aseprite('arcade', ArcadePNG, ArcadeJSON);
 		this.load.aseprite('yato', YatoPNG, YatoJSON);
 		this.load.aseprite('dog', DogPNG, DogJSON);
 		this.load.aseprite('flags', FlagsPNG, FlagsJSON);
+		this.load.aseprite('japanFood', JapanFoodPNG, JapanFoodJSON);
 		this.load.aseprite('tetrominos', TetrominosPNG, TetrominosJSON);
 		this.load.aseprite('progressArrow', ProgressArrowPNG, ProgressArrowJSON);
 		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
@@ -114,19 +120,8 @@ export default class MainMenuScene extends Phaser.Scene {
 		// this.load.audio('bgm01-main-voice', Bgm01MainVoice);
 		// this.load.audio('bgm01-piano', Bgm01Piano);
 
-		// Audio BGM 01
-		this.load.audio('bgm02-drums', Bgm02Drums);
-		this.load.audio('bgm02-bass', Bgm02Bass);
-		this.load.audio('bgm02-pads', Bgm02Pads);
-		this.load.audio('bgm02-melody', Bgm02Melody);
-		this.load.audio('bgm02-lofi01', Bgm02Lofi01);
-		this.load.audio('bgm02-lofi02', Bgm02Lofi02);
-		this.load.audio('bgm02-lofi03', Bgm02Lofi03);
-		this.load.audio('bgm02-lofi04', Bgm02Lofi04);
-		this.load.audio('bgm02-voice', Bgm02Voice);
-
-    // Load body shapes from JSON file generated using PhysicsEditor
-    this.load.json('shapes', TetrominosShapesJSON);
+		// Load body shapes from JSON file generated using PhysicsEditor
+		this.load.json('shapes', TetrominosShapesJSON);
 
 		// load the PNG file
 		this.load.image('tilesheet_japan', TilesPNG)
@@ -153,7 +148,6 @@ export default class MainMenuScene extends Phaser.Scene {
 		});
 	
 		this.load.on('complete', () => {
-			console.log('complete');
 			this.progressBar.destroy();
 			this.progressBox.destroy();
 		});
@@ -175,13 +169,14 @@ export default class MainMenuScene extends Phaser.Scene {
 
 		this.anims.createFromAseprite('dog');
 		this.anims.createFromAseprite('flags');
+		this.anims.createFromAseprite('japanFood');
 		this.anims.createFromAseprite('tetrominos');
 		this.anims.createFromAseprite('progressArrow');
 		this.anims.createFromAseprite('scoreLabel');
 		this.anims.createFromAseprite('flares');
 		this.anims.createFromAseprite('dangerLine');
 		this.anims.createFromAseprite('petal');
-		console.log('--- Finished Creating Animations from Spritesheets ---');
+		console.log('--- Finished Creating Animations from Spritesheets ---', this.anims);
 
     this.scene.start('main-menu');
   }

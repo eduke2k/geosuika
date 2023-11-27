@@ -12,7 +12,7 @@ export class Petal extends Phaser.GameObjects.Sprite {
   private addForceY = 0;
   private targetAddForceX = 0;
   private targetAddForceY = 0;
-  private windForce = Phaser.Math.Vector2.ZERO;
+  private windForce = new Phaser.Math.Vector2(0, 0);
   private changeForceTime = CHANGE_FORCE_TIME;
 
   public constructor(scene: Phaser.Scene, x: number, y: number) {

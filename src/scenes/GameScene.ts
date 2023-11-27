@@ -4,18 +4,34 @@ import DropBucket from '../entities/DropBucket';
 import { parseTiledProperties } from '../functions/helper';
 import { PetalEmitter } from '../models/PetalEmitter';
 import chroma from 'chroma-js';
+import Dog from '../entities/Dog';
+import Arcade from '../entities/Arcade';
+import { Instrument } from '../models/Instrument';
+import BlinkingText from '../entities/BlinkingText';
+import { Action, InputController } from '../models/Input';
 
 // import Dog from '../entities/Dog';
 
 export default class GameScene extends Phaser.Scene {
-	public debugText!: Phaser.GameObjects.Text;
 	public buckets: DropBucket[] = [];
+	public arcades: Arcade[] = [];
+	public dog: Dog | undefined = undefined;
 	public petalEmitter = new PetalEmitter(this);
 	public tilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 	public elevatorBodies: {
 		bucketName: string,
 		body: MatterJS.BodyType
 	}[] = []
+
+	public inputController: InputController | null = null;
+
+	// public rotateInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+	// public chordInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+	// public visibleTilesInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+	// public rankUpInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+	// public clearTiles = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+	// public moveElevatorUpInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+	// public moveElevatorDownInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
 
 	constructor() {
 		super({ key: 'game-scene' })
@@ -41,7 +57,8 @@ export default class GameScene extends Phaser.Scene {
 
 				// Get contact point. Typings of MatterJS are broken.
 				const contactVertex = (event.pairs[0] as any).contacts.filter((c: any) => c !== undefined)[0].vertex;
-				parentBucket.playCollisionSound(droppable, Math.max(v1, v2), contactVertex);
+				const maxV = Math.max(v1, v2);
+				parentBucket.playCollisionSound(droppable, maxV, contactVertex);
 			}
 		}
 	}
@@ -68,7 +85,6 @@ export default class GameScene extends Phaser.Scene {
 		const background1 = map.createLayer('Background1', tileset);
 		if (background1) {
 			this.tilemapLayers.push(background1);
-			console.log(background1);
 		}
 
 		const terrain = map.createLayer('Terrain', tileset);
@@ -100,14 +116,14 @@ export default class GameScene extends Phaser.Scene {
 		// });
 	
 		// Setup initial tilemap state
-    this.getTilemapLayers().forEach(tl => {
-      tl.forEachTile(t => {
-        t.properties.progress = 0;
+		this.getTilemapLayers().forEach(tl => {
+			tl.forEachTile(t => {
+				t.properties.progress = 0;
 				t.properties.baseRotation = Phaser.Math.Angle.Random();
 				t.alpha = t.properties.progress;
 				t.rotation = t.properties.baseRotation;
-      });  
-    });
+			});  
+		});
 
 		// Generate map collisions from tiled map
 		const Body = new Phaser.Physics.Matter.MatterPhysics(this).body;
@@ -148,23 +164,103 @@ export default class GameScene extends Phaser.Scene {
 		// tile.tint = 0x364f71;
 	}
 
-	public initDebugTextField(): void {
-		this.debugText = this.add.text(0, 0, 'Early Preview', { font: "12px Courier", align: "left" });
-		this.debugText.setScrollFactor(0, 0);
-	}
-
 	public getTilemapLayers ():  Phaser.Tilemaps.TilemapLayer[] {
 		return this.tilemapLayers;
 	}
 
+	private getMountedBucket (): DropBucket | undefined {
+		return this.buckets.find(b => b.isMounted());
+	}
+
 	update (time: number, delta: number): void {
 		this.petalEmitter.update(time, delta);
+		this.dog?.update(time, delta);
+		this.arcades.forEach(a => a.update(time, delta));
+		this.buckets.forEach(a => a.update(time, delta));
+		
+		const mountedBucket = this.getMountedBucket();
+
+		// Handle Input
+		if (this.inputController?.justDown(Action.ACTION2)) {
+			if (mountedBucket) mountedBucket.rotateNextDroppable();
+		}
+	
+		if (this.inputController?.justDown(Action.ACTION1)) {
+			if (mountedBucket) {
+				mountedBucket.unmountBucket();
+			} else {
+				this.arcades[0]?.trigger();
+			}
+		}
+	
+		if (this.inputController?.justDown(Action.DEBUG1)) {
+			if (mountedBucket) mountedBucket.rankUp();
+		}
+	
+		if (this.inputController?.isDown(Action.UP)) {
+			// this.elevator.moveY(-100 / delta);
+			if (mountedBucket) mountedBucket.moveY(-100 / delta);
+		}
+	
+		if (this.inputController?.isDown(Action.DOWN)) {
+			// this.elevator.moveY(100 / delta);
+			if (mountedBucket) mountedBucket.moveY(100 / delta);
+		}
+		
+		if (this.inputController?.justDown(Action.DEBUG2)) {
+			console.log('debug 2 is just down', mountedBucket);
+			if (mountedBucket) mountedBucket.clearAllVisibleTiles();
+		} 
+	
+		if (this.inputController?.justDown(Action.DEBUG3)) {
+			if (!mountedBucket || !mountedBucket.bgm) return;
+			const instrument = this.registry.get('instument:harp') as Instrument | undefined;
+			if (instrument) {
+				const chord = mountedBucket.bgm.getCurrentChord();
+				new BlinkingText(this, chord, mountedBucket.x, mountedBucket.y, { fontSize: 16, movementY: 100, duration: 1000 });
+				instrument.playRandomNoteInChord(chord, this, 0, 1);
+			}
+		}
+	}
+
+
+	public bucketUnmountFinished (_bucket: DropBucket): void {
+		this.cameraFollowEntity({ object: this.dog});
+	}
+
+	public cameraFollowEntity (options: { object: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image | undefined, instant?: boolean, smooth?: number, offsetX?: number, offsetY?: number }): void {
+		if (!options.object) return;
+		console.log(options);
+		const lerpAmount = options.smooth ?? 0.1;
+		const instantaneous = options.instant ?? false;
+
+		if (instantaneous) {
+			this.cameras.main.startFollow(options.object, true, lerpAmount, lerpAmount, options.offsetX, options.offsetY);
+		} else {
+			this.cameras.main.pan(
+				options.object.x - (options.offsetX ?? 0),
+				options.object.y - (options.offsetY ?? 0),
+				750,
+				Phaser.Math.Easing.Cubic.InOut,
+				undefined,
+				(camera, progress, _x, _y) => {
+					if (!options.object) return;
+					camera.panEffect.destination.x = options.object.x - (options.offsetX ?? 0);
+                    camera.panEffect.destination.y = options.object.y - (options.offsetY ?? 0);
+					if (progress === 1) {
+						console.log('done');
+						if (options.object)	this.cameras.main.startFollow(options.object, true, lerpAmount, lerpAmount, options.offsetX, options.offsetY);	
+					}
+				}
+			)
+		}
 	}
 
 	create() {
+		this.inputController = new InputController(this);
+
 		// this.lights.enable().setAmbientColor(0x364f71);
 		const map = this.initMap();
-		this.initDebugTextField();
 
 		this.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) =>	{
 			event.pairs.forEach(c => { this.handleCollision(c.bodyA, c.bodyB, event) });
@@ -175,23 +271,28 @@ export default class GameScene extends Phaser.Scene {
 		});
 
 		// Camera Settings
-		this.cameras.main.setZoom(4);
+		// this.cameras.main.setZoom(4);
 		this.cameras.main.fadeIn(1000);
-		this.cameras.main.setRoundPixels(false);
+		this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
 		// Spawn entities of map
 		const mapObjects = map.objects.find(o => o.name === 'Objects')?.objects;
 		if (mapObjects) {
 			mapObjects.forEach(o => {
-				if (o.type === 'entity') {
+				if (['bucket', 'arcade', 'character'].includes(o.type)) {
 					const properties = parseTiledProperties(o.properties);
-					switch (o.name) {
+					switch (o.type) {
+						case 'character': {
+							if (o.name === 'dog') this.dog = new Dog(this, o.x ?? 0, o.y ?? 0);
+							break;
+						}
 						case 'bucket': {
 							this.buckets.push(new DropBucket({
 								scene: this,
 								active: Boolean(properties.active),
 								x: o.x ?? 0,
 								y: o.y ?? 0,
+								name: o.name,
 								width: properties.width ? parseInt(properties.width.toString()) : 470,
 								height: properties.height ? parseInt(properties.height.toString()) : 535,
 								thickness: properties.thickness ? parseInt(properties.thickness.toString()) : 64,
@@ -206,13 +307,16 @@ export default class GameScene extends Phaser.Scene {
 							}));
 							break;
 						}
+						case 'arcade': {
+							const bucket = this.buckets.find(b => b.name === properties.bucket);
+							this.arcades.push(new Arcade(this, o.x ?? 0, o.y ?? 0, o.name, undefined, bucket));
+							break;
+						}
 					}
 				}
 			});
 		}
-		// const dog = new Dog(this, 400, 600);
-		// dog.setScale(0.3);
-		// dog.setRotation(90);
-		// dog.play({ key: 'idle', repeat: -1 });
+
+		this.cameraFollowEntity({ object: this.dog, instant: false });
 	}
 }

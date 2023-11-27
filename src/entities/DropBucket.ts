@@ -18,6 +18,7 @@ import ScoreProgressBar from "./ScoreProgressBar";
 import { EffectCircleOptions, TilemapLayerEffectCircle } from "./TilemapLayerEffectCircle";
 // import { Depths } from "../const/depths";
 import BlinkingScore from "./BlinkingScore";
+import { japanFoodSet } from "../config/japanFood";
 
 export const GAME_OVER_TIME = 3000;
 export const DROPPABLE_REMOVE_TIME = 500;
@@ -31,6 +32,7 @@ export type DropBucketOptions = {
   scene: GameScene;
   x: number;
   y: number;
+  name: string;
   width: number;
   height: number;
   thickness: number;
@@ -77,25 +79,19 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public lastTierDestroy: boolean;
   public maxTierToDrop: number | 'auto';
   private mergeDisabled: boolean;
-  private targetZoom = 0.9;
+  private targetZoom = 1;
   // private baseZoom = 1;
+  private bucketMounted = false;
   private bucketActive = false;
+  private bgmDataLoading = false;
   private collisionSoundWaitTime = 0;
   private mergeSoundWaitTime = 0;
   private targetScore: number;
   private bucketImage: Phaser.GameObjects.Image;
   private bucketProgress = 0;
 
-  private bgm: BackgroundMusic;
+  public bgm: BackgroundMusic | null = null;
   private elevatorDistance: number;
-
-  public rotateInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-  public chordInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-  public visibleTilesInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.T);
-  public rankUpInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-  public clearTiles = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-  public moveElevatorUpInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-  public moveElevatorDownInput = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
 
   public highestDroppablePoint = this.scene.game.canvas.height;
   public lowestDroppablePoint = 0;
@@ -106,12 +102,13 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public dangerTime = GAME_OVER_TIME;
   public isGameOver = false;
 
-  private droppableRemoveTime = DROPPABLE_REMOVE_TIME;
+  // private droppableRemoveTime = DROPPABLE_REMOVE_TIME;
 
   public constructor(options: DropBucketOptions) {
     super(options.scene.matter.world, options.x, options.y, '');
     this.options = options;
-    this.bucketActive = options.active;
+    this.name = options.name;
+    // this.bucketActive = options.active;
     this.gameOverThreshold = options.gameOverThreshold;
     this.lastTierDestroy = options.lastTierDestroy ?? false;
     this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
@@ -130,9 +127,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.bucketThickness = options.thickness;
     const Bodies = new Phaser.Physics.Matter.MatterPhysics(options.scene).bodies;
     const Body = new Phaser.Physics.Matter.MatterPhysics(options.scene).body;
-
-    // Init bgm
-    this.bgm = new BackgroundMusic(this.scene, bgm02BGMConfig);
 
     // Add Elevator
     // this.elevator = new BucketElevator(this, options.x, options.y, options.width + (options.thickness * 2), '');
@@ -203,20 +197,48 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 		this.progressCircle = new ProgressCircle(this.scene, this, 0, 0, this.floorBody.bounds.max.x - this.floorBody.bounds.min.x);
     this.progressCircle.visible = true;
 
+    this.bucketImage.setDepth(0);
+    this.scoreProgressBar.setDepth(1);
+    this.scoreProgressBar.alpha = 0;
+    this.progressCircle.setDepth(1);
+    this.progressCircle.alpha = 0;
+    this.dangerLine.setDepth(1);
+    this.dangerLine.alpha = 0;
+    this.scoreLabel.setDepth(2);
+    this.scoreLabel.alpha = 0;
+
     if (options.active) {
-      this.activateBucket();
+      // this.activateBucket();
     }
 
-    this.bucketImage.setDepth(0);
-    this.scoreProgressBar.setDepth(1)
-    this.progressCircle.setDepth(1);
-    this.dangerLine.setDepth(1);
-    this.scoreLabel.setDepth(2);
-
     // Call internal update function if scene updates. Extended classes not update automatically
-    options.scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
+    // options.scene.events.on('update', (time: number, delta: number) => { this.update(time, delta)} );
+  }
+
+  public isActive (): boolean {
+    return this.bucketActive;
+  }
+
+  public isMounted (): boolean {
+    return this.bucketMounted;
   }
   
+  public setBucketAssetVisibility (makeVisible: boolean): void {
+    this.scene.tweens.addCounter({
+      from: makeVisible ? 0 : 1,
+      to: makeVisible ? 1 : 0,
+      duration: 750,
+      onUpdate: ((tween) => {
+        this.scoreProgressBar.alpha = tween.getValue();
+        this.progressCircle.alpha = tween.getValue();
+        this.dangerLine.alpha = tween.getValue();
+        this.scoreLabel.alpha = tween.getValue();
+        if (this.nextDroppable) this.nextDroppable.alpha = tween.getValue();;
+      })
+    })
+
+  }
+
   public getGameScene (): GameScene | undefined {
     if (this.scene instanceof GameScene) return this.scene;
     return;
@@ -226,20 +248,75 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     return this.currentPhase;
   }
 
-  public activateBucket (): void {
+  public unmountBucket (): void {
+    if (this.bgmDataLoading || !this.bucketMounted) return;
+    this.bucketActive = false;
+    this.setBucketAssetVisibility(false);
+
+    const hide = this.bucketImage.postFX.addReveal(undefined, 0, 1);
+    if (this.nextDroppable) {
+      this.explode(this.nextDroppable);
+      this.nextDroppable = null;
+    }
+
+    this.droppables.slice(0).forEach(d => {
+      this.explode(d);
+    });
+
+    this.scene.tweens.addCounter({
+      from: 1,
+      to: 0,
+      duration: 500,
+      onUpdate: (tween => {
+        hide.progress = tween.getValue();
+      }),
+      onComplete: (() => {
+        this.bgm = null;
+        this.bucketMounted = false;
+        this.bucketImage.setVisible(false);
+        this.bucketImage.clearFX();
+      })
+    })
+
+    new BlinkingText(this.scene, 'Memory Chamber disconncted', this.x, this.y, { fadeInTime: 250, movementY: 100, fontSize: 24, duration: 1000 });
+    this.getGameScene()?.bucketUnmountFinished(this);
+  }
+
+  public async mountBucket (): Promise<void> {
+    if (this.bgmDataLoading || this.bucketMounted) return;
+    this.bucketMounted = true;
+
+    // Map camera to the bucket
+    this.getGameScene()?.cameraFollowEntity({ object: this, offsetY: 50});
+
+    this.bucketImage.setVisible(true);
+    const reveal = this.bucketImage.postFX.addReveal(undefined, 0, 1);
+
+    this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 500,
+      onUpdate: (tween => {
+        reveal.progress = tween.getValue();
+      })
+    });
+
+    new BlinkingText(this.scene, 'Memory Chamber ready', this.x, this.y, { fadeInTime: 250, movementY: 100, fontSize: 24, duration: 2000 });
+
+    // Init bgm
+    this.bgm = new BackgroundMusic(this.scene, bgm02BGMConfig);
+
     // Start Music
     this.bgm.play();
-
-    // this.scene.sound.play('bgm01-chello-chord', { loop: true })
+    
+    // Make bucket playable
+    this.bucketActive = true;
 
     // Init first drop
     this.initNextDroppable();
 
-    // Map camera to the bucket
-    this.scene.cameras.main.startFollow(this, true, 0.05, 0.05);
-    this.scene.cameras.main.setFollowOffset(0, 50)
-
-    this.bucketActive = true;
+    // Make all bucket assets visible
+    this.setBucketAssetVisibility(true);
   }
 
   public getDroppableSet (): DroppableSet {
@@ -297,6 +374,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   }
 
   public playMergeSound (score: ScorePayload, x: number): void {
+    if (!this.bgm) return;
+
     if (this.mergeSoundWaitTime <= 0) {
       const instrument = this.scene.registry.get('instument:merge') as Instrument | undefined;
       if (instrument) {
@@ -309,29 +388,33 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   }
 
   public playCollisionSound (source: Droppable, force: number, contactVertex?: { x: number; y: number }): void {
+    if (!this.bgm) return;
+
     if (!source.body || this.collisionSoundWaitTime > 0) return;
     const instrument = this.scene.registry.get('instument:harp') as Instrument | undefined;
     if (!instrument) return;
-    const pan = (source.body.position.x - this.getBounds().centerX) / (this.bucketWidth / 2);
+    const pan = Phaser.Math.Clamp((source.body.position.x - this.getBounds().centerX) / (this.bucketWidth / 2), 0, 1);
     const volume = scaleNumberRange(Math.min(force, 17), [0, 50], [0, 1]);
     instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, pan, volume);
     this.collisionSoundWaitTime = COLLISION_SOUND_WAIT_TIME;
     if (contactVertex) this.triggerSparkParticle(contactVertex);
   }
 
-  private rankUp (progressLevel: number): void {
-    this.bucketProgress = progressLevel;
-    this.getGameScene()?.petalEmitter.setIntesity(this.bgm.getProgress(progressLevel));
+  public rankUp (progressLevel?: number): void {
+    if (!this.bgm) return;
 
-    new BlinkingText(this.scene, "Memory unveiled", this.x, this.y - 128, { fontSize: 48, duration: 1500, fadeInTime: 500, flashingDuration: 750, movementY: 200 });
+    this.bucketProgress = progressLevel ?? (this.bucketProgress + 1);
+    this.getGameScene()?.petalEmitter.setIntesity(this.bgm.getProgress(this.bucketProgress));
+
+    new BlinkingText(this.scene, "new Stem reveiled", this.x, this.y - 128, { fontSize: 48, duration: 1500, fadeInTime: 500, flashingDuration: 750, movementY: 200 });
     // this.elevator.moveRelativeY(-(this.elevatorDistance / this.bgm.getTotalProgressLength()) * this.bgm.getProgress(progressLevel));
-    this.moveRelativeY(-(this.elevatorDistance / this.bgm.getTotalProgressLength()) * this.bgm.getProgress(progressLevel));
+    this.moveRelativeY(-(this.elevatorDistance / this.bgm.getTotalProgressLength()) * this.bgm.getProgress(this.bucketProgress));
 
-    this.bgm.setProgress(progressLevel);
+    this.bgm.setProgress(this.bucketProgress);
 
     const instrument = this.scene.registry.get('instument:gong') as Instrument | undefined;
     if (instrument) {
-      const volume = 0.5 * this.bgm.getProgress(progressLevel) + 0.5;
+      const volume = 0.5 * this.bgm.getProgress(this.bucketProgress) + 0.5;
       instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, 0, volume);
     }
   }
@@ -368,7 +451,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
   public tryMergeDroppables (a: Droppable, b: Droppable): void {
     // Early out
-    if (this.mergeDisabled || this.isGameOver || a.getTier() !== b.getTier()) return;
+    if (this.mergeDisabled || !this.bgm || this.isGameOver || a.getTier() !== b.getTier()) return;
 
     if (!a.getBody() && !b.getBody()) {
       console.log('body a AND b are undefined. skipping');
@@ -452,9 +535,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.playMergeSound(scoreObject, spawnPosition.x);
 
     if (this.currentPhase === BucketPhase.DESTROY) {
-      this.updateElevatorPosition();
+      // this.updateElevatorPosition();
       droppable.setDestroyable();
-      this.handleDestroyedPhaseProgress();
+      // this.handleDestroyedPhaseProgress();
     }
   }
 
@@ -554,6 +637,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   }
 
   private triggerDestroyPhase (): void {
+    if (!this.bgm) return;
+
+    const bgm = this.bgm;
     this.currentPhase = BucketPhase.DESTROY;
     this.totalDroppablesForDestruction = this.droppables.length;
     new BlinkingText(this.scene, 'The memory fades...', this.x, this.y, { fontSize: 48, duration: 1500, fadeInTime: 500, flashingDuration: 750, movementY: 200 });
@@ -569,7 +655,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
         to: 0.7,
         duration: 2000,
         onUpdate: (tween => {
-          this.bgm.setPlaybackRate(tween.getValue());
+          bgm.setPlaybackRate(tween.getValue());
         })
       })
   
@@ -606,7 +692,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     })
   }
 
-  private rotateNextDroppable (): void {
+  public rotateNextDroppable (): void {
     if (!this.nextDroppable) return;
     this.nextDroppable.setRotation(this.nextDroppable.rotation + Phaser.Math.DegToRad(90));
   }
@@ -644,7 +730,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       this.setBucketTint(0xFFFFFF, 2500);
     }
 
-    this.bgm.reset();
+    if (this.bgm) this.bgm.reset();
     this.scoreProgressBar.setProgress(0);
     this.getGameScene()?.petalEmitter.setIntesity(0);
     this.bucketProgress = 0;
@@ -674,7 +760,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     target.rotation = angle ?? reference.angle;
   }
 
-  private clearAllVisibleTiles (): void {
+  public clearAllVisibleTiles (): void {
     this.getGameScene()?.getTilemapLayers().forEach(tl => {
       tl.forEachTile(t => {
         this.getGameScene()?.revealTile(t);
@@ -709,7 +795,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 	}
 
   public update (_time: number, delta: number): void {
-    if (!this.bucketActive) return;
+    if (!this.bucketMounted) return;
     const dangerPercentage = this.getDangerPercentage();
 
     // Effect circles
@@ -753,51 +839,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       this.scene.cameras.main.setZoom(this.targetZoom);
     }
 
-    // Handle Input
-    if (Phaser.Input.Keyboard.JustDown(this.rotateInput)) {
-      this.rotateNextDroppable();
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.visibleTilesInput)) {
-      this.getGameScene()?.getTilemapLayers().forEach(tl => {
-        tl.getTilesWithinWorldXY(this.scene.cameras.main.worldView.left, this.scene.cameras.main.worldView.top, this.scene.cameras.main.worldView.width, this.scene.cameras.main.worldView.height).forEach(t => {
-          t.rotation = Math.random() * Math.PI;
-          const scaleFactor = (Math.random() - 0.5) * 16;
-          t.width = scaleFactor + t.baseWidth;
-          t.height = scaleFactor + t.baseHeight
-          t.properties.alpha = 1;
-        });  
-      });
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.rankUpInput)) {
-      this.rankUp(this.bucketProgress + 1);
-    }
-
-    if (this.moveElevatorUpInput.isDown) {
-      // this.elevator.moveY(-100 / delta);
-      this.moveY(-100 / delta);
-
-    }
-
-    if (this.moveElevatorDownInput.isDown) {
-      // this.elevator.moveY(100 / delta);
-      this.moveY(100 / delta);
-    }
-    
-    if (Phaser.Input.Keyboard.JustDown(this.clearTiles)) {
-      this.clearAllVisibleTiles();
-    } 
-
-    if (Phaser.Input.Keyboard.JustDown(this.chordInput)) {
-      const instrument = this.scene.registry.get('instument:harp') as Instrument | undefined;
-      if (instrument) {
-        const chord = this.bgm.getCurrentChord();
-        new BlinkingText(this.scene, chord, this.x, this.y, { fontSize: 16, movementY: 100, duration: 1000 });
-        instrument.playRandomNoteInChord(chord, this.scene, 0, 1);
-      }
-    }
-
     // Remove droppables on game over
     // if (this.isGameOver && this.droppables.length > 0) {
     //   if (this.droppableRemoveTime <= 0) {
@@ -823,7 +864,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // }
 
     // Set Score position
-    this.syncTranslation(this.scoreLabel, this.dropSensorBody, this.getBody().angle, { x: -(((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) - 18), y: -(this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y + 18) });
+    this.syncTranslation(this.scoreLabel, this.dropSensorBody, this.getBody().angle, { x: (((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) + this.bucketThickness + 32), y: -(this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y) / 2 });
 
     // Set bucket image position
     this.syncTranslation(this.bucketImage, this.floorBody, this.getBody().angle);
@@ -846,41 +887,35 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       this.dangerLine.alpha = 0;
     }
 
-    // Handle next droppable position change with mouse position
-    if (this.currentPhase === BucketPhase.DROP && this.nextDroppable && this.nextDroppable.isTethered()) {
-      const x = this.scene.game.input.mousePointer?.worldX;
-      const y = this.scene.game.input.mousePointer?.worldY;
+    if (this.bucketActive) {
+      // Handle next droppable position change with mouse position
+      if (this.currentPhase === BucketPhase.DROP && this.nextDroppable && this.nextDroppable.isTethered()) {
+        const x = this.scene.game.input.mousePointer?.worldX;
+        const y = this.scene.game.input.mousePointer?.worldY;
 
-      if (x == undefined || y == undefined) {
-        this.nextDroppable.setX(this.dropSensorBody.position.x);
-        this.nextDroppable.setY(this.dropSensorBody.position.y);
-      } else {
-        this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , x));
-        this.nextDroppable.setY(getNumberInRange(this.dropSensorBody.bounds.min.y, this.dropSensorBody.bounds.max.y, y));
-      }
-      this.nextDroppable.setVelocity(0, 0);
-    }
-
-    this.calculateHighestAndLowestPoint();
-    // (this.scene as GameScene).debugText.text = `
-    //   Highest: ${this.highestDroppablePoint}
-    //   Lowest:  ${this.lowestDroppablePoint}
-    //   Danger-Percentage: ${this.getDangerPercentage()}
-    //   Next Droppable x: ${this.nextDroppable?.body?.position.x}
-    //   Next Droppable y: ${this.nextDroppable?.body?.position.y}
-    // `;
-
-    if (this.currentPhase === BucketPhase.DROP && this.highestDroppablePoint > this.gameOverThreshold) {
-      if (!this.isDanger) {
-        this.triggerDanger();
-      } else {
-        this.dangerTime -= delta;
-        if (this.dangerTime <= 0 && !this.isGameOver) {
-          this.triggerDestroyPhase();
+        if (x == undefined || y == undefined) {
+          this.nextDroppable.setX(this.dropSensorBody.position.x);
+          this.nextDroppable.setY(this.dropSensorBody.position.y);
+        } else {
+          this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , x));
+          this.nextDroppable.setY(getNumberInRange(this.dropSensorBody.bounds.min.y, this.dropSensorBody.bounds.max.y, y));
         }
+        this.nextDroppable.setVelocity(0, 0);
       }
-    } else if (this.highestDroppablePoint <= this.gameOverThreshold && this.isDanger) {
-      this.triggerSafe();
+      this.calculateHighestAndLowestPoint();
+
+      if (this.currentPhase === BucketPhase.DROP && this.highestDroppablePoint > this.gameOverThreshold) {
+        if (!this.isDanger) {
+          this.triggerDanger();
+        } else {
+          this.dangerTime -= delta;
+          if (this.dangerTime <= 0 && !this.isGameOver) {
+            this.triggerDestroyPhase();
+          }
+        }
+      } else if (this.highestDroppablePoint <= this.gameOverThreshold && this.isDanger) {
+        this.triggerSafe();
+      }
     }
   }
 
@@ -888,6 +923,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     switch(setName) {
       case 'flagSet': return flagSet;
       case 'tetrominos': return tetrominosSet;
+      case 'japanFoodSet': return japanFoodSet;
       default: return flagSet;
     }
   }

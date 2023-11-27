@@ -2,7 +2,7 @@ import { DroppableSet } from "../types";
 
 export const tetrominosSet: DroppableSet = {
   randomizeOrder: true,
-  tierScles: [
+  tierScales: [
     1,
     1.5,
     2,

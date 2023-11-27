@@ -3,6 +3,7 @@ import Phaser from 'phaser'
 import MainMenuScene from './scenes/MainMenuScene'
 import GameScene from './scenes/GameScene'
 import BootScene from './scenes/BootScene'
+import HUDScene from './scenes/HUDScene'
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
@@ -20,7 +21,6 @@ const config: Phaser.Types.Core.GameConfig = {
 			gravity: {
 				y: 1
 			},
-			constraintIterations: 4,
 			// "plugins.attractors": true,
 			debug: {
 				showSensors: true,
@@ -32,7 +32,7 @@ const config: Phaser.Types.Core.GameConfig = {
 			}
 		}
 	},
-	scene: [BootScene, MainMenuScene, GameScene],
+	scene: [BootScene, MainMenuScene, GameScene, HUDScene]
 }
 
 export default new Phaser.Game(config)
