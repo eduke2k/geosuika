@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import Droppable from '../entities/Droppable';
+// import Droppable from '../entities/Droppable';
 import DropBucket from '../entities/DropBucket';
 import { parseTiledProperties } from '../functions/helper';
 import { PetalEmitter } from '../models/PetalEmitter';
@@ -9,13 +9,16 @@ import Arcade from '../entities/Arcade';
 import { Instrument } from '../models/Instrument';
 import BlinkingText from '../entities/BlinkingText';
 import { Action, InputController } from '../models/Input';
+import { CATEGORY_TERRAIN } from '../const/collisions';
+import Character from '../entities/Character';
 
 // import Dog from '../entities/Dog';
 
 export default class GameScene extends Phaser.Scene {
 	public buckets: DropBucket[] = [];
 	public arcades: Arcade[] = [];
-	public dog: Dog | undefined = undefined;
+	// public dog: Dog | undefined = undefined;
+	public characters: Character[] = [];
 	public petalEmitter = new PetalEmitter(this);
 	public tilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 	public elevatorBodies: {
@@ -24,44 +27,37 @@ export default class GameScene extends Phaser.Scene {
 	}[] = []
 
 	public inputController: InputController | null = null;
-
-	// public rotateInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-	// public chordInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-	// public visibleTilesInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.T);
-	// public rankUpInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-	// public clearTiles = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-	// public moveElevatorUpInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-	// public moveElevatorDownInput = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+	public bokehEffect: Phaser.FX.Bokeh | undefined;
 
 	constructor() {
 		super({ key: 'game-scene' })
 	}
 
 	// Todo: Move this to Droppable? or Bucket?
-	public handleCollision (bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType, event: Phaser.Physics.Matter.Events.CollisionStartEvent | Phaser.Physics.Matter.Events.CollisionActiveEvent): void {
-		if (bodyA.gameObject instanceof Droppable && bodyB.gameObject instanceof Droppable) {
-			const parentBucket = bodyB.gameObject.getParentBucket();
-			parentBucket.tryMergeDroppables(bodyA.gameObject, bodyB.gameObject);
-		}
+	// public handleCollision (bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType, event: Phaser.Physics.Matter.Events.CollisionStartEvent | Phaser.Physics.Matter.Events.CollisionActiveEvent): void {
+	// 	if (bodyA.gameObject instanceof Droppable && bodyB.gameObject instanceof Droppable) {
+	// 		const parentBucket = bodyB.gameObject.getParentBucket();
+	// 		parentBucket.tryMergeDroppables(bodyA.gameObject, bodyB.gameObject);
+	// 	}
 
-		if (bodyA.gameObject instanceof Droppable || bodyB.gameObject instanceof Droppable) {
-			// const droppable = bodyA.gameObject instanceof Droppable ? bodyA : bodyB;
-			// const parentBucket = droppable.getParentBucket();
-			const droppable = Droppable.getFirstDroppableFromBodies(bodyA, bodyB);
-			if (!droppable) return;
-			const parentBucket = droppable.getParentBucket();
+	// 	if (bodyA.gameObject instanceof Droppable || bodyB.gameObject instanceof Droppable) {
+	// 		// const droppable = bodyA.gameObject instanceof Droppable ? bodyA : bodyB;
+	// 		// const parentBucket = droppable.getParentBucket();
+	// 		const droppable = Droppable.getFirstDroppableFromBodies(bodyA, bodyB);
+	// 		if (!droppable) return;
+	// 		const parentBucket = droppable.getParentBucket();
 
-			const v1 = new Phaser.Math.Vector2(bodyB.velocity).length();
-			const v2 = new Phaser.Math.Vector2(bodyA.velocity).length();
-			if ((!bodyA.isSensor && !bodyB.isSensor) && (v1 > 2 || v2 > 2)) {
+	// 		const v1 = new Phaser.Math.Vector2(bodyB.velocity).length();
+	// 		const v2 = new Phaser.Math.Vector2(bodyA.velocity).length();
+	// 		if ((!bodyA.isSensor && !bodyB.isSensor) && (v1 > 2 || v2 > 2)) {
 
-				// Get contact point. Typings of MatterJS are broken.
-				const contactVertex = (event.pairs[0] as any).contacts.filter((c: any) => c !== undefined)[0].vertex;
-				const maxV = Math.max(v1, v2);
-				parentBucket.playCollisionSound(droppable, maxV, contactVertex);
-			}
-		}
-	}
+	// 			// Get contact point. Typings of MatterJS are broken.
+	// 			const contactVertex = (event.pairs[0] as any).contacts.filter((c: any) => c !== undefined)[0].vertex;
+	// 			const maxV = Math.max(v1, v2);
+	// 			parentBucket.playCollisionSound(droppable, maxV, contactVertex);
+	// 		}
+	// 	}
+	// }
 
 	public initMap (): Phaser.Tilemaps.Tilemap {
 		// create the Tilemap
@@ -132,9 +128,22 @@ export default class GameScene extends Phaser.Scene {
 			mapObjects.forEach(o => {
 				if (o.type === 'collision') {
 					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-						this.matter.add.rectangle(o.x + (o.width / 2), o.y + (o.height / 2), o.width, o.height, { isStatic: true });
+						this.matter.add.rectangle(
+							o.x + (o.width / 2),
+							o.y + (o.height / 2),
+							o.width,
+							o.height,
+							{
+								isStatic: true,
+								label: o.name,
+								collisionFilter: {
+									group: 0,
+									category: CATEGORY_TERRAIN
+								}
+							},
+						);
 					} else if (o.polygon && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-						const body = this.matter.add.fromVertices(0, 0, o.polygon, { isStatic: true, frictionStatic: 1, friction: 1 });
+						const body = this.matter.add.fromVertices(0, 0, o.polygon, { isStatic: true, label: o.name });
 						Body.setPosition(body, { x: o.x + body.centerOffset.x, y: o.y + body.centerOffset.y}, false);
 					}
 				}
@@ -168,30 +177,42 @@ export default class GameScene extends Phaser.Scene {
 		return this.tilemapLayers;
 	}
 
-	private getMountedBucket (): DropBucket | undefined {
+	public getMountedBucket (): DropBucket | undefined {
 		return this.buckets.find(b => b.isMounted());
+	}
+
+	public unmountBucket (): void {
+		const bucket = this.getMountedBucket();
+		if (!bucket) return;
+		bucket.unmountBucket();
+	}
+
+	public restartBucket (): void {
+		const bucket = this.getMountedBucket();
+		if (!bucket) return;
+		bucket.restartBucket();
 	}
 
 	update (time: number, delta: number): void {
 		this.petalEmitter.update(time, delta);
-		this.dog?.update(time, delta);
+		this.characters.forEach(c => c.update(time, delta));
 		this.arcades.forEach(a => a.update(time, delta));
 		this.buckets.forEach(a => a.update(time, delta));
 		
 		const mountedBucket = this.getMountedBucket();
 
 		// Handle Input
-		if (this.inputController?.justDown(Action.ACTION2)) {
-			if (mountedBucket) mountedBucket.rotateNextDroppable();
-		}
+		// if (this.inputController?.justDown(Action.ACTION2)) {
+		// 	if (mountedBucket) mountedBucket.rotateNextDroppable();
+		// }
 	
-		if (this.inputController?.justDown(Action.ACTION1)) {
-			if (mountedBucket) {
-				mountedBucket.unmountBucket();
-			} else {
-				this.arcades[0]?.trigger();
-			}
-		}
+		// if (this.inputController?.justDown(Action.ACTION1)) {
+		// 	if (mountedBucket) {
+		// 		mountedBucket.unmountBucket();
+		// 	} else {
+		// 		this.arcades[0]?.trigger();
+		// 	}
+		// }
 	
 		if (this.inputController?.justDown(Action.DEBUG1)) {
 			if (mountedBucket) mountedBucket.rankUp();
@@ -208,7 +229,6 @@ export default class GameScene extends Phaser.Scene {
 		}
 		
 		if (this.inputController?.justDown(Action.DEBUG2)) {
-			console.log('debug 2 is just down', mountedBucket);
 			if (mountedBucket) mountedBucket.clearAllVisibleTiles();
 		} 
 	
@@ -223,14 +243,19 @@ export default class GameScene extends Phaser.Scene {
 		}
 	}
 
+	public getPlayerCharacter (): Character | undefined {
+		return this.characters.find(c => c.isPlayerControlled())
+	}
 
 	public bucketUnmountFinished (_bucket: DropBucket): void {
-		this.cameraFollowEntity({ object: this.dog});
+		const playerCharacter = this.getPlayerCharacter();
+		if (playerCharacter) {
+			this.cameraFollowEntity({ object: playerCharacter });
+		}
 	}
 
 	public cameraFollowEntity (options: { object: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image | undefined, instant?: boolean, smooth?: number, offsetX?: number, offsetY?: number }): void {
 		if (!options.object) return;
-		console.log(options);
 		const lerpAmount = options.smooth ?? 0.1;
 		const instantaneous = options.instant ?? false;
 
@@ -240,15 +265,14 @@ export default class GameScene extends Phaser.Scene {
 			this.cameras.main.pan(
 				options.object.x - (options.offsetX ?? 0),
 				options.object.y - (options.offsetY ?? 0),
-				750,
+				1500,
 				Phaser.Math.Easing.Cubic.InOut,
 				undefined,
 				(camera, progress, _x, _y) => {
 					if (!options.object) return;
 					camera.panEffect.destination.x = options.object.x - (options.offsetX ?? 0);
-                    camera.panEffect.destination.y = options.object.y - (options.offsetY ?? 0);
+          camera.panEffect.destination.y = options.object.y - (options.offsetY ?? 0);
 					if (progress === 1) {
-						console.log('done');
 						if (options.object)	this.cameras.main.startFollow(options.object, true, lerpAmount, lerpAmount, options.offsetX, options.offsetY);	
 					}
 				}
@@ -256,19 +280,27 @@ export default class GameScene extends Phaser.Scene {
 		}
 	}
 
-	create() {
+	public setBokehEffect (radius: number, duration: number, ease?: (v: number) => number ): void {
+		if (!this.bokehEffect) return;
+		this.tweens.add({ targets: this.bokehEffect, duration, ease, radius });
+	}
+
+	public triggerGameOver (score: number): void {
+		if (!this.bokehEffect) this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
+		this.scene.launch('gameover-scene', { score });
+
+		this.setBokehEffect(2, 1000, Phaser.Math.Easing.Sine.InOut);
+
+		this.time.delayedCall(1000, () => {
+			this.scene.pause();
+		});
+	}
+
+	public create() {
 		this.inputController = new InputController(this);
 
 		// this.lights.enable().setAmbientColor(0x364f71);
 		const map = this.initMap();
-
-		this.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) =>	{
-			event.pairs.forEach(c => { this.handleCollision(c.bodyA, c.bodyB, event) });
-		});
-
-		this.matter.world.on('collisionstart', (event: Phaser.Physics.Matter.Events.CollisionStartEvent, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
-			this.handleCollision(bodyA, bodyB, event);
-		});
 
 		// Camera Settings
 		// this.cameras.main.setZoom(4);
@@ -283,7 +315,10 @@ export default class GameScene extends Phaser.Scene {
 					const properties = parseTiledProperties(o.properties);
 					switch (o.type) {
 						case 'character': {
-							if (o.name === 'dog') this.dog = new Dog(this, o.x ?? 0, o.y ?? 0);
+							if (o.name === 'dog') {
+								const dog = new Dog(this, o.x ?? 0, o.y ?? 0).setIgnoreGravity(true);
+								this.characters.push(dog);
+							}
 							break;
 						}
 						case 'bucket': {
@@ -296,12 +331,13 @@ export default class GameScene extends Phaser.Scene {
 								width: properties.width ? parseInt(properties.width.toString()) : 470,
 								height: properties.height ? parseInt(properties.height.toString()) : 535,
 								thickness: properties.thickness ? parseInt(properties.thickness.toString()) : 64,
+								bgmKey: properties.bgmKey ? properties.bgmKey.toString() : 'bgm01',
 								gameOverThreshold: properties.gameOverThreshold ? parseInt(properties.gameOverThreshold.toString()) : 535,
 								maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
 								disableMerge: Boolean(properties.disableMerge),
 								droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
 								image: properties.image ? properties.image as string : '',
-								targetScore: 2100,
+								targetScore: 500,
 								elevatorDistance: properties.elevatorDistance ? parseInt(properties.elevatorDistance.toString()) : undefined,
 								elevatorBody: this.elevatorBodies.find(b => b.bucketName === o.name)?.body
 							}));
@@ -317,6 +353,9 @@ export default class GameScene extends Phaser.Scene {
 			});
 		}
 
-		this.cameraFollowEntity({ object: this.dog, instant: false });
+		const playerCharacter = this.getPlayerCharacter();
+		if (playerCharacter) {
+			this.cameraFollowEntity({ object: playerCharacter, instant: false });
+		}
 	}
 }

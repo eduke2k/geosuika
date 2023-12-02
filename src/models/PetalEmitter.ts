@@ -13,6 +13,7 @@ export class PetalEmitter {
   private intensity = 0;
   private emitting = false;
   private emitTimer = this.frequency
+  private tint = 0xFFFFFF;
 
   public constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -21,6 +22,14 @@ export class PetalEmitter {
 
   public isEmitting (): boolean {
     return this.emitting;
+  }
+
+  public resetTint (): void {
+    this.tint = 0xFFFFFF;
+  }
+
+  public setTint (tint: number): void {
+    this.tint = tint;
   }
 
   public triggerWind (x: number, y: number, strength: number): void {
@@ -47,7 +56,7 @@ export class PetalEmitter {
     const spawnY = this.scene.cameras.main.worldView.top - 50;
     const spawnX = [this.scene.cameras.main.worldView.left - 50, this.scene.cameras.main.worldView.right + (this.scene.cameras.main.width / 2)];
 
-    const petal = new Petal(this.scene, randomIntFromInterval(spawnX[0], spawnX[1]), spawnY);
+    const petal = new Petal(this.scene, randomIntFromInterval(spawnX[0], spawnX[1]), spawnY, this.tint);
     petal.setDepth(Depths.FOREGROUND_LAYER);
 
     this.petals.push(petal);

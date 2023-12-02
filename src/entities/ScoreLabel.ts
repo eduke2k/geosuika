@@ -43,6 +43,10 @@ export default class ScoreLabel extends Phaser.GameObjects.Container {
     this.multiplierTime = 0;
   }
 
+  public getScore (): number {
+    return this.score;
+  }
+
   private calculateScore (tier: number, multiplier: number): number {
     return BASE_SCORE * tier * multiplier;
   }

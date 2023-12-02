@@ -32,10 +32,14 @@ export const japanFoodSet: DroppableSet = {
     },
     {
       spriteKey: 'japanFood',
-      animationKey: 'japanfood:tako',
-      bodyType: 'circle',
-      radius: 236,
-      offset: 20
+      animationKey: 'japanfood:dango',
+      bodyType: 'rectangle',
+      width: 170,
+      height: 420,
+      chamfer: 89,
+      offsetX: 0,
+      offsetY: -8,
+      scaleMultiplier: 1.8,
     },
     {
       spriteKey: 'japanFood',

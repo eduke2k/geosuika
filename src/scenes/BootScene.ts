@@ -37,6 +37,10 @@ import BassSFX from './../assets/sfx/bass.ogg';
 import MergeSFX from './../assets/sfx/merge.ogg';
 import GongSFX from './../assets/sfx/gong.ogg';
 import TaikoSFX from './../assets/sfx/taiko.ogg';
+import AscensionSFX from './../assets/sfx/ascension.ogg';
+import MusicBoxSFX from './../assets/sfx/musicbox.ogg';
+import ConfirmSFX from './../assets/sfx/confirm.ogg';
+import TouchySFX from './../assets/sfx/touchy.ogg';
 
 // Audio BGM 01 All The Ducks
 // import Bgm01ChelloChord from './../assets/bgm/bgm01/chello-chord.ogg';
@@ -63,6 +67,7 @@ import TilesPNG from './../assets/tilesets/tilesheet_japan.png';
 import TilesJSON from './../assets/tilesets/map.json';
 import { Instrument } from '../models/Instrument';
 import { Drum } from '../models/Drum';
+import { BaseNote } from '../const/scales';
 
 const LOADING_BAR_HEIGHT = 25;
 const LOADING_BAR_WIDTH = 240;
@@ -110,6 +115,10 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.audio('sfx:merge', MergeSFX);
 		this.load.audio('sfx:gong', GongSFX);
 		this.load.audio('sfx:taiko', TaikoSFX);
+		this.load.audio('sfx:ascension', AscensionSFX);
+		this.load.audio('sfx:musicbox', MusicBoxSFX);
+		this.load.audio('sfx:confirm', ConfirmSFX);
+		this.load.audio('sfx:touchy', TouchySFX);
 
 		// Audio BGM 01
 		// this.load.audio('bgm01-chello-chord', Bgm01ChelloChord);
@@ -165,6 +174,10 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.registry.set('instument:merge', new Instrument({ key: 'sfx:merge', octaves: 3, audioMarkerDuration: 4 }));
 		this.registry.set('instument:gong', new Instrument({ key: 'sfx:gong', octaves: 1, audioMarkerDuration: 8 }));
 		this.registry.set('drum:taiko', new Drum({ key: 'sfx:taiko', notes: 15, audioMarkerDuration: 4 }));
+		this.registry.set('instrument:musicbox', new Instrument({ key: 'sfx:musicbox', octaves: 1, audioMarkerDuration: 4 }));
+		this.registry.set('instrument:confirm', new Instrument({ key: 'sfx:confirm', octaves: 1, audioMarkerDuration: 4 }));
+		this.registry.set('instrument:touchy', new Instrument({ key: 'sfx:touchy', octaves: 1, audioMarkerDuration: 4 }));
+		this.registry.set('instrument:ascension', new Instrument({ key: 'sfx:ascension', octaves: 1, notes: [BaseNote.C], audioMarkerDuration: 12 }));
 		console.log('---finished loading instruments');
 
 		this.anims.createFromAseprite('dog');

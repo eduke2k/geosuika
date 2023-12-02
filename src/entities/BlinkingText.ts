@@ -53,7 +53,7 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
     this.scoreText.setFontFamily('Coiny');
     this.scoreText.setFontSize(`${options?.fontSize ?? 12}px`);
     this.scoreText.setShadow(0, 2, 'black', 2, false, true);
-    this.scoreText.alpha = 0.2;
+    this.scoreText.alpha = 0;
 
     this.add(this.scoreText);
     this.setX(this.x);

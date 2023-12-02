@@ -1,3 +1,4 @@
+import GameObject from "../entities/GameObject";
 import { BGMPatternConfig, ChordProgressionMarker } from "../models/BackgroundMusic";
 import { TiledPropertiesNative, TiledPropertiesParsed } from "../types";
 
@@ -82,4 +83,22 @@ export const generateChordProgressionFromPattern = (pattern: BGMPatternConfig): 
   });
 
   return chordProgression;
+}
+
+export function getOtherGameObjectsFromCollisionPairs<T> (reference: T, pairs: Phaser.Types.Physics.Matter.MatterCollisionData[]): GameObject[] {
+  const result: GameObject[] = [];
+  pairs.forEach(pair => {
+    const other = pair.bodyA.gameObject === reference ? pair.bodyB : pair.bodyA;
+    if (other.gameObject instanceof GameObject && other.gameObject.isInteractable()) {
+      result.push(other.gameObject);
+    }
+  })
+
+  return result;
+}
+
+export function syncTranslation (target: Phaser.GameObjects.Container | Phaser.GameObjects.Image, reference: MatterJS.BodyType, angle?: number, offset?: { x: number, y: number }): void {
+  target.setX(reference.position.x + (offset?.x ?? 0));
+  target.setY(reference.position.y + (offset?.y ?? 0));
+  target.rotation = angle ?? reference.angle;
 }

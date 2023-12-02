@@ -669,6 +669,11 @@
                          "value":true
                         }, 
                         {
+                         "name":"bgmKey",
+                         "type":"string",
+                         "value":"bgm02"
+                        }, 
+                        {
                          "name":"droppableSet",
                          "type":"string",
                          "value":"japanFoodSet"
@@ -681,7 +686,7 @@
                         {
                          "name":"gameOverThreshold",
                          "type":"int",
-                         "value":150
+                         "value":535
                         }, 
                         {
                          "name":"height",
@@ -725,7 +730,7 @@
                 {
                  "height":192,
                  "id":46,
-                 "name":"",
+                 "name":"terrain",
                  "rotation":0,
                  "type":"collision",
                  "visible":true,
@@ -748,8 +753,8 @@
                  "type":"arcade",
                  "visible":true,
                  "width":0,
-                 "x":768,
-                 "y":3904
+                 "x":832,
+                 "y":4032
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -758,7 +763,7 @@
          "y":0
         }],
  "nextlayerid":11,
- "nextobjectid":50,
+ "nextobjectid":55,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

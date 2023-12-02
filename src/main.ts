@@ -4,6 +4,7 @@ import MainMenuScene from './scenes/MainMenuScene'
 import GameScene from './scenes/GameScene'
 import BootScene from './scenes/BootScene'
 import HUDScene from './scenes/HUDScene'
+import GameOverScene from './scenes/GameOverScene'
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
@@ -11,7 +12,6 @@ const config: Phaser.Types.Core.GameConfig = {
 	width: 1280,
 	height: 720,
 	antialias: true,
-	roundPixels: true,
 	fps: {
 		limit: 60,
 	},
@@ -19,20 +19,20 @@ const config: Phaser.Types.Core.GameConfig = {
 		default: 'matter',
 		matter: {
 			gravity: {
-				y: 1
+				y: 2
 			},
 			// "plugins.attractors": true,
-			debug: {
-				showSensors: true,
-				showCollisions: false,
-				showVelocity: false,
-				showBounds: true,
-				showSeparation: false,
-				showBody: true
-			}
+			// debug: {
+			// 	showSensors: true,
+			// 	showCollisions: false,
+			// 	showVelocity: true,
+			// 	showBounds: true,
+			// 	showSeparation: false,
+			// 	showBody: true,
+			// }
 		}
 	},
-	scene: [BootScene, MainMenuScene, GameScene, HUDScene]
+	scene: [BootScene, MainMenuScene, GameScene, HUDScene, GameOverScene]
 }
 
 export default new Phaser.Game(config)

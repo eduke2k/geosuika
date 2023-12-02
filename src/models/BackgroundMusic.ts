@@ -12,6 +12,13 @@ export type AudioKeyConfig = {
 }
 
 export type BackgroundMusicConfig = {
+  key: string;
+  title: string;
+  songTitle: string;
+  artist: string;
+  year?: number,
+  ytLink?: string;
+  url?: string;
   audioKeys: AudioKeyConfig[];
   chordProgression: ChordProgressionMarker[];
 }
@@ -27,7 +34,8 @@ export type BGMPatternConfig = {
 export class BackgroundMusic {
   private scene: Phaser.Scene;
   private audio: Phaser.Sound.WebAudioSound[];
-  private config: BackgroundMusicConfig;
+  public config: BackgroundMusicConfig;
+  private currentLevel = 0;
 
   public constructor(scene: Phaser.Scene, config: BackgroundMusicConfig) {
     this.scene = scene;
@@ -82,16 +90,30 @@ export class BackgroundMusic {
     return level;
   }
 
-  public setProgress (progressLevel: number) {
-    const progressRatio = this.getProgress(progressLevel);
-    this.config.audioKeys.forEach(k => {
-      const audio = this.audio.find(a => a.key === k.key);
-      if (audio && audio.volume === 0 && k.minScoreRatio <= progressRatio) {
-        this.fadeSound(audio, 1, 5000)
-      } else if (audio && audio.volume === 1 && k.minScoreRatio > progressRatio) {
-        this.fadeSound(audio, 0, 5000)
-      }
-    });
+  public setProgress (scoreRatio: number): { rankUp: boolean; level: number } {
+    const targetLevel = this.getCurrentProgressLevel(scoreRatio);
+
+    if (targetLevel > this.currentLevel) {
+      this.config.audioKeys.forEach(k => {
+        const audio = this.audio.find(a => a.key === k.key);
+        if (audio && audio.volume === 0 && k.minScoreRatio <= scoreRatio) {
+          this.fadeSound(audio, 1, 5000)
+        } else if (audio && audio.volume === 1 && k.minScoreRatio > scoreRatio) {
+          this.fadeSound(audio, 0, 5000)
+        }
+      });
+
+      this.currentLevel = targetLevel;
+      return {
+        rankUp: true,
+        level: targetLevel
+      };
+    }
+
+    return {
+      rankUp: false,
+      level: targetLevel
+    };
   }
 
   private fadeSound (audio: Phaser.Sound.WebAudioSound, volume: number, duration: number) {
@@ -111,10 +133,11 @@ export class BackgroundMusic {
       this.setPlaybackRate(1);
       this.handleLoop();
     });
+
+    this.currentLevel = 0;
   }
 
   public static preloadByBGMKey (scene: Phaser.Scene, key: string, onProgress: (value: number) => void, onComplete: () => void): void {
-    console.log('preloadByBGMKey');
     switch (key) {
       case 'bgm02': {
         scene.load.audio('bgm02-drums', '/bgm/bgm02/drums.ogg');

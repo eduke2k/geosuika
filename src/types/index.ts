@@ -12,7 +12,8 @@ export type DroppableSet = {
 export type BaseSingleDroppableConfig = {
   spriteKey: string;
   animationKey: string;
-  bodyType: 'fromVerts' | 'circle'
+  bodyType: 'fromVerts' | 'circle' |'rectangle'
+  scaleMultiplier?: number;
 }
 
 export type SingleCircleDroppableConfig = BaseSingleDroppableConfig & {
@@ -21,12 +22,21 @@ export type SingleCircleDroppableConfig = BaseSingleDroppableConfig & {
   offset: number;
 }
 
+export type SingleRectangleDroppableConfig = BaseSingleDroppableConfig & {
+  bodyType: 'rectangle';
+  width: number;
+  height: number;
+  chamfer: number;
+  offsetX: number;
+  offsetY: number
+}
+
 export type SingleCustomDroppableConfig = BaseSingleDroppableConfig & {
   bodyType: 'fromVerts';
   verts: any[];
 }
 
-export type SingleDroppableConfig = SingleCircleDroppableConfig | SingleCustomDroppableConfig
+export type SingleDroppableConfig = SingleCircleDroppableConfig | SingleRectangleDroppableConfig | SingleCustomDroppableConfig;
 
 export type TiledPropertiesNative = {
   name: string;

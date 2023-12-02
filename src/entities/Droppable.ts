@@ -1,3 +1,4 @@
+import { CATEGORY_BUCKET, CATEGORY_DROPPABLES, CATEGORY_TERRAIN } from "../const/collisions";
 import { SingleDroppableConfig } from "../types";
 import DropBucket from "./DropBucket";
 
@@ -19,13 +20,29 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   public birthTime: number;
 
   private static generateBody (droppableConfig: SingleDroppableConfig, scene: Phaser.Scene, x: number, y: number): MatterJS.BodyType {
+    const collisionFilter = {
+      group: 0,
+      category: CATEGORY_DROPPABLES,
+      mask: CATEGORY_BUCKET | CATEGORY_TERRAIN
+    }
+
     switch (droppableConfig.bodyType) {
       case 'circle': {
-        return scene.matter.add.circle(x, y, droppableConfig.radius);
+        return scene.matter.add.circle(x, y, droppableConfig.radius, { collisionFilter, label: 'circle-droppable' });
+      }
+      case 'rectangle': {
+        return scene.matter.add.rectangle(x, y, droppableConfig.width, droppableConfig.height, {
+          collisionFilter,
+          chamfer: {
+            radius: droppableConfig.chamfer
+          },
+          render: { sprite: { xOffset: droppableConfig.offsetX / droppableConfig.width, yOffset: droppableConfig.offsetY / droppableConfig.height }},
+          label: 'rect-droppable'
+        });
       }
       case 'fromVerts': {
         const verts = droppableConfig.verts;
-        return scene.matter.add.fromVertices(x, y, verts);
+        return scene.matter.add.fromVertices(x, y, verts, { collisionFilter, label: 'verts-droppable' });
       }
     }
   }
@@ -58,7 +75,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     this.setMass(params.bucket.getDroppableSet().tierScales[params.tierIndex]);
 
     // If the droppable is tethered, remove collision
-    if (this.tethered) this.setCollidesWith(0);
+    if (this.tethered) this.setCollidesWith(-1);
 
     // Setup size depending on tier (just for testing)
     // this.setScale(params.bucket.getDroppableSet().tierScales[params.tierIndex]);
@@ -75,8 +92,8 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     // console.log(this.width);
     // console.log(params.bucket.getDroppableSet().tierScales[params.tierIndex]);
     this.setDisplaySize(
-      (params.bucket.getDroppableSet().tierScales[params.tierIndex] + (absoluteOffset * 2)),
-      (params.bucket.getDroppableSet().tierScales[params.tierIndex] + (absoluteOffset * 2)) * ratio
+      (params.bucket.getDroppableSet().tierScales[params.tierIndex] + (absoluteOffset * 2)) * (config.scaleMultiplier ?? 1),
+      (params.bucket.getDroppableSet().tierScales[params.tierIndex] + (absoluteOffset * 2)) * (config.scaleMultiplier ?? 1) * ratio
     );
 
     // Add collide event to log first collision of this Droppable and init some Bucket logic (e.g. enable next Droppable)
@@ -87,7 +104,6 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   }
 
   public setDestroyable (): void {
-
     const config: Phaser.Types.Input.InputConfiguration = {
       useHandCursor: true,
       pixelPerfect: true
@@ -146,7 +162,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   public untether (): void {
     if (!this.tethered) return;
     this.tethered = false;
-    this.setCollidesWith(1);
+    this.setCollisionGroup(0);
 
     // Update birth time when untethered
     this.birthTime = this.scene.time.now;

@@ -3,8 +3,10 @@ export enum Action {
     DOWN,
     LEFT,
     RIGHT,
-    ACTION1,
-    ACTION2,
+    JUMP,
+    INTERACT,
+    CONFIRM,
+    CANCEL,
     DEBUG1,
     DEBUG2,
     DEBUG3
@@ -29,12 +31,11 @@ export const controlMapping: Record<string, number[]> = {
         Phaser.Input.Keyboard.KeyCodes.RIGHT,
         Phaser.Input.Keyboard.KeyCodes.D
     ],
-    [Action.ACTION1]: [
+    [Action.JUMP]: [
         Phaser.Input.Keyboard.KeyCodes.SPACE,
-        Phaser.Input.Keyboard.KeyCodes.E
     ],
-    [Action.ACTION2]: [
-        Phaser.Input.Keyboard.KeyCodes.F
+    [Action.INTERACT]: [
+        Phaser.Input.Keyboard.KeyCodes.E
     ],
     [Action.DEBUG1]: [
         Phaser.Input.Keyboard.KeyCodes.ONE
@@ -86,6 +87,10 @@ export class InputController {
 
     public justDown (action: Action): boolean {
         return this.controls[action].some(input => Phaser.Input.Keyboard.JustDown(input));
+    }
+
+    public justUp (action: Action): boolean {
+        return this.controls[action].some(input => Phaser.Input.Keyboard.JustUp(input));
     }
 
     public isDown (action: Action): boolean {

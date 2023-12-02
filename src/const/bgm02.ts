@@ -43,6 +43,12 @@ const bgm02Pattern: BGMPatternConfig = [
 ]
 
 export const bgm02BGMConfig: BackgroundMusicConfig = {
+  key: 'bgm02',
+  title: 'Memories of Japan',
+  songTitle: 'Achan Hime',
+  artist: 'Annoying Edu',
+  year: 2021,
+  ytLink: 'https://youtu.be/_mahqVF-4ug',
   audioKeys: [
     {
       key: 'bgm02-drums',

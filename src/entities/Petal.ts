@@ -15,11 +15,12 @@ export class Petal extends Phaser.GameObjects.Sprite {
   private windForce = new Phaser.Math.Vector2(0, 0);
   private changeForceTime = CHANGE_FORCE_TIME;
 
-  public constructor(scene: Phaser.Scene, x: number, y: number) {
+  public constructor(scene: Phaser.Scene, x: number, y: number, tint: number) {
     super(scene, x, y, 'petal');
     this.scene = scene;
 
     this.setScale(randomFloatFromInterval(0.5, 1.5));
+    this.setTint(tint);
 
     scene.add.existing(this);
     this.play({ key: 'petal:idle', repeat: -1 });

@@ -32,6 +32,12 @@ const bgm01Pattern: BGMPatternConfig = [
 ]
 
 export const bgm01BGMConfig: BackgroundMusicConfig = {
+  key: 'bgm01',
+  artist: 'Annoying Edu',
+  songTitle: 'All the Ducks',
+  title: 'Memories of Ducks',
+  year: 2023,
+  ytLink: 'https://www.youtube.com/watch?v=2np5PISWCIo',
   audioKeys: [
     {
       key: 'bgm01-chello-chord',
