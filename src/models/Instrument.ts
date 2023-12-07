@@ -32,16 +32,13 @@ export class Instrument {
       }));
     } else {
       // Special config via specific notes
-      console.log('special',config);
       this.audioMarkerConfig = config.notes.map((note, i) => ({
         name: note.toString(),
         duration: this.audioMarkerDuration,
         start: this.audioMarkerDuration * i
       }));
     }
-
     console.log(`-----registered new instrument: ${this.key}-----`);
-    console.log(this);
   }
 
   private generateChordIndices (): Record<string, number[]> {
@@ -69,6 +66,11 @@ export class Instrument {
       const markerConfig = this.audioMarkerConfig[i];
       this.playFromConfig(scene, markerConfig, pan, volume);
     });
+  }
+
+  public playIndex (scene: Phaser.Scene, index: number, pan: number, volume: number): void {
+    const markerConfig = this.audioMarkerConfig[index];
+    this.playFromConfig(scene, markerConfig, pan, volume);
   }
 
   public playRandomNote (scene: Phaser.Scene, pan: number, volume: number): void {

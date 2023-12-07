@@ -16,5 +16,14 @@ module.exports = {
 		'@typescript-eslint/ban-ts-ignore': 0,
 		'@typescript-eslint/member-delimiter-style': 0,
 		'@typescript-eslint/no-explicit-any': 0,
+		'no-unused-vars': 'off',
+		'@typescript-eslint/no-unused-vars': [
+			'error', // or "error"
+			{ 
+				'argsIgnorePattern': '^_',
+				'varsIgnorePattern': '^_',
+				'caughtErrorsIgnorePattern': '^_'
+			}
+		],
 	},
 }

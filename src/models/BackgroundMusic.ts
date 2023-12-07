@@ -46,7 +46,9 @@ export class BackgroundMusic {
 
   public setPlaybackRate (rate: number): void {
     this.audio.forEach(a => {
-      a.source.playbackRate.value = rate;
+      if (a.source && a.source.playbackRate) {
+        a.source.playbackRate.value = rate;
+      }
     });
   }
 
@@ -62,6 +64,7 @@ export class BackgroundMusic {
   }
 
   public stop (): void {
+    console.log('audio stopped');
     this.audio.forEach(a => a.stop());
   }
 
@@ -124,12 +127,24 @@ export class BackgroundMusic {
     });
   }
 
-  public reset (): void {
+  public fadeOutAndStop (duration: number): void {
     this.audio.forEach(a => {
-      this.fadeSound(a, 0, 5000);
+      this.fadeSound(a, 0, duration);
     });
 
-    this.scene.time.delayedCall(5000, () => {
+    this.scene.time.delayedCall(duration, () => {
+      this.stop();
+    });
+  }
+
+  public reset (duration = 5000): void {
+    console.log('reset called');
+    this.audio.forEach(a => {
+      this.fadeSound(a, 0, duration);
+    });
+
+    this.scene.time.delayedCall(duration, () => {
+      console.log('delayed reset call');
       this.setPlaybackRate(1);
       this.handleLoop();
     });
@@ -137,8 +152,31 @@ export class BackgroundMusic {
     this.currentLevel = 0;
   }
 
+  // public static removePreloadCallbacks (scene: Phaser.Scene): void {
+  //   scene.load.off('complete', () => {
+  //     onComplete();
+  //   });
+
+  //   scene.load.on('progress', (value: number) => {
+  //     onProgress(value);
+  //   });
+  // }
+
   public static preloadByBGMKey (scene: Phaser.Scene, key: string, onProgress: (value: number) => void, onComplete: () => void): void {
     switch (key) {
+      case 'bgm01': {
+        scene.load.audio('bgm01-drums', '/bgm/bgm01/drums.ogg');
+        scene.load.audio('bgm01-bass', '/bgm/bgm01/bass.ogg');
+        scene.load.audio('bgm01-pads', '/bgm/bgm01/pads.ogg');
+        scene.load.audio('bgm01-melody01', '/bgm/bgm01/melody01.ogg');
+        scene.load.audio('bgm01-melody02', '/bgm/bgm01/melody02.ogg');
+        scene.load.audio('bgm01-lofi01', '/bgm/bgm01/lofi01.ogg');
+        scene.load.audio('bgm01-lofi02', '/bgm/bgm01/lofi02.ogg');
+        scene.load.audio('bgm01-lofi03', '/bgm/bgm01/lofi03.ogg');
+        scene.load.audio('bgm01-lofi04', '/bgm/bgm01/lofi04.ogg');
+        scene.load.audio('bgm01-voice', '/bgm/bgm01/vocals.ogg');
+        break;
+      }
       case 'bgm02': {
         scene.load.audio('bgm02-drums', '/bgm/bgm02/drums.ogg');
         scene.load.audio('bgm02-bass', '/bgm/bgm02/bass.ogg');
@@ -153,14 +191,15 @@ export class BackgroundMusic {
       }
     }
 
-    scene.load.on('complete', () => {
+    const progressCallback = (value: number) => { onProgress(value); }
+    const completeCallback = () => {
       onComplete();
-    });
+      scene.load.off('complete', completeCallback);
+      scene.load.off('progress', progressCallback);
+    }
 
-    scene.load.on('progress', (value: number) => {
-      onProgress(value);
-    });
-
+    scene.load.on('complete', completeCallback);
+    scene.load.on('progress', progressCallback);
     scene.load.start();
   }
 }

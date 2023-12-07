@@ -11,4 +11,8 @@ export default class HUDScene extends Phaser.Scene {
 		this.debugText = this.add.text(0, 0, 'Early Preview', { font: "12px Courier", align: "left" });
     this.scene.bringToTop();
   }
+
+	public addDebugText (text: string): void {
+		this.debugText.setText(text);
+	}
 }

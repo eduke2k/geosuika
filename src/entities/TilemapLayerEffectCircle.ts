@@ -1,5 +1,5 @@
 import chroma from "chroma-js";
-import DropBucket from "./DropBucket";
+import GameScene from "../scenes/GameScene";
 
 export type EffectCircleOptions = {
   toRadius?: number;
@@ -11,8 +11,8 @@ export class TilemapLayerEffectCircle extends Phaser.GameObjects.Arc {
   private effect = 1;
   private color = chroma.random().hex();
 
-  public constructor (bucket: DropBucket, x: number, y: number, options?: EffectCircleOptions) {
-    super(bucket.scene, x, y, 0);
+  public constructor (scene: GameScene, x: number, y: number, options?: EffectCircleOptions) {
+    super(scene, x, y, 0);
 
     if (options) {
       if (options.toRadius) this.endRadius = options.toRadius;
@@ -21,11 +21,11 @@ export class TilemapLayerEffectCircle extends Phaser.GameObjects.Arc {
   
     this.scene.tweens.add({
       targets: this,
-      radius: 720,
+      radius: this.endRadius,
       ease: Phaser.Math.Easing.Cubic.Out,
       duration: 2000,
       onComplete: () => {
-        bucket.destroyEffectCircle(this);
+        scene.destroyEffectCircle(this);
       }
     });
   }

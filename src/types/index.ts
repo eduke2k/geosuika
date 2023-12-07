@@ -1,6 +1,7 @@
 export type MenuItem = {
   label: string;
   key: string;
+  url?: string;
 }
 
 export type DroppableSet = {
@@ -12,7 +13,7 @@ export type DroppableSet = {
 export type BaseSingleDroppableConfig = {
   spriteKey: string;
   animationKey: string;
-  bodyType: 'fromVerts' | 'circle' |'rectangle'
+  bodyType: 'fromVerts' | 'circle' |'rectangle' | 'polygon'
   scaleMultiplier?: number;
 }
 
@@ -31,12 +32,23 @@ export type SingleRectangleDroppableConfig = BaseSingleDroppableConfig & {
   offsetY: number
 }
 
+export type SinglePolygonDroppableConfig = BaseSingleDroppableConfig & {
+  bodyType: 'polygon';
+  radius: number;
+  sides: number;
+  chamfer: number[];
+  offset: number;
+}
+
 export type SingleCustomDroppableConfig = BaseSingleDroppableConfig & {
   bodyType: 'fromVerts';
   verts: any[];
+  offsetX?: number;
+  offsetY?: number;
+  chamfer?: number[];
 }
 
-export type SingleDroppableConfig = SingleCircleDroppableConfig | SingleRectangleDroppableConfig | SingleCustomDroppableConfig;
+export type SingleDroppableConfig = SingleCircleDroppableConfig | SinglePolygonDroppableConfig | SingleRectangleDroppableConfig | SingleCustomDroppableConfig;
 
 export type TiledPropertiesNative = {
   name: string;

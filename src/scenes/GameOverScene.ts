@@ -1,6 +1,8 @@
 import Phaser from 'phaser'
 import { MenuItem } from '../types';
 import GameScene from './GameScene';
+import { LocalStorage } from '../models/LocalStorage';
+import { BackgroundMusicConfig } from '../models/BackgroundMusic';
 const MENU_ITEM_GAP = 0;
 
 export default class GameOverScene extends Phaser.Scene {
@@ -10,11 +12,12 @@ export default class GameOverScene extends Phaser.Scene {
   public scoreText!: Phaser.GameObjects.Text;
 	public bokehEffect!: Phaser.FX.Bokeh;
   private score = 0;
-  private menuItems: MenuItem[] = [
+  private bucketKey: string | undefined = undefined;
+  private bgmConfig: BackgroundMusicConfig | undefined = undefined;
+  private baseMenuItems: MenuItem[] = [
     { label: 'Try again', key: 'retry' },
     { label: 'Leave Cabinet', key: 'disconnect' },
   ];
-
 
 	constructor() {
 		super({ key: 'gameover-scene' })
@@ -25,9 +28,13 @@ export default class GameOverScene extends Phaser.Scene {
 		this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
     this.container = this.add.container(0, 0);
 
-    this.gameOverText = this.add.text(0, 0, 'The Memory finally faded...', { font: "48px Coiny", align: "center" });
+    // this.gameOverText = this.add.text(0, 0, 'The Memory faded...', { font: "48px Coiny", align: "center" });
+     this.gameOverText = this.add.text(0, 0, 'Happy Birthday Achan!', { font: "48px Coiny", align: "center" });
     this.gameOverText.setOrigin(0.5, 0.5);
     this.container.add(this.gameOverText);
+
+    // const rect = this.add.rectangle(0, this.gameOverText.y +  this.gameOverText.height + 50, 500, 100, 0x000000).setOrigin(0.5, 0.5);
+    // this.container.add(rect);
 
     this.scoreHeadlineText = this.add.text(0, this.gameOverText.y + this.gameOverText.height + 50 , 'FINAL SCORE', { font: "18px Coiny", align: "center" });
     this.scoreHeadlineText.setOrigin(0.5, 0.5);
@@ -37,9 +44,28 @@ export default class GameOverScene extends Phaser.Scene {
     this.scoreText.setOrigin(0.5, 0.5);
     this.container.add(this.scoreText);
 
+    if (this.bucketKey) {
+      const highscore = LocalStorage.getHighscore(this.bucketKey);
+      if (this.score > highscore) {
+        LocalStorage.setHighscore(this.bucketKey, this.score);
+      }
+    }
 
     let y = this.scoreText.y + 100;
-    this.menuItems.forEach((item) => {
+
+    const menuItems = [...this.baseMenuItems];
+
+    if (this.bgmConfig) {
+      if (this.bgmConfig.ytLink) {
+        menuItems.unshift({
+          key: 'yt',
+          label: 'Full Song on Youtube',
+          url: this.bgmConfig.ytLink
+        });
+      }
+    }
+
+    menuItems.forEach((item) => {
       const text = item;
       const t = this.add.text(0, y, text.label.toUpperCase(), { font: "32px Coiny", align: "center" });
       t.setOrigin(0.5, 0.5);
@@ -57,7 +83,7 @@ export default class GameOverScene extends Phaser.Scene {
       t.on('pointerover', () => { t.setTint(0x7878ff); });
       t.on('pointerout', () => { t.clearTint(); });
       t.on('pointerdown', () => { t.setTint(0xff0000); });
-      t.on('pointerup', () => { t.clearTint(); this.handleAction(item.key) });
+      t.on('pointerup', () => { t.clearTint(); this.handleAction(item) });
       y += t.getBounds().height + MENU_ITEM_GAP;
     });
 
@@ -72,14 +98,18 @@ export default class GameOverScene extends Phaser.Scene {
 			onUpdate: (tween) => {
         this.cameras.main.alpha = tween.getValue();
 				this.bokehEffect.radius = (1 - tween.getValue()) * 2;
-			}
+			},
+      onComplete: () => {
+        this.cameras.main.postFX.remove(this.bokehEffect);
+      }
 		})
   }
 
-  private handleAction (key: string): void {
-    switch (key) {
+  private handleAction (item: MenuItem): void {
+    switch (item.key) {
       case 'retry': this.retry(); break;
       case 'disconnect': this.disconnect(); break;
+      case 'yt': if (item.url) window.open(item.url); break;
     }
   }
 
@@ -98,7 +128,7 @@ export default class GameOverScene extends Phaser.Scene {
     const gameScene = this.scene.get('game-scene') as GameScene | undefined;
     if (!gameScene) return;
 
-    gameScene.scene.resume();
+    gameScene.ignoreInputs = false;
     gameScene.setBokehEffect(0, 1000, Phaser.Math.Easing.Sine.InOut);
 
 		this.tweens.addCounter({
@@ -120,5 +150,7 @@ export default class GameOverScene extends Phaser.Scene {
 
   public init (data: Record<string, any>)  {
     this.score = data?.score ?? 0;
+    this.bgmConfig = data?.bgmConfig;
+    this.bucketKey = data?.bucketKey ?? undefined;
   }
 }

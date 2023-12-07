@@ -10,7 +10,7 @@ export default class Dog extends Character {
     y: number,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, 'dog', 'flags', options);
+    super(scene, x, y, 'dog', 'flags', '', options);
     this.movementBehaviour = new MovementBehaviour(this);
 
     // Setup physics
@@ -37,7 +37,6 @@ export default class Dog extends Character {
     this.movementBehaviour.acceleration = 4;
     this.movementBehaviour.deacceleration = 10;
 
-    this.setPlayerControlled(true);
     this.setExistingBody(rect);
     this.setDepth(Depths.PLAYER_LAYER);
     this.setScale(0.5);

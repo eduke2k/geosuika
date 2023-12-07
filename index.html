@@ -22,15 +22,45 @@
 		body {
 			background-color: #131313;
 			display: flex;
-			justify-content: center;
+			flex-direction: column;
+			justify-content: flex-start;
 			align-items: center;
 		}
 		canvas {
+			margin-top: 16px;
 			outline: none;
 			max-width: 1280px;
 			max-height: 720px;
 			width: 100%;
 			height: 100%;
+			display: block;
+		}
+
+		.controls {
+			max-width: 1280px;
+			width: 100%;
+			margin-top: 16px;
+			box-sizing: border-box;
+			background-color: #0c0c0c;
+			padding: 36px;
+			color: rgb(87, 87, 87);
+			font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+			display: flex;
+		}
+
+		.controls > div {
+			width: 400px;
+		}
+
+		.controls h2 {
+			margin: 0;
+			margin-bottom: 8px;
+		}
+
+		.controls code {
+			border-radius: 4px;
+			background-color: black;
+			padding: 2px 4px;
 		}
 	</style>
 </head>
@@ -38,6 +68,22 @@
 <body>
 	<div id="app"></div>
 	<script type="module" src="src/main.ts"></script>
+	<div class="controls">
+		<div>
+			<h2>Achan Controls</h2>
+			<div>Movement: <code>A/D</code> | <code>Left/Right</code></div>
+			<div>Look up: <code>W</code> | <code>Up</code></div>
+			<div>Look down: <code>S</code> | <code>Down</code></div>
+			<div>Jump: <code>Space</code></div>
+			<div>Interact: <code>E</code> | <code>Enter</code></div>
+		</div>
+		<div>
+			<h2>Game Controls</h2>
+			<div>Drop: <code>Mouse click</code></div>
+			<div>Destroy: <code>Mouse click</code></div>
+			<div>Rotate Drop: <code>Space</code></div>
+		</div>
+	</div>
 </body>
 
 </html>

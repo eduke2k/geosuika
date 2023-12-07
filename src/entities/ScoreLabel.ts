@@ -43,6 +43,10 @@ export default class ScoreLabel extends Phaser.GameObjects.Container {
     this.multiplierTime = 0;
   }
 
+  public getRoundedScore (): number {
+    return Math.round(this.score);
+  }
+
   public getScore (): number {
     return this.score;
   }

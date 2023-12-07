@@ -21,12 +21,23 @@ export class MovementBehaviour {
         }
     }
 
+    public handleLooking (movementVector: Phaser.Math.Vector2, onGround: boolean) {
+        if (!onGround) return;
+
+        if (movementVector.y > 0) {
+            this.character.play({ key: `${this.character.name}:lookup`, repeat: -1 }, true);
+        } else {
+            this.character.play({ key: `${this.character.name}:lookdown`, repeat: -1 }, true);
+        }
+    }
+
     public handleMovement (movementVector: Phaser.Math.Vector2, accelerationMultiplier: number, delta: number) {
         const vX = this.character.getVelocity().x ?? 0;
+        // const vY = this.character.getVelocity().y ?? 0;
         const triesToChangeDirection = movementVector.x !== 0 && vX !== 0 && Math.sign(movementVector.x) !== Math.sign(vX ?? 0);
 
         if (triesToChangeDirection) {
-             this.handleNoMovement(delta, accelerationMultiplier);
+            this.handleNoMovement(delta, accelerationMultiplier);
         } else {
             const vXDelta = movementVector.x * (this.acceleration * accelerationMultiplier) / delta;
 
@@ -44,10 +55,11 @@ export class MovementBehaviour {
     }
 
     public handleNoMovement (delta: number, accelerationMultiplier: number) {
-        const v = { ...this.character.getVelocity() };
-        const originalSign = Math.sign(v.x ?? 0);
+        const vX = this.character.getVelocity().x ?? 0;
+        // const vY = this.character.getVelocity().y ?? 0;
+        const originalSign = Math.sign(vX ?? 0);
         const vXDelta = (this.deacceleration * accelerationMultiplier * originalSign) / delta;
-        let newVX = (v.x ?? 0) - vXDelta;
+        let newVX = (vX ?? 0) - vXDelta;
 
         const newSign = Math.sign(newVX);
         if (originalSign !== newSign) newVX = 0;

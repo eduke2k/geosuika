@@ -1,6 +1,7 @@
 import { CATEGORY_OBJECT, CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN } from "../const/collisions";
 import { BackgroundMusic } from "../models/BackgroundMusic";
 import { Instrument } from "../models/Instrument";
+import { LocalStorage } from "../models/LocalStorage";
 import BlinkingText from "./BlinkingText";
 import Character from "./Character";
 import DropBucket from "./DropBucket";
@@ -11,6 +12,7 @@ export default class Arcade extends GameObject {
   private linkedBucket: DropBucket | undefined;
   private isLoading = false;
   private titleTextfield: HoverText;
+  private highscoreTextfield: HoverText;
 
   constructor(
     scene: Phaser.Scene,
@@ -72,12 +74,21 @@ export default class Arcade extends GameObject {
 
     this.play({ key: 'arcade:idle', repeat: -1 });
 
-    this.titleTextfield = new HoverText(this.scene, this.linkedBucket?.getBGMConfig()?.title ?? '???', this.x, this.y - (this.displayHeight / 2) - 32, { fontSize: 18, movementY: 16, duration: 250 });
+    this.titleTextfield = new HoverText(this.scene, this.linkedBucket?.getBGMConfig()?.title ?? '???', this.x, this.y - (this.displayHeight / 2) - 64, { fontSize: 24, movementY: 16, duration: 250 });
+    
+    const highscore = LocalStorage.getHighscore(this.linkedBucket?.name ?? '')
+    const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
+    this.highscoreTextfield = new HoverText(this.scene, highscoreText, this.x, this.titleTextfield.y + 24, { fontSize: 18, movementY: 16, duration: 250 });
   }
 
   public onCollisionStart (other: Character): void {
     super.onCollisionStart(other);
     this.titleTextfield.start();
+
+    const highscore = LocalStorage.getHighscore(this.linkedBucket?.name ?? '')
+    const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
+    this.highscoreTextfield.setText(highscoreText);
+    this.highscoreTextfield.start();
     this.setVelocityY(-5);
 
     const sfx = this.scene.registry.get('instrument:musicbox') as Instrument | undefined;
@@ -87,21 +98,29 @@ export default class Arcade extends GameObject {
   public onCollisionEnd (other: Character): void {
     super.onCollisionEnd(other);
     this.titleTextfield.end();
+    this.highscoreTextfield.end();
   }
-
 
   public trigger (): void {
     if (this.isLoading) return;
     this.titleTextfield.end();
+    this.highscoreTextfield.end();
+
+    console.log('triggering', this.name);
+    console.log(this.linkedBucket);
 
     if (!this.linkedBucket) {
       new BlinkingText(this.scene, 'Not connected', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000 });
     } else {
       this.isLoading = true;
+
+      // This freeze inputs of player character
+      this.getGameScene()?.getPlayerCharacter()?.setFreezeInputs(true);
+
       const loadingText = new BlinkingText(this.scene, '0%', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000, manualEnd: true });
       BackgroundMusic.preloadByBGMKey(
         this.scene,
-        'bgm02',
+        this.linkedBucket.bgmKey,
         (value: number) => {
           const percentage = Math.round(value * 100);
           loadingText.setText(`${percentage}%`);

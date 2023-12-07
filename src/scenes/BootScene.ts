@@ -8,6 +8,8 @@ import YatoPNG from './../assets/yato.png';
 import YatoJSON from './../assets/yato.json';
 import DogPNG from './../assets/dog.png';
 import DogJSON from './../assets/dog.json';
+import AchanPNG from './../assets/achan.png';
+import AchanJSON from './../assets/achan.json';
 import FlagsPNG from './../assets/flags.png';
 import FlagsJSON from './../assets/flags.json';
 import TetrominosPNG from './../assets/tetrominos.png';
@@ -21,6 +23,8 @@ import FlaresPNG from './../assets/flares.png';
 import FlaresJSON from './../assets/flares.json';
 import JapanFoodPNG from './../assets/japanFood.png';
 import JapanFoodJSON from './../assets/japanFood.json';
+import DuckSetPNG from './../assets/duckSet.png';
+import DuckSetJSON from './../assets/duckSet.json';
 import DangerLinePNG from './../assets/dangerLine.png';
 import DangerLineJSON from './../assets/dangerLine.json';
 import PetalPNG from './../assets/petal.png';
@@ -41,33 +45,20 @@ import AscensionSFX from './../assets/sfx/ascension.ogg';
 import MusicBoxSFX from './../assets/sfx/musicbox.ogg';
 import ConfirmSFX from './../assets/sfx/confirm.ogg';
 import TouchySFX from './../assets/sfx/touchy.ogg';
-
-// Audio BGM 01 All The Ducks
-// import Bgm01ChelloChord from './../assets/bgm/bgm01/chello-chord.ogg';
-// import Bgm01BackingVoice from './../assets/bgm/bgm01/backing-voice.ogg';
-// import Bgm01Bass from './../assets/bgm/bgm01/bass.ogg';
-// import Bgm01ChelloMelody from './../assets/bgm/bgm01/chello-melody.ogg';
-// import Bgm01KamoVoice from './../assets/bgm/bgm01/kamo-voice.ogg';
-// import Bgm01MainVoice from './../assets/bgm/bgm01/main-voice.ogg';
-// import Bgm01Piano from './../assets/bgm/bgm01/piano.ogg';
-
-// Audio BGM 02 Achan
-// import Bgm02Drums from './../assets/bgm/bgm02/drums.ogg';
-// import Bgm02Bass from './../assets/bgm/bgm02/bass.ogg';
-// import Bgm02Pads from './../assets/bgm/bgm02/pads.ogg';
-// import Bgm02Melody from './../assets/bgm/bgm02/melody.ogg';
-// import Bgm02Lofi01 from './../assets/bgm/bgm02/lofi01.ogg';
-// import Bgm02Lofi02 from './../assets/bgm/bgm02/lofi02.ogg';
-// import Bgm02Lofi03 from './../assets/bgm/bgm02/lofi03.ogg';
-// import Bgm02Lofi04 from './../assets/bgm/bgm02/lofi04.ogg';
-// import Bgm02Voice from './../assets/bgm/bgm02/voice.ogg';
+import BucketSFX from './../assets/sfx/bucket.ogg';
+import AchanSFX from './../assets/sfx/achan.ogg';
+import StepsSFX from './../assets/sfx/steps.ogg';
 
 // Tiles
-import TilesPNG from './../assets/tilesets/tilesheet_japan.png';
+import JapanTilesPNG from './../assets/tilesets/tilesheet_japan.png';
+import MainTilesPNG from './../assets/tilesets/tilesheet_main.png';
 import TilesJSON from './../assets/tilesets/map.json';
 import { Instrument } from '../models/Instrument';
-import { Drum } from '../models/Drum';
+import { SFX } from '../models/SFX';
 import { BaseNote } from '../const/scales';
+import { achanSFXConfig } from '../const/achanSFX';
+import { bucketSFXConfig } from '../const/bucketSFX';
+import { stepsSFXConfig } from '../const/stepsSFX';
 
 const LOADING_BAR_HEIGHT = 25;
 const LOADING_BAR_WIDTH = 240;
@@ -95,8 +86,10 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.aseprite('arcade', ArcadePNG, ArcadeJSON);
 		this.load.aseprite('yato', YatoPNG, YatoJSON);
 		this.load.aseprite('dog', DogPNG, DogJSON);
+		this.load.aseprite('achan', AchanPNG, AchanJSON);
 		this.load.aseprite('flags', FlagsPNG, FlagsJSON);
 		this.load.aseprite('japanFood', JapanFoodPNG, JapanFoodJSON);
+		this.load.aseprite('ducks', DuckSetPNG, DuckSetJSON);
 		this.load.aseprite('tetrominos', TetrominosPNG, TetrominosJSON);
 		this.load.aseprite('progressArrow', ProgressArrowPNG, ProgressArrowJSON);
 		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
@@ -119,6 +112,9 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.audio('sfx:musicbox', MusicBoxSFX);
 		this.load.audio('sfx:confirm', ConfirmSFX);
 		this.load.audio('sfx:touchy', TouchySFX);
+		this.load.audio('sfx:bucket', BucketSFX);
+		this.load.audio('sfx:achan', AchanSFX);
+		this.load.audio('sfx:steps', StepsSFX);
 
 		// Audio BGM 01
 		// this.load.audio('bgm01-chello-chord', Bgm01ChelloChord);
@@ -133,7 +129,8 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.json('shapes', TetrominosShapesJSON);
 
 		// load the PNG file
-		this.load.image('tilesheet_japan', TilesPNG)
+		this.load.image('tilesheet_japan', JapanTilesPNG);
+		this.load.image('tilesheet_main', MainTilesPNG);
 
 		// load the JSON file
 		this.load.tilemapTiledJSON('tilemap', TilesJSON)
@@ -173,7 +170,10 @@ export default class MainMenuScene extends Phaser.Scene {
 		// this.registry.set('instument:bass', new Instrument({ key: 'sfx:bass', octaves: 2, audioMarkerDuration: 4 }));
 		this.registry.set('instument:merge', new Instrument({ key: 'sfx:merge', octaves: 3, audioMarkerDuration: 4 }));
 		this.registry.set('instument:gong', new Instrument({ key: 'sfx:gong', octaves: 1, audioMarkerDuration: 8 }));
-		this.registry.set('drum:taiko', new Drum({ key: 'sfx:taiko', notes: 15, audioMarkerDuration: 4 }));
+		this.registry.set('drum:taiko', new SFX('sfx:taiko', { notes: 15, audioMarkerDuration: 4 }));
+		this.registry.set('sfx:bucket', new SFX('sfx:bucket', undefined, bucketSFXConfig));
+		this.registry.set('sfx:achan', new SFX('sfx:achan', undefined, achanSFXConfig));
+		this.registry.set('sfx:steps', new SFX('sfx:steps', undefined, stepsSFXConfig));
 		this.registry.set('instrument:musicbox', new Instrument({ key: 'sfx:musicbox', octaves: 1, audioMarkerDuration: 4 }));
 		this.registry.set('instrument:confirm', new Instrument({ key: 'sfx:confirm', octaves: 1, audioMarkerDuration: 4 }));
 		this.registry.set('instrument:touchy', new Instrument({ key: 'sfx:touchy', octaves: 1, audioMarkerDuration: 4 }));
@@ -183,13 +183,14 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.anims.createFromAseprite('dog');
 		this.anims.createFromAseprite('flags');
 		this.anims.createFromAseprite('japanFood');
+		this.anims.createFromAseprite('ducks');
 		this.anims.createFromAseprite('tetrominos');
 		this.anims.createFromAseprite('progressArrow');
 		this.anims.createFromAseprite('scoreLabel');
 		this.anims.createFromAseprite('flares');
 		this.anims.createFromAseprite('dangerLine');
 		this.anims.createFromAseprite('petal');
-		console.log('--- Finished Creating Animations from Spritesheets ---', this.anims);
+		console.log('--- Finished Creating Animations from Spritesheets ---');
 
     this.scene.start('main-menu');
   }

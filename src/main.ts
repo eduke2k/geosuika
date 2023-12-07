@@ -21,15 +21,16 @@ const config: Phaser.Types.Core.GameConfig = {
 			gravity: {
 				y: 2
 			},
-			// "plugins.attractors": true,
-			// debug: {
-			// 	showSensors: true,
-			// 	showCollisions: false,
-			// 	showVelocity: true,
-			// 	showBounds: true,
-			// 	showSeparation: false,
-			// 	showBody: true,
-			// }
+			positionIterations: 8,
+			velocityIterations: 8,
+			debug: {
+				showSensors: true,
+				showCollisions: false,
+				showVelocity: true,
+				showBounds: true,
+				showSeparation: false,
+				showBody: true,
+			}
 		}
 	},
 	scene: [BootScene, MainMenuScene, GameScene, HUDScene, GameOverScene]
