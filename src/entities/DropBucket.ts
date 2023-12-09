@@ -120,7 +120,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.lastTierDestroy = options.lastTierDestroy ?? false;
     this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
     this.mergeDisabled = options.disableMerge ?? false;
-    console.log(options.targetScore);
     this.targetScore = options.targetScore;
     this.elevatorDistance = options.elevatorDistance ?? 1000;
     this.visible = false;
@@ -329,7 +328,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   }
 
   public async mountBucket (): Promise<void> {
-    console.log('mounting bucket', this.name);
     const bgmConfig = this.getBGMConfig();
 
     if (this.bgmDataLoading || this.bucketMounted || !bgmConfig) return;

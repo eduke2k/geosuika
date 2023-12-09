@@ -64,7 +64,6 @@ export class BackgroundMusic {
   }
 
   public stop (): void {
-    console.log('audio stopped');
     this.audio.forEach(a => a.stop());
   }
 
@@ -138,13 +137,11 @@ export class BackgroundMusic {
   }
 
   public reset (duration = 5000): void {
-    console.log('reset called');
     this.audio.forEach(a => {
       this.fadeSound(a, 0, duration);
     });
 
     this.scene.time.delayedCall(duration, () => {
-      console.log('delayed reset call');
       this.setPlaybackRate(1);
       this.handleLoop();
     });

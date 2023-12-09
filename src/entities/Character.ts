@@ -81,7 +81,10 @@ export default class Character extends GameObject {
     this.scene.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
       // bodyA will always be terrain becuase that's added first in the GameScene
       // const collisions = event.pairs.filter(pair => pair.bodyA.gameObject === this || pair.bodyB.gameObject === this);
-      const terrainCollisions = event.pairs.filter(pair => pair.bodyA.label === 'terrain' && pair.bodyB.gameObject === this);
+      const terrainCollisions = event.pairs.filter(pair => 
+        (['terrain', 'terrainObject'].includes(pair.bodyA.label) && pair.bodyB.gameObject === this) ||
+        (['terrain', 'terrainObject'].includes(pair.bodyB.label) && pair.bodyA.gameObject === this)
+      );
       this.groundCheck(terrainCollisions);
 
       // Check if player is within reach of interactbale game objects
@@ -213,6 +216,7 @@ export default class Character extends GameObject {
     const groundNormal = new Phaser.Math.Vector2(0, 0);
     collisions.forEach(pair => {
       const normal = (pair as any).collision.normal;
+      // console.log('normal', normal);
       if (normal.y > 0.5) {
         onGround = true;
         this.onGroundThresholdTime = ON_GROUND_THRESHOLD;

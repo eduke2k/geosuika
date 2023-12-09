@@ -31,6 +31,8 @@ import PetalPNG from './../assets/petal.png';
 import PetalJSON from './../assets/petal.json';
 import BarPNG from './../assets/bar.png';
 import BarJSON from './../assets/bar.json';
+import RecyclingCanPNG from './../assets/recycling.png';
+import RecyclingCanJSON from './../assets/recycling.json';
 
 // Images
 import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
@@ -96,6 +98,8 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.aseprite('flares', FlaresPNG, FlaresJSON);
 		this.load.aseprite('dangerLine', DangerLinePNG, DangerLineJSON);
 		this.load.aseprite('petal', PetalPNG, PetalJSON);
+		this.load.aseprite('recyclingCan', RecyclingCanPNG, RecyclingCanJSON);
+		
 		this.load.atlas('bar', BarPNG, BarJSON);
 
 		// Images

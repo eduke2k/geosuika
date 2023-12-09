@@ -1,6 +1,6 @@
 import { MovementBehaviour } from "../behaviour/MovementBehaviour";
 import { StepSoundBehaviour } from "../behaviour/StepSoundBehaviour";
-import { CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN } from "../const/collisions";
+import { CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN, CATEGORY_TERRAIN_OBJECT } from "../const/collisions";
 import { Depths } from "../const/depths";
 import { SFX } from "../models/SFX";
 import Character from "./Character";
@@ -26,19 +26,19 @@ export default class Achan extends Character {
       friction: 0,
       frictionAir: 0,
       frictionStatic: 0,
-      chamfer: { radius: 7 },
+      chamfer: { radius: 3 },
       render: { sprite: { xOffset: 0, yOffset: 0.08 }},
       collisionFilter: {
         group: 0,
         category: CATEGORY_PLAYER,
-        mask: CATEGORY_TERRAIN | CATEGORY_SENSOR
+        mask: CATEGORY_TERRAIN | CATEGORY_SENSOR | CATEGORY_TERRAIN_OBJECT
       }
     });
 
     rect.label = 'achan';
 
     this.movementBehaviour.acceleration = 4;
-    this.airControl = 0.3;
+    this.airControl = 0.5;
     this.movementBehaviour.deacceleration = 10;
     this.movementBehaviour.maxSpeed = 6;
 

@@ -14,6 +14,7 @@ import Character from '../entities/Character';
 import Achan from '../entities/Achan';
 import { EffectCircleOptions, TilemapLayerEffectCircle } from '../entities/TilemapLayerEffectCircle';
 import { SFX } from '../models/SFX';
+import RecyclingCan from '../entities/RecyclingCan';
 
 // import Dog from '../entities/Dog';
 
@@ -360,53 +361,70 @@ export default class GameScene extends Phaser.Scene {
 
 		// Spawn entities of map
 		const mapObjects = map.objects.find(o => o.name === 'Objects')?.objects;
+
+		const potentialStaticObjects: Phaser.Types.Tilemaps.TiledObject[] = [];
+		const staticObjectsQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+		const charactersQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+		const bucketQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+		const arcadesQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+
 		if (mapObjects) {
 			mapObjects.forEach(o => {
-				if (['bucket', 'arcade', 'character'].includes(o.type)) {
-					const properties = parseTiledProperties(o.properties);
+				if (['bucket', 'arcade', 'character', 'staticObject', 'potentialStaticObject'].includes(o.type)) {
 					switch (o.type) {
-						case 'character': {
-							if (o.name === 'dog') {
-								const dog = new Dog(this, o.x ?? 0, o.y ?? 0);
-								this.characters.push(dog);
-							} else if (o.name === 'achan') {
-								const achan = new Achan(this, o.x ?? 0, o.y ?? 0);
-								this.characters.push(achan);
-							}
-							break;
-						}
-						case 'bucket': {
-							this.buckets.push(new DropBucket({
-								scene: this,
-								active: Boolean(properties.active),
-								x: o.x ?? 0,
-								y: o.y ?? 0,
-								name: o.name,
-								width: properties.width ? parseInt(properties.width.toString()) : 470,
-								height: properties.height ? parseInt(properties.height.toString()) : 535,
-								thickness: properties.thickness ? parseInt(properties.thickness.toString()) : 64,
-								bgmKey: properties.bgmKey ? properties.bgmKey.toString() : 'bgm01',
-								gameOverThreshold: properties.gameOverThreshold ? parseInt(properties.gameOverThreshold.toString()) : 535,
-								maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
-								disableMerge: Boolean(properties.disableMerge),
-								droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
-								image: properties.image ? properties.image as string : '',
-								targetScore: properties.targetScore ? parseInt(properties.targetScore.toString()) : 2000,
-								elevatorDistance: properties.elevatorDistance ? parseInt(properties.elevatorDistance.toString()) : undefined
-							}));
-							break;
-						}
-						case 'arcade': {
-							console.log(this.buckets.length);
-							const bucket = this.buckets.find(b => b.name === properties.bucket);
-							console.log(`found for ${properties.bucket}`, bucket);
-							this.arcades.push(new Arcade(this, o.x ?? 0, o.y ?? 0, o.name, undefined, bucket));
-							break;
-						}
+						case 'character': {	charactersQueue.push(o); break;	}
+						case 'potentialStaticObject': { potentialStaticObjects.push(o); break; }
+						case 'staticObject': { staticObjectsQueue.push(o); break; }
+						case 'bucket': { bucketQueue.push(o); break; }
+						case 'arcade': { arcadesQueue.push(o); }
 					}
 				}
 			});
 		}
+
+		staticObjectsQueue.forEach(o => {
+			const properties = parseTiledProperties(o.properties);
+			if (o.name === 'recyclingCan') { new RecyclingCan(this, o.x ?? 0, o.y ?? 0, properties.frame ? properties.frame.toString() : 'blue');}
+		});
+
+		bucketQueue.forEach(o => {
+			const properties = parseTiledProperties(o.properties);
+			this.buckets.push(
+				new DropBucket({
+				scene: this,
+				active: Boolean(properties.active),
+				x: o.x ?? 0,
+				y: o.y ?? 0,
+				name: o.name,
+				width: properties.width ? parseInt(properties.width.toString()) : 470,
+				height: properties.height ? parseInt(properties.height.toString()) : 535,
+				thickness: properties.thickness ? parseInt(properties.thickness.toString()) : 64,
+				bgmKey: properties.bgmKey ? properties.bgmKey.toString() : 'bgm01',
+				gameOverThreshold: properties.gameOverThreshold ? parseInt(properties.gameOverThreshold.toString()) : 535,
+				maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
+				disableMerge: Boolean(properties.disableMerge),
+				droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
+				image: properties.image ? properties.image as string : '',
+				targetScore: properties.targetScore ? parseInt(properties.targetScore.toString()) : 2000,
+				elevatorDistance: properties.elevatorDistance ? parseInt(properties.elevatorDistance.toString()) : undefined
+			}));
+		});
+
+		arcadesQueue.forEach(o => {
+			const properties = parseTiledProperties(o.properties);
+			const bucket = this.buckets.find(b => b.name === properties.bucket);
+			this.arcades.push(new Arcade(this, o.x ?? 0, o.y ?? 0, o.name, undefined, bucket));
+		});
+
+		charactersQueue.forEach(o => {
+			if (o.name === 'dog') {
+				const dog = new Dog(this, o.x ?? 0, o.y ?? 0);
+				this.characters.push(dog);
+			} else if (o.name === 'achan') {
+				const achan = new Achan(this, o.x ?? 0, o.y ?? 0);
+				this.characters.push(achan);
+			}
+		});
 
 		const playerCharacter = this.getPlayerCharacter();
 		if (playerCharacter) {

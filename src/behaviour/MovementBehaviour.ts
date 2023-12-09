@@ -33,25 +33,21 @@ export class MovementBehaviour {
 
     public handleMovement (movementVector: Phaser.Math.Vector2, accelerationMultiplier: number, delta: number) {
         const vX = this.character.getVelocity().x ?? 0;
-        // const vY = this.character.getVelocity().y ?? 0;
         const triesToChangeDirection = movementVector.x !== 0 && vX !== 0 && Math.sign(movementVector.x) !== Math.sign(vX ?? 0);
+        const directionChangeMultiplier = triesToChangeDirection ? 2 : 1;
 
-        if (triesToChangeDirection) {
-            this.handleNoMovement(delta, accelerationMultiplier);
-        } else {
-            const vXDelta = movementVector.x * (this.acceleration * accelerationMultiplier) / delta;
+        const vXDelta = movementVector.x * (this.acceleration * accelerationMultiplier * directionChangeMultiplier) / delta;
 
-            let newVX = (vX ?? 0) + vXDelta;
-    
-            if (Math.abs(newVX) > this.maxSpeed) {
-                const tooFast = Math.abs(newVX) - this.maxSpeed;
-                const speedReduction = Math.max((tooFast / delta), tooFast);
-                const sign = Math.sign(newVX);
-                newVX = newVX - (speedReduction * sign);
-            }
-    
-            this.character.setVelocityX(newVX);
+        let newVX = (vX ?? 0) + vXDelta;
+
+        if (Math.abs(newVX) > this.maxSpeed) {
+            const tooFast = Math.abs(newVX) - this.maxSpeed;
+            const speedReduction = Math.max((tooFast / delta), tooFast);
+            const sign = Math.sign(newVX);
+            newVX = newVX - (speedReduction * sign);
         }
+
+        this.character.setVelocityX(newVX);
     }
 
     public handleNoMovement (delta: number, accelerationMultiplier: number) {

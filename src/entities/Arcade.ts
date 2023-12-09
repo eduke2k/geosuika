@@ -106,9 +106,6 @@ export default class Arcade extends GameObject {
     this.titleTextfield.end();
     this.highscoreTextfield.end();
 
-    console.log('triggering', this.name);
-    console.log(this.linkedBucket);
-
     if (!this.linkedBucket) {
       new BlinkingText(this.scene, 'Not connected', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000 });
     } else {
