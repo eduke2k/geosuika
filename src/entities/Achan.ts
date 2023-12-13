@@ -6,6 +6,8 @@ import { SFX } from "../models/SFX";
 import Character from "./Character";
 
 export default class Achan extends Character {
+  private shadow: Phaser.FX.Shadow;
+
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -50,7 +52,7 @@ export default class Achan extends Character {
     this.setFixedRotation();
     this.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
-    this.postFX.addShadow(10, 10, 1, 1, undefined, 1, 1);
+    this.shadow = this.postFX.addShadow(0.5, 0.5, 0.05, 0.8, 0x000000, 4);
 		this.anims.createFromAseprite('achan');
     // this.play({ key: 'achan:idle', repeat: -1 });
   }

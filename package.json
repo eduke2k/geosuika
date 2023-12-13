@@ -23,7 +23,9 @@
 	"dependencies": {
 		"chroma-js": "^2.4.2",
 		"fontfaceobserver": "^2.3.0",
+		"glsl-chromatic-aberration": "^1.0.1",
 		"md5": "^2.3.0",
-		"phaser": "^3.60.0"
+		"phaser": "^3.60.0",
+		"phaser3-rex-plugins": "^1.60.8"
 	}
 }

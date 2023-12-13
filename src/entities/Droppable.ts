@@ -1,4 +1,4 @@
-import { CATEGORY_BUCKET, CATEGORY_DROPPABLES, CATEGORY_TERRAIN } from "../const/collisions";
+import { CATEGORY_BUCKET, CATEGORY_DROPPABLES } from "../const/collisions";
 import { SingleDroppableConfig } from "../types";
 import DropBucket from "./DropBucket";
 
@@ -18,13 +18,13 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   private parentBucket: DropBucket;
   public birthTime: number;
   public hasCollided = false;
-  public shadow: any;
+  public shadow: Phaser.FX.Shadow;
 
   private static generateBody (droppableConfig: SingleDroppableConfig, scene: Phaser.Scene, x: number, y: number): MatterJS.BodyType {
     const collisionFilter = {
       group: 0,
       category: CATEGORY_DROPPABLES,
-      mask: CATEGORY_BUCKET | CATEGORY_TERRAIN
+      mask: CATEGORY_BUCKET
     }
 
     switch (droppableConfig.bodyType) {
@@ -67,7 +67,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
 
     // Allow full collisions if not tethered
     if (!options.tethered) {
-      body.collisionFilter.mask = CATEGORY_BUCKET | CATEGORY_TERRAIN | CATEGORY_DROPPABLES;
+      body.collisionFilter.mask = CATEGORY_BUCKET | CATEGORY_DROPPABLES;
     }
 
     // Setup sprite (as Droppable)
@@ -175,7 +175,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     this.tethered = false;
 
     // Enable full collisions
-    this.getBody().collisionFilter.mask = CATEGORY_BUCKET | CATEGORY_TERRAIN | CATEGORY_DROPPABLES;
+    this.getBody().collisionFilter.mask = CATEGORY_BUCKET | CATEGORY_DROPPABLES;
     
     
     // Update birth time when untethered

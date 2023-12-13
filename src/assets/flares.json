@@ -19,7 +19,7 @@
    },
    {
     "filename": "2",
-    "frame": { "x": 123, "y": 64, "w": 29, "h": 53 },
+    "frame": { "x": 184, "y": 109, "w": 29, "h": 53 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 17, "y": 7, "w": 27, "h": 51 },
@@ -28,7 +28,7 @@
    },
    {
     "filename": "3",
-    "frame": { "x": 153, "y": 64, "w": 29, "h": 53 },
+    "frame": { "x": 123, "y": 124, "w": 29, "h": 53 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 17, "y": 7, "w": 27, "h": 51 },
@@ -79,25 +79,35 @@
     "spriteSourceSize": { "x": 3, "y": 2, "w": 58, "h": 60 },
     "sourceSize": { "w": 64, "h": 64 },
     "duration": 100
+   },
+   {
+    "filename": "9",
+    "frame": { "x": 123, "y": 64, "w": 60, "h": 59 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 2, "y": 4, "w": 58, "h": 57 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
    }
  ],
  "meta": {
   "app": "https://www.aseprite.org/",
-  "version": "1.2.40-x64",
+  "version": "1.3.2-x64",
   "image": "flares.png",
   "format": "RGBA8888",
-  "size": { "w": 213, "h": 126 },
+  "size": { "w": 214, "h": 178 },
   "scale": "1",
   "frameTags": [
-   { "name": "note_pink", "from": 0, "to": 0, "direction": "forward" },
-   { "name": "note_cyan", "from": 1, "to": 1, "direction": "forward" },
-   { "name": "note_green", "from": 2, "to": 2, "direction": "forward" },
-   { "name": "note_red", "from": 3, "to": 3, "direction": "forward" },
-   { "name": "petal_1", "from": 4, "to": 4, "direction": "forward" },
-   { "name": "petal_2", "from": 5, "to": 5, "direction": "forward" },
-   { "name": "petal_3", "from": 6, "to": 6, "direction": "forward" },
-   { "name": "petal_4", "from": 7, "to": 7, "direction": "forward" },
-   { "name": "petal_5", "from": 8, "to": 8, "direction": "forward" }
+   { "name": "note_pink", "from": 0, "to": 0, "direction": "forward", "color": "#000000ff" },
+   { "name": "note_cyan", "from": 1, "to": 1, "direction": "forward", "color": "#000000ff" },
+   { "name": "note_green", "from": 2, "to": 2, "direction": "forward", "color": "#000000ff" },
+   { "name": "note_red", "from": 3, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "petal_1", "from": 4, "to": 4, "direction": "forward", "color": "#000000ff" },
+   { "name": "petal_2", "from": 5, "to": 5, "direction": "forward", "color": "#000000ff" },
+   { "name": "petal_3", "from": 6, "to": 6, "direction": "forward", "color": "#000000ff" },
+   { "name": "petal_4", "from": 7, "to": 7, "direction": "forward", "color": "#000000ff" },
+   { "name": "petal_5", "from": 8, "to": 8, "direction": "forward", "color": "#000000ff" },
+   { "name": "spark_red", "from": 9, "to": 9, "direction": "forward", "color": "#000000ff" }
   ]
  }
 }

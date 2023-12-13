@@ -1,16 +1,17 @@
 import { MovementBehaviour } from "../behaviour/MovementBehaviour";
 import { StepSoundBehaviour } from "../behaviour/StepSoundBehaviour";
-import { getOtherGameObjectsFromCollisionPairs } from "../functions/helper";
+import { getOtherInteractableGameObjectsFromCollisionPairs } from "../functions/helper";
 import { Action } from "../models/Input";
 import { SFX } from "../models/SFX";
 import GameScene from "../scenes/GameScene";
 import HUDScene from "../scenes/HUDScene";
 import GameObject from "./GameObject";
+import InteractableGameObject from "./InteractableGameObject";
 
 const JUMP_PRESS_TIME = 150;
 const ON_GROUND_THRESHOLD = 150;
 
-export type CharacterStates = 'idle' | 'run' | 'stop' | 'turn' | 'lookup' | 'lookdown' | 'lookup' | 'jump' | 'fall'
+export type CharacterStates = 'idle' | 'run' | 'stop' | 'turn' | 'lookup' | 'lookdown' | 'lookup' | 'jump' | 'fall' | 'floating'
 
 export default class Character extends GameObject {
   protected movementBehaviour?: MovementBehaviour;
@@ -18,17 +19,18 @@ export default class Character extends GameObject {
   protected playerControlled = false;
   protected freezeInputs = false;
   public lastState: CharacterStates = 'idle';
-  public currentState: CharacterStates = 'idle';
+  public state: CharacterStates = 'idle';
   public onGround = false;
   public wasOnGround = false;
   public justLanded = false;
   public justJumped = false;
   public justSlided = false;
+  public floatingY: number | undefined = undefined;
   public maxJumpStrength = 15;
   public airControl = 0.1;
   public longPressJumpTime = 0;
   public onGroundThresholdTime = 0;
-  public objectsInReach: GameObject[] = [];
+  public interactableObjectsInReach: InteractableGameObject[] = [];
   public sfxBank: SFX | undefined;
   
   constructor(
@@ -50,37 +52,42 @@ export default class Character extends GameObject {
     this.scene.matter.world.on('beforeupdate', () => {
       this.wasOnGround = this.onGround;
       this.onGround = false;
+      this.justLanded = false;
+      this.justSlided = false;
+      this.justJumped = false;
     });
 
     this.scene.matter.world.on('collisionstart', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
+      // console.log('collisionstart', event);
       // Check if player is within reach of interactbale game objects
       if (this.playerControlled) {
-        const gameObjects = getOtherGameObjectsFromCollisionPairs<this>(this, event.pairs);
+        const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs).filter(o => o.active);
         if (gameObjects.length > 0) {
-          this.objectsInReach.push(...gameObjects)
+          this.interactableObjectsInReach.push(...gameObjects)
           gameObjects[0].onCollisionStart(this);
         }
       }
     });
 
     this.scene.matter.world.on('collisionend', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
+      // console.log('collisionend', event);
       // Check if player is within reach of interactbale game objects
       if (this.playerControlled) {
-        const gameObjects = getOtherGameObjectsFromCollisionPairs<this>(this, event.pairs);
+        const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs).filter(o => o.active);
         if (gameObjects.length > 0) {
+          console.log('collisionend', gameObjects[0]);
           gameObjects[0].onCollisionEnd(this);
 
           gameObjects.forEach(o => {
-            const index = this.objectsInReach.findIndex(r => r === o)
-            this.objectsInReach.splice(index, 1);
+            const index = this.interactableObjectsInReach.findIndex(r => r === o)
+            this.interactableObjectsInReach.splice(index, 1);
           });
         }
       }
     });
 
     this.scene.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
-      // bodyA will always be terrain becuase that's added first in the GameScene
-      // const collisions = event.pairs.filter(pair => pair.bodyA.gameObject === this || pair.bodyB.gameObject === this);
+      // console.log('collisionactive', event);
       const terrainCollisions = event.pairs.filter(pair => 
         (['terrain', 'terrainObject'].includes(pair.bodyA.label) && pair.bodyB.gameObject === this) ||
         (['terrain', 'terrainObject'].includes(pair.bodyB.label) && pair.bodyA.gameObject === this)
@@ -89,7 +96,7 @@ export default class Character extends GameObject {
 
       // Check if player is within reach of interactbale game objects
       if (this.playerControlled) {
-        const gameObjects = getOtherGameObjectsFromCollisionPairs<this>(this, event.pairs);
+        const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs);
         if (gameObjects.length > 0) {
           gameObjects[0].setHighlighted(true);
         }
@@ -120,9 +127,17 @@ export default class Character extends GameObject {
     return this.onGround ? 1 : this.airControl;
   }
 
+  public setFloating (floating: boolean): void {
+    if (floating) {
+      this.setStatic(true);
+    } else {
+      this.setStatic(false);
+    }
+  }
+
   protected handleInputs (delta: number): void {
     if (!this.movementBehaviour) return;
-    const inputsDeactivated = (!this.playerControlled || this.freezeInputs);
+    const inputsDeactivated = (!this.playerControlled || this.freezeInputs || this.getGameScene()?.getState() !== 'play');
 
     // Get movement vector depending on this characters control settings
     const movementVector = (!inputsDeactivated) ? (this.getGameScene()?.inputController?.getMovementVector() ?? new Phaser.Math.Vector2(0, 0)) : new Phaser.Math.Vector2(0, 0);
@@ -152,14 +167,14 @@ export default class Character extends GameObject {
       }
 
       // Interacting
-      if (this.onGround && this.objectsInReach[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
-        const targetObject = this.objectsInReach[0];
+      if (this.onGround && this.interactableObjectsInReach[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
+        const targetObject = this.interactableObjectsInReach[0];
         targetObject.trigger();
       }
 
-      // Singing
-      if (this.onGround && this.getGameScene()?.inputController?.justDown(Action.SING)) {
-        this.getGameScene()?.addEffectCircle(this.x, this.y, { effect: 2, toRadius: 300 });
+      // Map layer changing mode
+      if (this.getGameScene()?.inputController?.justDown(Action.LAYER_CHANGE)) {
+        this.getGameScene()?.startLayerChange();
       }
     }
 
@@ -168,28 +183,28 @@ export default class Character extends GameObject {
     const vx = velocity.x ?? 0;
     const vy = velocity.y ?? 0;
 
-    this.lastState = this.currentState;
+    this.lastState = this.state;
 
     if (this.onGround) {
       if (movementVector.x !== 0) {
         if (Math.sign(movementVector.x) === Math.sign(vx)) {
-          this.currentState = 'run';
+          this.state = 'run';
         } else {
-          this.currentState = 'turn';
+          this.state = 'turn';
         }
       } else {
         if (Math.abs(vx) > 2) {
-          this.currentState = 'stop';
+          this.state = 'stop';
         } else {
           if (movementVector.y !== 0) {
-            this.currentState = movementVector.y === 1 ? 'lookdown' : 'lookup';
+            this.state = movementVector.y === 1 ? 'lookdown' : 'lookup';
           } else {
-            this.currentState = 'idle';
+            this.state = 'idle';
           }
         }
       }
     } else {
-      this.currentState = vy < 0 ? 'jump' : 'fall';
+      this.state = vy < 0 ? 'jump' : 'fall';
     }
 
     if (this.longPressJumpTime < JUMP_PRESS_TIME && this.getGameScene()?.inputController?.isDown(Action.JUMP)) {
@@ -215,8 +230,12 @@ export default class Character extends GameObject {
     let onGround = false;
     const groundNormal = new Phaser.Math.Vector2(0, 0);
     collisions.forEach(pair => {
-      const normal = (pair as any).collision.normal;
-      // console.log('normal', normal);
+      // const terrainBody = pair.bodyA.label === 'terrain' ? pair.bodyA : pair.bodyB;
+      // const characterBody = pair.bodyA.label !== 'terrain' ? pair.bodyA : pair.bodyB;
+      const inverseNormals = pair.bodyA.label !== 'terrain';
+
+      const normal = new Phaser.Math.Vector2((pair as any).collision.normal);
+      if (inverseNormals) normal.multiply({ x: -1, y: -1 });
       if (normal.y > 0.5) {
         onGround = true;
         this.onGroundThresholdTime = ON_GROUND_THRESHOLD;
@@ -235,7 +254,7 @@ export default class Character extends GameObject {
     const absoluteVelocity = new Phaser.Math.Vector2(velocity ?? {x: 0, y: 0}).length();
 
     // per update cycle
-    switch (this.currentState) {
+    switch (this.state) {
       case 'run': {
         this.stepSoundBehaviour?.update(this.anims.currentFrame?.index ?? 0);
         this.anims.timeScale = 1;
@@ -251,8 +270,8 @@ export default class Character extends GameObject {
     }
 
     // Per state change
-    if (this.currentState !== this.lastState) {
-      switch(this.currentState) {
+    if (this.state !== this.lastState) {
+      switch(this.state) {
         case 'jump': {
           this.play({ key: 'jump', repeat: -1 }, true);
           break;
@@ -317,6 +336,6 @@ export default class Character extends GameObject {
     this.updateAnimations();
 
     const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
-    if (hudScene) hudScene.addDebugText(this.currentState);
+    if (hudScene) hudScene.addDebugText(this.state);
   }
 }

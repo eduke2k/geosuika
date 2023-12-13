@@ -51,4 +51,10 @@ export default class ScoreProgressBar extends Phaser.GameObjects.Container {
       ease: 'sine.out',
     });
   }
+
+  public destroy (): void {
+    this.scoreProgressBackground.destroy();
+    this.scoreProgressForeground.destroy();
+    super.destroy();
+  }
 }

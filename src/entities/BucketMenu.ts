@@ -40,6 +40,7 @@ export default class BucketMenu extends Phaser.GameObjects.Container {
 
     bucket.scene.add.existing(this);
   }
+
   private handleAction (key: string): void {
     switch (key) {
       case 'restart': this.bucket.restartBucket(); break;

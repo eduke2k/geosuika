@@ -33,6 +33,8 @@ import BarPNG from './../assets/bar.png';
 import BarJSON from './../assets/bar.json';
 import RecyclingCanPNG from './../assets/recycling.png';
 import RecyclingCanJSON from './../assets/recycling.json';
+import SmallLampPNG from './../assets/smallLamp.png';
+import SmallLampJSPN from './../assets/smallLamp.json';
 
 // Images
 import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
@@ -50,11 +52,13 @@ import TouchySFX from './../assets/sfx/touchy.ogg';
 import BucketSFX from './../assets/sfx/bucket.ogg';
 import AchanSFX from './../assets/sfx/achan.ogg';
 import StepsSFX from './../assets/sfx/steps.ogg';
+import ShockSFX from './../assets/sfx/shock.ogg';
 
 // Tiles
 import JapanTilesPNG from './../assets/tilesets/tilesheet_japan.png';
 import MainTilesPNG from './../assets/tilesets/tilesheet_main.png';
-import TilesJSON from './../assets/tilesets/map.json';
+import map2JSON from './../assets/tilesets/map2.json';
+
 import { Instrument } from '../models/Instrument';
 import { SFX } from '../models/SFX';
 import { BaseNote } from '../const/scales';
@@ -99,7 +103,8 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.aseprite('dangerLine', DangerLinePNG, DangerLineJSON);
 		this.load.aseprite('petal', PetalPNG, PetalJSON);
 		this.load.aseprite('recyclingCan', RecyclingCanPNG, RecyclingCanJSON);
-		
+		this.load.aseprite('smallLamp', SmallLampPNG, SmallLampJSPN);
+
 		this.load.atlas('bar', BarPNG, BarJSON);
 
 		// Images
@@ -107,6 +112,7 @@ export default class MainMenuScene extends Phaser.Scene {
 
 		// Audio SFX
 		// Don't forget to register the corresponsing instrument when adding new instrument sfx files
+		this.load.audio('sfx:shock', ShockSFX);
 		this.load.audio('sfx:harp', HarpSFX);
 		this.load.audio('sfx:bass', BassSFX);
 		this.load.audio('sfx:merge', MergeSFX);
@@ -132,12 +138,12 @@ export default class MainMenuScene extends Phaser.Scene {
 		// Load body shapes from JSON file generated using PhysicsEditor
 		this.load.json('shapes', TetrominosShapesJSON);
 
-		// load the PNG file
+		// load tilesets
 		this.load.image('tilesheet_japan', JapanTilesPNG);
 		this.load.image('tilesheet_main', MainTilesPNG);
 
-		// load the JSON file
-		this.load.tilemapTiledJSON('tilemap', TilesJSON)
+		// load map files
+		this.load.tilemapTiledJSON('map2', map2JSON)
 
 		// this.load.setBaseURL('https://labs.phaser.io')
 		// this.load.image('sky', 'assets/skies/space3.png')

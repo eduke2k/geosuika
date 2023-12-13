@@ -28,8 +28,8 @@ export default class GameOverScene extends Phaser.Scene {
 		this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
     this.container = this.add.container(0, 0);
 
-    // this.gameOverText = this.add.text(0, 0, 'The Memory faded...', { font: "48px Coiny", align: "center" });
-     this.gameOverText = this.add.text(0, 0, 'Happy Birthday Achan!', { font: "48px Coiny", align: "center" });
+    this.gameOverText = this.add.text(0, 0, 'The Memory faded...', { font: "48px Coiny", align: "center" });
+    //  this.gameOverText = this.add.text(0, 0, 'Happy Birthday Achan!', { font: "48px Coiny", align: "center" });
     this.gameOverText.setOrigin(0.5, 0.5);
     this.container.add(this.gameOverText);
 

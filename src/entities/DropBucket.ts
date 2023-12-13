@@ -6,7 +6,7 @@ import { BackgroundMusic, BackgroundMusicConfig } from "../models/BackgroundMusi
 import { SFX } from "../models/SFX";
 import { Instrument } from "../models/Instrument";
 import GameScene from "../scenes/GameScene";
-import { DroppableSet } from "../types";
+import { DroppableSet, FixedMatterCollisionData } from "../types";
 import BlinkingText from "./BlinkingText";
 // import BucketElevator from "./BucketElevator";
 import Droppable from "./Droppable";
@@ -23,8 +23,10 @@ import { Depths } from "../const/depths";
 import BucketMenu from "./BucketMenu";
 import { Action } from "../models/Input";
 import { duckSet } from "../config/ducks";
+import { DropBucketShockwave } from "../models/DropBucketShockwave";
 
 export const GAME_OVER_TIME = 3000;
+export const DANGER_SPARK_TIME = 100;
 export const DROPPABLE_REMOVE_TIME = 500;
 export const DROPPABLE_EXTRA_PADDING = 1;
 export const DANGER_VISUALIZATION_START = 0.8;
@@ -97,6 +99,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   private targetScore: number;
   private bucketImage: Phaser.GameObjects.Image;
   private bucketProgressRatio = 0;
+  private shockwaveController = new DropBucketShockwave(this.scene);
+  private shockSound = this.scene.sound.add('sfx:shock');
 
   public bgm: BackgroundMusic | null = null;
   private elevatorDistance: number;
@@ -109,6 +113,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public isDanger = false;
   public dangerTime = GAME_OVER_TIME;
   public isGameOver = false;
+  private dangerSparkTime = 0;
 
   // private droppableRemoveTime = DROPPABLE_REMOVE_TIME;
 
@@ -150,7 +155,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.rightWallBody = Bodies.rectangle((options.width / 2) + (options.thickness / 2), 0, options.thickness, options.height, { collisionFilter });
     this.floorBody = Bodies.rectangle(0, (options.height / 2) + (options.thickness / 2), options.width + (options.thickness * 2), options.thickness, { isSensor: options.noBottom, collisionFilter });
     this.dropSensorBody = Bodies.rectangle(0, (-options.height / 2) - options.thickness, options.width, 50, { mass: 0, isSensor: true });
-    this.dangerLineBody = Bodies.rectangle(0, this.leftWallBody.bounds.max.y - options.gameOverThreshold, options.width, 10, { isSensor: true });
+    this.dangerLineBody = Bodies.rectangle(0, this.leftWallBody.bounds.max.y - options.gameOverThreshold, options.width, 10, { isSensor: true, label: 'dangerLine' });
 
     const parts = [this.leftWallBody, this.rightWallBody, this.floorBody, this.dropSensorBody, this.dangerLineBody];
 
@@ -203,10 +208,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
 
     // Assign collision handler
-    this.scene.matter.world.on('collisionstart', this.handleCollision, this);
-    this.scene.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
-      event.pairs.forEach(c => { this.handleCollision(event, c.bodyA, c.bodyB) });
-    });
+    this.scene.matter.world.on('collisionstart', this.onCollisionStart, this);
+    this.scene.matter.world.on('collisionactive', this.onCollisionActive, this);
 
     // Create progress circle
 		this.progressCircle = new ProgressCircle(this.scene, this, 0, 0, this.floorBody.bounds.max.x - this.floorBody.bounds.min.x);
@@ -230,8 +233,18 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public isMounted (): boolean {
     return this.bucketMounted;
   }
+
+  private onCollisionActive (event: Phaser.Physics.Matter.Events.CollisionActiveEvent): void {
+    if (!this.bucketActive) return;
+    event.pairs.forEach(c => { this.handleCollision(c, c.bodyA, c.bodyB) });
+  }
+
+  private onCollisionStart (event: Phaser.Physics.Matter.Events.CollisionStartEvent, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType): void {
+    if (!this.bucketActive) return;
+    this.handleCollision(event.pairs[0], bodyA, bodyB);
+  }
   
-	private handleCollision (event: Phaser.Physics.Matter.Events.CollisionStartEvent, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType): void {
+	private handleCollision (collisionData: Phaser.Types.Physics.Matter.MatterCollisionData, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType): void {
 		if (!this.isMounted() || !this.isActive()) return;
     if (bodyA.gameObject instanceof Droppable && bodyB.gameObject instanceof Droppable) {
 			const parentBucket = bodyB.gameObject.getParentBucket();
@@ -250,11 +263,18 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 			if ((!bodyA.isSensor && !bodyB.isSensor) && (v1 > 2 || v2 > 2)) {
 
 				// Get contact point. Typings of MatterJS are broken.
-				const contactVertex = (event.pairs[0] as any).contacts.filter((c: any) => c !== undefined)[0].vertex;
+				const contactVertex = (collisionData as FixedMatterCollisionData).contacts.filter(c => c !== undefined)[0].vertex;
 				const maxV = Math.max(v1, v2);
 				parentBucket.playCollisionSound(droppable, maxV, contactVertex);
 			}
 		}
+
+    // if (this.isDanger && (bodyA.label === 'dangerLine' || bodyB.label === 'dangerLine') && (bodyA.gameObject instanceof Droppable || bodyB.gameObject instanceof Droppable)) {
+    //   console.log('dangerEvent', (collisionData as FixedMatterCollisionData).contacts);
+    //   (collisionData as FixedMatterCollisionData).contacts.forEach(c => {
+    //     if (c.vertex.body.label !== 'dangerLine') this.triggerDangerParticle(c.vertex);
+    //   });
+    // }
 	}
 
   public setBucketAssetVisibility (makeVisible: boolean): void {
@@ -568,10 +588,11 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     a.destroy();
     b.destroy();
 
-    // Add a explosion!
-    // Too buggy yet
-    // new ExplosionForce('', this, spawnPosition.x, spawnPosition.y, 1, 0.0001, 10);
+    // Camera Shake
     this.scene.cameras.main.shake(100, 0.005);
+
+    // Add shockwave!
+    this.shockwaveController.triggerOnMainCamera(spawnPosition, nextTier / this.getMaxTier());
 
     // Spawn new body, one tier higher!
     const droppable = Droppable.create({
@@ -591,7 +612,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // const droppable = new Droppable(this, tier + 1, false, parentBucket, spawnPosition.x, spawnPosition.y, 'flags');
     droppable.hasCollided = true;
 
-    this.fadeInDroppable(droppable);
+    this.fadeInDroppable(droppable, nextTier);
 
     // Do Score calculation
     const scoreObject = this.scoreLabel.grantScore(nextTier);
@@ -654,7 +675,24 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     });
     emitter.explode(1);
 
-    this.scene.time.delayedCall(5000, function() {
+    this.scene.time.delayedCall(5000, () => {
+      emitter.destroy();
+    });
+  }
+
+  private triggerDangerParticle (contactVertex: { x: number; y: number }): void {
+    const emitter = this.scene.add.particles(contactVertex.x, contactVertex.y, 'flares', {
+      frame: [9],
+      lifespan: 500,
+      speed: { min: 50, max: 75 },
+      scale: { start: 0.3, end: 0 },
+      gravityY: 0,
+      rotate: { min: 0, max: 360 },
+      emitting: false,
+    });
+    emitter.explode(1);
+
+    this.scene.time.delayedCall(200, () => {
       emitter.destroy();
     });
   }
@@ -705,12 +743,16 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
   public triggerDanger (): void {
     this.isDanger = true;
+    this.shockSound.play();
+    this.dangerSparkTime = 0;
     // this.scene.cameras.main.zoomTo(1.1, 100, 'Power2');
   }
 
   public triggerSafe (): void {
     this.isDanger = false;
     this.dangerTime = GAME_OVER_TIME;
+    this.dangerSparkTime = 0;
+    this.shockSound.stop();
     // this.scene.cameras.main.zoomTo(1, 100, 'Power2');
   }
 
@@ -721,6 +763,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   private triggerDestroyPhase (): void {
     if (!this.bgm) return;
 
+    this.shockSound.stop();
+    this.isDanger = false;
     const bgm = this.bgm;
     this.endDroppablesLength = this.droppables.length;
     this.currentPhase = BucketPhase.DESTROY;
@@ -877,6 +921,23 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
   }
 
+  public destroy (): void {
+    this.scene.matter.world.off('collisionstart', this.onCollisionStart, this);
+    this.scene.matter.world.off('collisionactive', this.onCollisionActive, this);
+    if (this.dropSensorBody) this.scene.matter.world.remove(this.dropSensorBody);
+    if (this.leftWallBody) this.scene.matter.world.remove(this.leftWallBody);
+    if (this.rightWallBody) this.scene.matter.world.remove(this.rightWallBody);
+    if (this.floorBody) this.scene.matter.world.remove(this.floorBody);
+    if (this.dangerLineBody) this.scene.matter.world.remove(this.dangerLineBody);
+    if (this.dangerLine) this.dangerLine.destroy();
+    this.scoreLabel.destroy();
+    this.bucketMenu.destroy();
+    this.scoreProgressBar.destroy();
+    this.progressCircle.destroy();
+    this.bucketImage.destroy();
+    super.destroy();
+  }
+
   public update (_time: number, delta: number): void {
     if (!this.bucketMounted) return;
     const dangerPercentage = this.getDangerPercentage();
@@ -973,12 +1034,36 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
           this.triggerDanger();
         } else {
           this.dangerTime -= delta;
+          this.dangerSparkTime -= delta;
           if (this.dangerTime <= 0 && !this.isGameOver) {
             this.triggerDestroyPhase();
           }
         }
       } else if (this.highestDroppablePoint <= this.gameOverThreshold && this.isDanger) {
         this.triggerSafe();
+      }
+
+      if (this.currentPhase === BucketPhase.DROP && this.isDanger && this.dangerSparkTime <= 0) {
+        this.dangerSparkTime = DANGER_SPARK_TIME;
+        const startX = this.dangerLine.getBounds().left;
+        const endX = this.dangerLine.getBounds().right;
+        const iterations = 40;
+        const y = this.dangerLine.getCenter().y ?? 0;
+        const length = endX - startX;
+        const iterationLength = length / iterations;
+
+        const matter = new Phaser.Physics.Matter.MatterPhysics(this.scene);
+        const hits: number[] = [];
+        for (let x = startX; x <= endX; x += iterationLength) {
+          const r = matter.query.point(this.droppables.map(d => d.getBody()), { x, y });
+          if (r.length > 0) {
+            hits.push(x);
+          }
+        }
+
+        hits.forEach(x => {
+          this.triggerDangerParticle({ x, y })
+        });
       }
     }
   }

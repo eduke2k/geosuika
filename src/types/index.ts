@@ -57,3 +57,21 @@ export type TiledPropertiesNative = {
 }[];
 
 export type TiledPropertiesParsed = Record<string, string | number | boolean>;
+
+export type MatterCollisionContactVertex = {
+  body: MatterJS.BodyType,
+  index: number;
+  isinternal: boolean;
+  x: number;
+  y: number;
+}
+
+export type MatterCollisionContact = {
+  normalImpulse: number;
+  tangentImpulse: number;
+  vertex: MatterCollisionContactVertex;
+}
+
+export type FixedMatterCollisionData = Phaser.Types.Physics.Matter.MatterCollisionData & {
+  contacts: MatterCollisionContact[];
+}

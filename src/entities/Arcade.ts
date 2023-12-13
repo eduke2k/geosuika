@@ -5,10 +5,10 @@ import { LocalStorage } from "../models/LocalStorage";
 import BlinkingText from "./BlinkingText";
 import Character from "./Character";
 import DropBucket from "./DropBucket";
-import GameObject from "./GameObject";
 import HoverText from "./HoverText";
+import InteractableGameObject from "./InteractableGameObject";
 
-export default class Arcade extends GameObject {
+export default class Arcade extends InteractableGameObject {
   private linkedBucket: DropBucket | undefined;
   private isLoading = false;
   private titleTextfield: HoverText;
@@ -50,6 +50,7 @@ export default class Arcade extends GameObject {
     
 		this.setBounce(0);
     this.setFriction(0.1);
+    this.setPipeline('Light2D');
 
     this.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
@@ -99,6 +100,13 @@ export default class Arcade extends GameObject {
     super.onCollisionEnd(other);
     this.titleTextfield.end();
     this.highscoreTextfield.end();
+  }
+
+  public destroy (): void {
+    this.titleTextfield.destroy();
+    this.highscoreTextfield.destroy();
+    if (this.sensor) this.scene.matter.world.remove(this.sensor);
+    super.destroy();
   }
 
   public trigger (): void {

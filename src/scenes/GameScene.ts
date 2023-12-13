@@ -15,12 +15,22 @@ import Achan from '../entities/Achan';
 import { EffectCircleOptions, TilemapLayerEffectCircle } from '../entities/TilemapLayerEffectCircle';
 import { SFX } from '../models/SFX';
 import RecyclingCan from '../entities/RecyclingCan';
+import ChromaticPostFX from '../shaders/ChromaticPostFX';
+import { SmallLamp, SmallLampFrame } from '../entities/SmallLamp';
+import GameObject from '../entities/GameObject';
+// import BendPostFX from '../shaders/BendPostFX';
+// import BarrelPostFX from '../shaders/BarrelPostFX';
+// import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
 
 // import Dog from '../entities/Dog';
 
+export type GameSceneState = 'play' | 'changeLayer';
+
 export default class GameScene extends Phaser.Scene {
+	public state: GameSceneState = 'play';
 	public buckets: DropBucket[] = [];
 	public arcades: Arcade[] = [];
+	public objects: GameObject[] = [];
 	// public dog: Dog | undefined = undefined;
 	public characters: Character[] = [];
 	public petalEmitter = new PetalEmitter(this);
@@ -28,148 +38,101 @@ export default class GameScene extends Phaser.Scene {
 	public reveilableTilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 	public effectCircles: TilemapLayerEffectCircle[] = [];
 	public ignoreInputs = false;
+	public map: Phaser.Tilemaps.Tilemap | undefined = undefined;
+	private tilesets: Record<string, Phaser.Tilemaps.Tileset> = {};
+	private playerLight: Phaser.GameObjects.Light | undefined = undefined;
+
+	// Active map stuff
+	private currentMap = '';
+	private currentMapLayer = '';
+	private staticMapCollisions: MatterJS.BodyType[] = [];
 
 	public inputController: InputController | null = null;
 	public bokehEffect: Phaser.FX.Bokeh | undefined;
+
+	// Layer change stuff
+	private layerChangeSprites: any[] = [];
 
 	constructor() {
 		super({ key: 'game-scene' })
 	}
 
-	// Todo: Move this to Droppable? or Bucket?
-	// public handleCollision (bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType, event: Phaser.Physics.Matter.Events.CollisionStartEvent | Phaser.Physics.Matter.Events.CollisionActiveEvent): void {
-	// 	if (bodyA.gameObject instanceof Droppable && bodyB.gameObject instanceof Droppable) {
-	// 		const parentBucket = bodyB.gameObject.getParentBucket();
-	// 		parentBucket.tryMergeDroppables(bodyA.gameObject, bodyB.gameObject);
-	// 	}
+	public getState (): GameSceneState {
+		return this.state;
+	}
 
-	// 	if (bodyA.gameObject instanceof Droppable || bodyB.gameObject instanceof Droppable) {
-	// 		// const droppable = bodyA.gameObject instanceof Droppable ? bodyA : bodyB;
-	// 		// const parentBucket = droppable.getParentBucket();
-	// 		const droppable = Droppable.getFirstDroppableFromBodies(bodyA, bodyB);
-	// 		if (!droppable) return;
-	// 		const parentBucket = droppable.getParentBucket();
+	public setTimeScaleFromTween (tweenValue: number, start: number, end: number): void {
+		const value = scaleNumberRange(tweenValue, [0, 1], [start, end]);
+		this.setTimeScale(value);
+	}
 
-	// 		const v1 = new Phaser.Math.Vector2(bodyB.velocity).length();
-	// 		const v2 = new Phaser.Math.Vector2(bodyA.velocity).length();
-	// 		if ((!bodyA.isSensor && !bodyB.isSensor) && (v1 > 2 || v2 > 2)) {
+	public setTimeScale(value: number): void {
+		this.time.timeScale = value;
+		this.matter.world.engine.timing.timeScale = value;
+		this.anims.globalTimeScale = value;
+	}
 
-	// 			// Get contact point. Typings of MatterJS are broken.
-	// 			const contactVertex = (event.pairs[0] as any).contacts.filter((c: any) => c !== undefined)[0].vertex;
-	// 			const maxV = Math.max(v1, v2);
-	// 			parentBucket.playCollisionSound(droppable, maxV, contactVertex);
-	// 		}
-	// 	}
+	// private getRelativePlayableCharacterPosition (): Phaser.Math.Vector2 {
+	// 	return new Phaser.Math.Vector2(
+	// 		(this.getPlayerCharacter()?.x ?? 0) - this.cameras.main.worldView.x,
+	// 		(this.getPlayerCharacter()?.y ?? 0) - this.cameras.main.worldView.y
+	// 	)
 	// }
 
-	public initMap (): Phaser.Tilemaps.Tilemap {
-		// create the Tilemap
-		const map = this.make.tilemap({ key: 'tilemap' });
-	
-		// add the tileset image we are using
-		const tilesetJapan = map.addTilesetImage('tilesheet_japan');
-		const tilesetMain = map.addTilesetImage('tilesheet_main');
+	public startLayerChange (): void {
+		const duration = 1000;
 
-		if (!tilesetJapan) throw new Error('tileset missing: tilesetJapan');
-		if (!tilesetMain) throw new Error('tileset missing: tilesetMain');
+		// this.cameras.main.setPostPipeline(WarpPostFX);
+		// const pipeline = this.cameras.main.getPostPipeline(WarpPostFX) as any;
+		// pipeline.direction = {
+		// 	x: 0,
+		// 	y: 1
+		// }
+		// pipeline.smoothness = 1;
 
-		
-		// Add layers from tileset
-		const background3 = map.createLayer('Background3', tilesetJapan);
-		if (background3) {
-			this.tilemapLayers.push(background3);
-			this.reveilableTilemapLayers.push(background3);
-			// background3.setScrollFactor(1, 0);
-		}
-		const background2 = map.createLayer('Background2', tilesetJapan);
-		if (background2) {
-			this.tilemapLayers.push(background2);
-			this.reveilableTilemapLayers.push(background2);
-		}
+		const currentPlayerLightRadius = this.playerLight?.radius ?? 400;
+		const currentAmbient = Phaser.Display.Color.RGBToString(this.lights.ambientColor.r * 255, this.lights.ambientColor.g * 255, this.lights.ambientColor.b * 255);
 
-		const background1 = map.createLayer('Background1', tilesetJapan);
-		if (background1) {
-			this.tilemapLayers.push(background1);
-			this.reveilableTilemapLayers.push(background1);
-		}
-
-		const world = map.createLayer('World', tilesetMain);
-		if (world) {
-			// foreground.setPipeline('Light2D');
-			this.tilemapLayers.push(world);
-		}
-
-		const terrain = map.createLayer('Terrain', tilesetJapan);
-		if (terrain) {
-			// terrain.setPipeline('Light2D');
-			this.tilemapLayers.push(terrain);
-			this.reveilableTilemapLayers.push(terrain);
-		}
-
-		const detail1 = map.createLayer('TerrainDetail2', tilesetJapan);
-		if (detail1) {
-			// detail1.setPipeline('Light2D');
-			this.tilemapLayers.push(detail1);
-			this.reveilableTilemapLayers.push(detail1);
-		} 
-
-		const detail2 = map.createLayer('TerrainDetail1', tilesetJapan);
-		if (detail2) {
-			// detail2.setPipeline('Light2D');
-			this.tilemapLayers.push(detail2);
-			this.reveilableTilemapLayers.push(detail2);
-		} 
-
-		const foreground = map.createLayer('Foreground', tilesetJapan);
-		if (foreground) {
-			// foreground.setPipeline('Light2D');
-			this.tilemapLayers.push(foreground);
-			this.reveilableTilemapLayers.push(foreground);		}
-
-		// terrain?.forEachTile(t => {
-		// 	t.alpha = 0.5;
-		// });
-	
-		// Setup initial tilemap state
-		this.getReveilableTilemapLayers().forEach(tl => {
-			tl.forEachTile(t => {
-				t.properties.progress = 0;
-				t.properties.baseRotation = Phaser.Math.Angle.Random();
-				t.alpha = t.properties.progress;
-				t.rotation = t.properties.baseRotation;
-			});  
-		});
-
-		// Generate map collisions from tiled map
-		const Body = new Phaser.Physics.Matter.MatterPhysics(this).body;
-		const mapObjects = map.objects.find(o => o.name === 'Objects')?.objects;
-		if (mapObjects) {
-			mapObjects.forEach(o => {
-				if (o.type === 'collision') {
-					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-						this.matter.add.rectangle(
-							o.x + (o.width / 2),
-							o.y + (o.height / 2),
-							o.width,
-							o.height,
-							{
-								isStatic: true,
-								label: o.name,
-								collisionFilter: {
-									group: 0,
-									category: CATEGORY_TERRAIN
-								}
-							},
-						);
-					} else if (o.polygon && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-						const body = this.matter.add.fromVertices(0, 0, o.polygon, { isStatic: true, label: o.name });
-						Body.setPosition(body, { x: o.x + body.centerOffset.x, y: o.y + body.centerOffset.y}, false);
+		this.tweens.addCounter({
+			from: 0,
+			to: 1,
+			duration: duration,
+			ease: Phaser.Math.Easing.Sine.Out,
+			onUpdate: (tween) => {
+				this.setTimeScaleFromTween(tween.getValue(), 1, 0.05);
+				this.playerLight?.setRadius((1 - tween.getValue()) * currentPlayerLightRadius);
+				this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix(currentAmbient, '#000000', tween.getValue()).hex()).color);
+			},
+			onComplete: () => {
+				this.setTimeScale(0.05);
+				this.nextLayer(1);
+				this.tweens.addCounter({
+					from: 0,
+					to: 1,
+					duration: duration,
+					ease: Phaser.Math.Easing.Sine.In,
+					onUpdate: (tween) => {
+						this.setTimeScaleFromTween(tween.getValue(), 0.05, 1);
+						this.playerLight?.setRadius(tween.getValue() * currentPlayerLightRadius);
+						this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix('#000000', currentAmbient, tween.getValue()).hex()).color);
+					},
+					onComplete: () => {
+						this.setTimeScale(1);
 					}
-				}
-			});
-		}
+				});
+			}
+		});
+	}
 
-		return map;
+	public nextLayer (_direction: -1 | 1) {
+		const newLayer = this.getCurrentMapLayer() === 'main' ? 'japan' : 'main';
+
+		this.unloadActiveWorldLayer();
+		this.loadInWorldLayer(newLayer);
+	}
+
+	public endLayerChange (): void {
+		this.state = 'play';
 	}
 
   public destroyEffectCircle (circle: TilemapLayerEffectCircle): void {
@@ -183,13 +146,13 @@ export default class GameScene extends Phaser.Scene {
     this.effectCircles.push(circle);
   }
 
-  private getNearestCircle (t: Phaser.Tilemaps.Tile): { distance: number; circle: TilemapLayerEffectCircle } | undefined {
-    const distances = this.effectCircles.map(c => ({
-      distance: c.getDistance(t.getCenterX(), t.getCenterY()),
-      circle: c
-    })).sort((a, b) => a.distance - b.distance);
-    return distances[0];
-  }
+  // private getNearestCircle (t: Phaser.Tilemaps.Tile): { distance: number; circle: TilemapLayerEffectCircle } | undefined {
+  //   const distances = this.effectCircles.map(c => ({
+  //     distance: c.getDistance(t.getCenterX(), t.getCenterY()),
+  //     circle: c
+  //   })).sort((a, b) => a.distance - b.distance);
+  //   return distances[0];
+  // }
 
 	public revealTile (tile: Phaser.Tilemaps.Tile): void {
 		tile.properties.progress = 1;
@@ -209,6 +172,49 @@ export default class GameScene extends Phaser.Scene {
 
 		tile.tint = Phaser.Display.Color.HexStringToColor(chroma.mix('#364f71', color, affection).hex()).color;
 		// tile.tint = 0x364f71;
+	}
+
+	public updateTiles (tiles: Phaser.Tilemaps.Tile[], delta: number): void {
+		tiles.forEach(t => {
+			
+			// Update Alpha
+			const targetAlphaProgress = t.properties.progress ?? 0;
+			const currentAlpha = t.alpha;
+			const newAlpha = ((targetAlphaProgress - currentAlpha) / 2 / delta) + currentAlpha;
+			t.alpha = newAlpha;
+
+			// Update Position
+			// const targetPositionProgress = t.properties.progressX ?? 0;
+			// const targetOffset = (1 - targetPositionProgress) * 64;
+			// const newOffset = targetOffset //((targetOffset - currentOffset) / 2 / delta) + currentOffset;
+			// t.pixelY = t.properties.originalPixelY + newOffset;
+		});
+	}
+
+	public getAllVisibleTiles (): Phaser.Tilemaps.Tile[] {
+		const tiles: Phaser.Tilemaps.Tile[] = []; 
+		this.tilemapLayers.forEach(tl => {
+			tiles.push(...tl.getTilesWithinWorldXY(this.cameras.main.worldView.left, this.cameras.main.worldView.top, this.cameras.main.worldView.width, this.cameras.main.worldView.height));
+		});
+		return tiles;
+	}
+
+	public updateTileTargetProgressByDistance (center: { x: number, y: number }, tiles: Phaser.Tilemaps.Tile[]): void {
+		tiles.forEach(t => {
+			const distance = Phaser.Math.Distance.BetweenPoints(center, { x: t.properties.originalPixelX + (t.width / 2), y: t.properties.originalPixelY + (t.width / 2) });
+			t.properties.progress = Math.max(Math.min(scaleNumberRange(distance, [256, 254], [0, 1]), 1), 0);
+			
+			const distanceX = Math.abs(center.x - (t.properties.originalPixelX + (t.width / 2) ));
+			t.properties.progressX = Math.min(scaleNumberRange(distanceX, [256, 0], [0, 2]), 1);
+			// t.width = t.baseWidth * scaledDistance;
+			// t.height = t.baseHeight * scaledDistance;
+
+			// const nearest = this.getNearestCircle(t);
+			// if (nearest) {
+			// 	const affection = Math.max(scaleNumberRange(nearest.distance, [128, 0], [0, 1]) * nearest.circle.getInverseProgress(), 0) * nearest.circle.getEffect();
+			// 	this.updateTileProgress(t, nearest.circle.getColor(), affection, delta);
+			// }
+		});  
 	}
 
 	public getReveilableTilemapLayers ():  Phaser.Tilemaps.TilemapLayer[] {
@@ -233,58 +239,6 @@ export default class GameScene extends Phaser.Scene {
 		const bucket = this.getMountedBucket();
 		if (!bucket) return;
 		bucket.restartBucket();
-	}
-
-	update (time: number, delta: number): void {
-		this.petalEmitter.update(time, delta);
-		this.characters.forEach(c => c.update(time, delta));
-		this.arcades.forEach(a => a.update(time, delta));
-		this.buckets.forEach(a => a.update(time, delta));
-		
-		const mountedBucket = this.getMountedBucket();
-	
-    // Effect circles
-    if (this.effectCircles.length > 0) {
-      this.getReveilableTilemapLayers().forEach(tl => {
-        tl.getTilesWithinWorldXY(this.cameras.main.worldView.left, this.cameras.main.worldView.top, this.cameras.main.worldView.width, this.cameras.main.worldView.height).forEach(t => {
-          const nearest = this.getNearestCircle(t);
-          if (nearest) {
-            const affection = Math.max(scaleNumberRange(nearest.distance, [128, 0], [0, 1]) * nearest.circle.getInverseProgress(), 0) * nearest.circle.getEffect();
-            this.updateTileProgress(t, nearest.circle.getColor(), affection, delta);
-          }
-        });  
-      });
-    }
-
-		if (!this.ignoreInputs) {
-			if (this.inputController?.justDown(Action.DEBUG1)) {
-				if (mountedBucket) mountedBucket.rankUp();
-			}
-		
-			if (this.inputController?.isDown(Action.UP)) {
-				// this.elevator.moveY(-100 / delta);
-				if (mountedBucket) mountedBucket.moveY(-100 / delta);
-			}
-		
-			if (this.inputController?.isDown(Action.DOWN)) {
-				// this.elevator.moveY(100 / delta);
-				if (mountedBucket) mountedBucket.moveY(100 / delta);
-			}
-			
-			if (this.inputController?.justDown(Action.DEBUG2)) {
-				if (mountedBucket) mountedBucket.clearAllVisibleTiles();
-			} 
-		
-			if (this.inputController?.justDown(Action.DEBUG3)) {
-				if (!mountedBucket || !mountedBucket.bgm) return;
-				const instrument = this.registry.get('instument:harp') as Instrument | undefined;
-				if (instrument) {
-					const chord = mountedBucket.bgm.getCurrentChord();
-					new BlinkingText(this, chord, mountedBucket.x, mountedBucket.y, { fontSize: 16, movementY: 100, duration: 1000 });
-					instrument.playRandomNoteInChord(chord, this, 0, 1);
-				}
-			}
-		}
 	}
 
 	public getPlayerCharacter (): Character | undefined {
@@ -348,35 +302,89 @@ export default class GameScene extends Phaser.Scene {
 		// });
 	}
 
-	public create() {
-		this.inputController = new InputController(this);
+	public loadInWorldLayer (layerName: string): void {
+		if (!this.map) {
+			console.error(`Could not load in map layer '${layerName}' because map is not set in GameScenee`);
+			return;
+		}
 
-		// this.lights.enable().setAmbientColor(0x364f71);
-		const map = this.initMap();
+		this.currentMapLayer = layerName;
 
-		// Camera Settings
-		// this.cameras.main.setZoom(4);
-		this.cameras.main.fadeIn(1000);
-		this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+		const terrainLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_terrain`));
+		// const backgroundLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_background`));
+		// const detailsLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_details`));
+		// const foregroundLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_foreground`));
+		const objectLayer = this.map.objects.find(l => l.name.startsWith(`${layerName}_objects`));
 
-		// Spawn entities of map
-		const mapObjects = map.objects.find(o => o.name === 'Objects')?.objects;
+		// Add available map layers to rendering pipe
+		if (terrainLayer) {
+			const existingLayer = this.tilemapLayers.find(l => l.layer.name === terrainLayer.name);
 
-		const potentialStaticObjects: Phaser.Types.Tilemaps.TiledObject[] = [];
+			if (existingLayer) {
+				existingLayer.setVisible(true);
+			} else {
+				const tileset = this.tilesets[(terrainLayer?.properties as { name: string, value: string }[]).find(k => k.name === 'tileset')?.value ?? ''];
+				const layer = this.map.createLayer(terrainLayer.name, tileset);
+				if (layer) {
+					layer?.setPipeline('Light2D');
+					this.tilemapLayers.push(layer);
+				}
+			}
+		}
+
+		// this.tilemapLayers.forEach(tl => {
+		// 	tl.forEachTile(t => {
+		// 		t.properties.progress = 0;
+		// 		t.alpha = 0;
+		// 		t.properties.originalPixelX = t.x * t.baseWidth;
+		// 		t.properties.originalPixelY = t.y * t.baseHeight;
+		// 	});
+		// });
+
+		// Generate map collisions from object layer
+		const Body = new Phaser.Physics.Matter.MatterPhysics(this).body;
+		if (objectLayer) {
+			objectLayer.objects.forEach(o => {
+				if (o.type === 'collision') {
+					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
+						this.staticMapCollisions.push(this.matter.add.rectangle(
+							o.x + (o.width / 2),
+							o.y + (o.height / 2),
+							o.width,
+							o.height,
+							{
+								isStatic: true,
+								label: o.name,
+								collisionFilter: {
+									group: 0,
+									category: CATEGORY_TERRAIN
+								}
+							},
+						));
+					} else if (o.polygon && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
+						const body = this.matter.add.fromVertices(0, 0, o.polygon, { isStatic: true, label: o.name });
+						Body.setPosition(body, { x: o.x + body.centerOffset.x, y: o.y + body.centerOffset.y}, false);
+						this.staticMapCollisions.push(body);
+					}
+				}
+			});
+		}
+
 		const staticObjectsQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const charactersQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const bucketQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const arcadesQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+		const objectsQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 
-		if (mapObjects) {
-			mapObjects.forEach(o => {
-				if (['bucket', 'arcade', 'character', 'staticObject', 'potentialStaticObject'].includes(o.type)) {
+		if (objectLayer) {
+			objectLayer.objects.forEach(o => {
+				if (['bucket', 'arcade', 'character', 'staticObject', 'object'].includes(o.type)) {
 					switch (o.type) {
 						case 'character': {	charactersQueue.push(o); break;	}
-						case 'potentialStaticObject': { potentialStaticObjects.push(o); break; }
 						case 'staticObject': { staticObjectsQueue.push(o); break; }
+						case 'object': { objectsQueue.push(o); break; }
 						case 'bucket': { bucketQueue.push(o); break; }
-						case 'arcade': { arcadesQueue.push(o); }
+						case 'arcade': { arcadesQueue.push(o); break; }
 					}
 				}
 			});
@@ -386,6 +394,23 @@ export default class GameScene extends Phaser.Scene {
 			const properties = parseTiledProperties(o.properties);
 			if (o.name === 'recyclingCan') { new RecyclingCan(this, o.x ?? 0, o.y ?? 0, properties.frame ? properties.frame.toString() : 'blue');}
 		});
+
+		objectsQueue.forEach(o => {
+			const properties = parseTiledProperties(o.properties);
+			if (o.name === 'smallLamp') {
+				this.objects.push(new SmallLamp(
+					this,
+					o.x ?? 0,
+					o.y ?? 0,
+					{
+						frame: properties.frame ? (properties.frame.toString() as SmallLampFrame) : undefined,
+						ropeLength: properties.ropeLength ? (properties.ropeLength as number) : undefined,
+						constrained: properties.constrained ? (properties.ropeLength as boolean) : undefined,
+					}
+				));
+			}
+		});
+
 
 		bucketQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
@@ -420,15 +445,145 @@ export default class GameScene extends Phaser.Scene {
 			if (o.name === 'dog') {
 				const dog = new Dog(this, o.x ?? 0, o.y ?? 0);
 				this.characters.push(dog);
-			} else if (o.name === 'achan') {
-				const achan = new Achan(this, o.x ?? 0, o.y ?? 0);
-				this.characters.push(achan);
 			}
 		});
+	}
+
+	public unloadActiveWorldLayer (): void {
+		// Remove all static collisions
+		this.matter.world.remove(this.staticMapCollisions);
+		this.staticMapCollisions = [];
+
+		// Remove active tileset
+		this.tilemapLayers.forEach(l => { 
+			l.setVisible(false);
+		})
+
+		this.arcades.forEach(a => {	a.destroy(); });
+		this.arcades = [];
+
+		this.buckets.forEach(b => {	b.destroy(); });
+		this.buckets = [];
+
+		// console.log(this.map);
+		// this.tilemapLayers = [];
+
+		this.currentMapLayer = '';
+	}
+
+	public getCurrentMap (): string {
+		return this.currentMap;
+	}
+
+	public getCurrentMapLayer(): string {
+		return this.currentMapLayer
+	}
+
+	private loadMap (mapKey: string): Phaser.Tilemaps.Tilemap {
+		this.currentMap = mapKey;
+
+		// create the Tilemap
+		const map = this.make.tilemap({ key: mapKey });
+		this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+		map.tilesets.forEach(t => {
+			const tileset = map.addTilesetImage(t.name);
+			if (tileset) this.tilesets[t.name] = tileset;
+		});
+		// const tilesetJapan = map.addTilesetImage('tilesheet_japan');
+		// const tilesetMain = map.addTilesetImage('tilesheet_main');
+
+		return map;
+	}
+
+	public create() {
+		// Enable Lights
+		this.lights.enable().setAmbientColor(0x0f101c);
+		this.playerLight = this.lights.addLight(0, 0, 400, 0xFFFFFF, 2);
+
+		const achan = new Achan(this, 0, 0);
+		this.characters.push(achan);
+
+		this.inputController = new InputController(this);
+		this.map = this.loadMap('map2');
+		this.loadInWorldLayer('japan');
+
+		this.cameras.main.setPostPipeline(ChromaticPostFX);
+
+		const playerSpawn = this.map.getObjectLayer('triggers')?.objects.find(o => o.name === 'playerSpawn');
+		achan.setPosition(playerSpawn?.x, playerSpawn?.y);
 
 		const playerCharacter = this.getPlayerCharacter();
 		if (playerCharacter) {
 			this.cameraFollowEntity({ object: playerCharacter, instant: false });
+		}
+
+		// Camera Settings
+		this.cameras.main.fadeIn(1000);
+	}
+
+	public update (time: number, delta: number): void {
+		const player = this.getPlayerCharacter();
+
+		// Let PlayerLight follow Player
+		this.playerLight?.setPosition(player?.body?.position.x, player?.body?.position.y);
+
+		this.petalEmitter.update(time, delta);
+		this.characters.forEach(c => c.update(time, delta));
+		this.arcades.forEach(a => a.update(time, delta));
+		this.buckets.forEach(a => a.update(time, delta));
+		this.objects.forEach(a => a.update(time, delta));
+		
+		const mountedBucket = this.getMountedBucket();
+
+		// TILE UPDATE LOGIC
+		// const allVisibleTiles = this.getAllVisibleTiles();
+		// if (player && player.body) {
+		// 	this.updateTileTargetProgressByDistance(player.body.position, allVisibleTiles);
+		// }
+		// this.updateTiles(allVisibleTiles, delta);
+
+    // EFFECT CIRCLE LOGIC
+    // if (this.effectCircles.length > 0) {
+    //   this.getReveilableTilemapLayers().forEach(tl => {
+    //     tl.getTilesWithinWorldXY(this.cameras.main.worldView.left, this.cameras.main.worldView.top, this.cameras.main.worldView.width, this.cameras.main.worldView.height).forEach(t => {
+    //       const nearest = this.getNearestCircle(t);
+    //       if (nearest) {
+    //         const affection = Math.max(scaleNumberRange(nearest.distance, [128, 0], [0, 1]) * nearest.circle.getInverseProgress(), 0) * nearest.circle.getEffect();
+    //         this.updateTileProgress(t, nearest.circle.getColor(), affection, delta);
+    //       }
+    //     });  
+    //   });
+    // }
+
+		if (!this.ignoreInputs) {
+			if (this.inputController?.justDown(Action.DEBUG1)) {
+				if (mountedBucket) mountedBucket.rankUp();
+			}
+		
+			if (this.inputController?.isDown(Action.UP)) {
+				// this.elevator.moveY(-100 / delta);
+				if (mountedBucket) mountedBucket.moveY(-100 / delta);
+			}
+		
+			if (this.inputController?.isDown(Action.DOWN)) {
+				// this.elevator.moveY(100 / delta);
+				if (mountedBucket) mountedBucket.moveY(100 / delta);
+			}
+			
+			if (this.inputController?.justDown(Action.DEBUG2)) {
+				if (mountedBucket) mountedBucket.clearAllVisibleTiles();
+			} 
+		
+			if (this.inputController?.justDown(Action.DEBUG3)) {
+				if (!mountedBucket || !mountedBucket.bgm) return;
+				const instrument = this.registry.get('instument:harp') as Instrument | undefined;
+				if (instrument) {
+					const chord = mountedBucket.bgm.getCurrentChord();
+					new BlinkingText(this, chord, mountedBucket.x, mountedBucket.y, { fontSize: 16, movementY: 100, duration: 1000 });
+					instrument.playRandomNoteInChord(chord, this, 0, 1);
+				}
+			}
 		}
 	}
 }

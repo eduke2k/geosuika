@@ -78,6 +78,11 @@ export default class ScoreLabel extends Phaser.GameObjects.Container {
     this.multiplier = 1;
   }
 
+  public destroy (): void {
+    this.scoreText.destroy();
+    super.destroy();
+  }
+
   public update (_time: number, delta: number): void {
     if (this.multiplierTime > 0) {
       this.multiplierTime -= delta;

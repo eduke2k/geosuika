@@ -1,4 +1,4 @@
-import GameObject from "../entities/GameObject";
+import InteractableGameObject from "../entities/InteractableGameObject";
 import { BGMPatternConfig, ChordProgressionMarker } from "../models/BackgroundMusic";
 import { TiledPropertiesNative, TiledPropertiesParsed } from "../types";
 
@@ -85,11 +85,11 @@ export const generateChordProgressionFromPattern = (pattern: BGMPatternConfig): 
   return chordProgression;
 }
 
-export function getOtherGameObjectsFromCollisionPairs<T> (reference: T, pairs: Phaser.Types.Physics.Matter.MatterCollisionData[]): GameObject[] {
-  const result: GameObject[] = [];
+export function getOtherInteractableGameObjectsFromCollisionPairs<T> (reference: T, pairs: Phaser.Types.Physics.Matter.MatterCollisionData[]): InteractableGameObject[] {
+  const result: InteractableGameObject[] = [];
   pairs.forEach(pair => {
     const other = pair.bodyA.gameObject === reference ? pair.bodyB : pair.bodyA;
-    if (other.gameObject instanceof GameObject && other.gameObject.isInteractable()) {
+    if (other.gameObject instanceof InteractableGameObject && other.gameObject.isInteractable()) {
       result.push(other.gameObject);
     }
   })
@@ -101,4 +101,11 @@ export function syncTranslation (target: Phaser.GameObjects.Container | Phaser.G
   target.setX(reference.position.x + (offset?.x ?? 0));
   target.setY(reference.position.y + (offset?.y ?? 0));
   target.rotation = angle ?? reference.angle;
+}
+
+export function getRelativePositionToCanvas (position: { x: number, y: number }, camera: Phaser.Cameras.Scene2D.Camera) {
+  return {
+    x: (position.x - camera.worldView.x) * camera.zoom,
+    y: (position.y - camera.worldView.y) * camera.zoom
+  }
 }

@@ -5,7 +5,7 @@ export enum Action {
     RIGHT,
     JUMP,
     INTERACT,
-    SING,
+    LAYER_CHANGE,
     CONFIRM,
     CANCEL,
     DEBUG1,
@@ -39,7 +39,7 @@ export const controlMapping: Record<string, number[]> = {
         Phaser.Input.Keyboard.KeyCodes.E,
         Phaser.Input.Keyboard.KeyCodes.ENTER,
     ],
-    [Action.SING]: [
+    [Action.LAYER_CHANGE]: [
         Phaser.Input.Keyboard.KeyCodes.F
     ],
     [Action.DEBUG1]: [
