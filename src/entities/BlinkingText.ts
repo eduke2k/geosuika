@@ -1,6 +1,8 @@
 import { Depths } from "../const/depths";
+import { FontName } from "../types";
 
 export type BlinkingTextOptions = {
+  fontFamily?: FontName;
   fontSize?: number;
   duration?: number;
   flashingDuration?: number;
@@ -50,7 +52,7 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
     this.setDepth(options?.depth ?? Depths.TEXT_LAYER);
 
     this.scoreText = this.scene.add.text(0, 0, this.text, { align: "center" }).setOrigin(0.5, 0.5);
-    this.scoreText.setFontFamily('Coiny');
+    this.scoreText.setFontFamily(options?.fontFamily ?? FontName.BOLD);
     this.scoreText.setFontSize(`${options?.fontSize ?? 12}px`);
     this.scoreText.setShadow(0, 2, 'black', 2, false, true);
     this.scoreText.alpha = 0;

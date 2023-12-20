@@ -57,6 +57,12 @@ export class SmallLamp extends GameObject {
     scene.add.existing(this);
   }
 
+  public destroy (): void {
+    if (this.constraint) this.scene.matter.world.remove(this.constraint);
+    if (this.light) this.scene.lights.removeLight(this.light);
+    super.destroy();
+  }
+
   public update (_time: number, delta: number): void {
     if (this.light) {
       this.light.setPosition(this.body?.position.x ?? 0, this.body?.position.y ?? 0);
@@ -69,7 +75,6 @@ export class SmallLamp extends GameObject {
       }
   
       // Update Light intensity
-      console.log(`currentI: ${this.light.intensity} | multiplier: ${this.lightIntensityMultiplier} | target: ${this.baseLightIntensity * this.lightIntensityMultiplier}`)
       this.light.setIntensity((((this.baseLightIntensity * this.lightIntensityMultiplier) - this.light.intensity) / 2 / delta) + this.light.intensity)
       this.light.setRadius((((this.baseLightRadius * this.lightIntensityMultiplier) - this.light.radius) / 2 / delta) + this.light.radius)
     }

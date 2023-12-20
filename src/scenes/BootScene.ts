@@ -38,6 +38,8 @@ import SmallLampJSPN from './../assets/smallLamp.json';
 
 // Images
 import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
+import EarthTextureJPG from './../assets/earth.jpg';
+import NoiseTextureJPG from './../assets/noise.png';
 
 // Audio SFX
 import HarpSFX from './../assets/sfx/harp.ogg';
@@ -53,6 +55,13 @@ import BucketSFX from './../assets/sfx/bucket.ogg';
 import AchanSFX from './../assets/sfx/achan.ogg';
 import StepsSFX from './../assets/sfx/steps.ogg';
 import ShockSFX from './../assets/sfx/shock.ogg';
+import BreakerSFX from './../assets/sfx/breaker.ogg';
+import RiserSFX from './../assets/sfx/riser1sec.ogg';
+import SwitchSFX from './../assets/sfx/switch.ogg';
+import DroneRiseSFX from './../assets/sfx/drone-rise.ogg';
+
+// BGM
+import MenuBGM from './../assets/music/menu.ogg';
 
 // Tiles
 import JapanTilesPNG from './../assets/tilesets/tilesheet_japan.png';
@@ -65,6 +74,9 @@ import { BaseNote } from '../const/scales';
 import { achanSFXConfig } from '../const/achanSFX';
 import { bucketSFXConfig } from '../const/bucketSFX';
 import { stepsSFXConfig } from '../const/stepsSFX';
+import { switchSFXConfig } from '../const/switchSFX';
+import { taikoSFXConfig } from '../const/taikoSFX';
+import { InputController } from '../models/Input';
 
 const LOADING_BAR_HEIGHT = 25;
 const LOADING_BAR_WIDTH = 240;
@@ -109,9 +121,13 @@ export default class MainMenuScene extends Phaser.Scene {
 
 		// Images
 		this.load.image('bucket:japanese-house', JapaneseHouseBucketPNG);
+		this.load.image('texture:earth', EarthTextureJPG);
+		this.load.image('texture:noise', NoiseTextureJPG);
+
+		// Global BGM
+		this.load.audio('bgm:menu', MenuBGM);
 
 		// Audio SFX
-		// Don't forget to register the corresponsing instrument when adding new instrument sfx files
 		this.load.audio('sfx:shock', ShockSFX);
 		this.load.audio('sfx:harp', HarpSFX);
 		this.load.audio('sfx:bass', BassSFX);
@@ -125,15 +141,10 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.audio('sfx:bucket', BucketSFX);
 		this.load.audio('sfx:achan', AchanSFX);
 		this.load.audio('sfx:steps', StepsSFX);
-
-		// Audio BGM 01
-		// this.load.audio('bgm01-chello-chord', Bgm01ChelloChord);
-		// this.load.audio('bgm01-backing-voice', Bgm01BackingVoice);
-		// this.load.audio('bgm01-bass', Bgm01Bass);
-		// this.load.audio('bgm01-chello-melody', Bgm01ChelloMelody);
-		// this.load.audio('bgm01-kamo-voice', Bgm01KamoVoice);
-		// this.load.audio('bgm01-main-voice', Bgm01MainVoice);
-		// this.load.audio('bgm01-piano', Bgm01Piano);
+		this.load.audio('sfx:breaker', BreakerSFX);
+		this.load.audio('sfx:riser', RiserSFX);
+		this.load.audio('sfx:switch', SwitchSFX);
+		this.load.audio('sfx:drone-rise', DroneRiseSFX);
 
 		// Load body shapes from JSON file generated using PhysicsEditor
 		this.load.json('shapes', TetrominosShapesJSON);
@@ -172,18 +183,21 @@ export default class MainMenuScene extends Phaser.Scene {
 	public async create () {
     console.log('--- Creating Boot Scene ---');
 
-    const font = new FontFaceObserver('Coiny');
-    await font.load();
+    await new FontFaceObserver('Barlow Condensed Light').load();
+		await new FontFaceObserver('Barlow Condensed Regular').load();
+		await new FontFaceObserver('Barlow Condensed Bold').load();
+
     console.log('--- Finished Loading Fonts ---');
 
 		this.registry.set('instument:harp', new Instrument({ key: 'sfx:harp', octaves: 3, audioMarkerDuration: 4 }));
 		// this.registry.set('instument:bass', new Instrument({ key: 'sfx:bass', octaves: 2, audioMarkerDuration: 4 }));
 		this.registry.set('instument:merge', new Instrument({ key: 'sfx:merge', octaves: 3, audioMarkerDuration: 4 }));
 		this.registry.set('instument:gong', new Instrument({ key: 'sfx:gong', octaves: 1, audioMarkerDuration: 8 }));
-		this.registry.set('drum:taiko', new SFX('sfx:taiko', { notes: 15, audioMarkerDuration: 4 }));
+		this.registry.set('sfx:taiko', new SFX('sfx:taiko', undefined, taikoSFXConfig));
 		this.registry.set('sfx:bucket', new SFX('sfx:bucket', undefined, bucketSFXConfig));
 		this.registry.set('sfx:achan', new SFX('sfx:achan', undefined, achanSFXConfig));
 		this.registry.set('sfx:steps', new SFX('sfx:steps', undefined, stepsSFXConfig));
+		this.registry.set('sfx:switch', new SFX('sfx:switch', undefined, switchSFXConfig));
 		this.registry.set('instrument:musicbox', new Instrument({ key: 'sfx:musicbox', octaves: 1, audioMarkerDuration: 4 }));
 		this.registry.set('instrument:confirm', new Instrument({ key: 'sfx:confirm', octaves: 1, audioMarkerDuration: 4 }));
 		this.registry.set('instrument:touchy', new Instrument({ key: 'sfx:touchy', octaves: 1, audioMarkerDuration: 4 }));
@@ -201,6 +215,9 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.anims.createFromAseprite('dangerLine');
 		this.anims.createFromAseprite('petal');
 		console.log('--- Finished Creating Animations from Spritesheets ---');
+
+		this.registry.set('input-controller', new InputController());
+		console.log('--- Finished Creating Custom Controller Input ---');
 
     this.scene.start('main-menu');
   }

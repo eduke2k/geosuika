@@ -1,7 +1,13 @@
-export type MenuItem = {
-  label: string;
-  key: string;
-  url?: string;
+// export type MenuItem = {
+//   label: string;
+//   key: string;
+//   url?: string;
+// }
+
+export enum FontName {
+  LIGHT = 'Barlow Condensed Light',
+  REGULAR = 'Barlow Condensed Regular',
+  BOLD = 'Barlow Condensed Bold',
 }
 
 export type DroppableSet = {

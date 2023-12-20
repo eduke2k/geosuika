@@ -1,11 +1,11 @@
-import { MenuItem } from "../types";
+import { FontName } from "../../types";
 import DropBucket from "./DropBucket";
 
 const MENU_ITEM_GAP = 0;
 
 export default class BucketMenu extends Phaser.GameObjects.Container {
   private bucket: DropBucket;
-  private menuItems: MenuItem[] = [
+  private menuItems: { label: string, key: string}[] = [
     { label: 'Restart', key: 'restart' },
     { label: 'Leave', key: 'leave' },
   ];
@@ -20,7 +20,7 @@ export default class BucketMenu extends Phaser.GameObjects.Container {
     let yIncrement = 0;
     this.menuItems.forEach((item, i) => {
       const text = item;
-      const t = this.scene.add.text(0, yIncrement * i, text.label.toUpperCase(), { font: "24px Coiny", align: "center" }).setOrigin(0, 0.5);
+      const t = this.scene.add.text(0, yIncrement * i, text.label.toUpperCase(), { fontFamily: FontName.LIGHT, fontSize: '24px', align: "center" }).setOrigin(0, 0.5);
       this.add(t);
       const hitbox = new Phaser.Geom.Rectangle(0, 0, t.getBounds().width, t.getBounds().height);
 

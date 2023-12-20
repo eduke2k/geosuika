@@ -1,4 +1,4 @@
-import DropBucket from "./DropBucket";
+import DropBucket from "./DropBucket/DropBucket";
 
 export default class ProgressCircle extends Phaser.GameObjects.Container {
   private bucket: DropBucket;

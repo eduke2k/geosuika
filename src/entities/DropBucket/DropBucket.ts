@@ -1,29 +1,27 @@
 import chroma from "chroma-js";
-import { flagSet } from "../config/flags";
-import { tetrominosSet } from "../config/tetrominos";
-import { getNumberInRange, randomIntFromInterval, scaleNumberRange, shuffleArray, syncTranslation } from "../functions/helper";
-import { BackgroundMusic, BackgroundMusicConfig } from "../models/BackgroundMusic";
-import { SFX } from "../models/SFX";
-import { Instrument } from "../models/Instrument";
-import GameScene from "../scenes/GameScene";
-import { DroppableSet, FixedMatterCollisionData } from "../types";
-import BlinkingText from "./BlinkingText";
-// import BucketElevator from "./BucketElevator";
+import { flagSet } from "../../config/flags";
+import { tetrominosSet } from "../../config/tetrominos";
+import { getNumberInRange, randomIntFromInterval, scaleNumberRange, shuffleArray, syncTranslation } from "../../functions/helper";
+import { BackgroundMusic, BackgroundMusicConfig } from "../../models/BackgroundMusic";
+import { SFX } from "../../models/SFX";
+import { Instrument } from "../../models/Instrument";
+import GameScene from "../../scenes/GameScene";
+import { DroppableSet, FixedMatterCollisionData } from "../../types";
+import BlinkingText from "../BlinkingText";
 import Droppable from "./Droppable";
-// import MergeScore from "./MergeScore";
-import ProgressCircle from "./ProgressCircle";
+import ProgressCircle from "../ProgressCircle";
 import ScoreLabel, { ScorePayload } from "./ScoreLabel";
 import ScoreProgressBar from "./ScoreProgressBar";
-// import { Depths } from "../const/depths";
-import BlinkingScore from "./BlinkingScore";
-import { japanFoodSet } from "../config/japanFood";
-import { CATEGORY_BUCKET, CATEGORY_DROPPABLES, CATEGORY_TERRAIN } from "../const/collisions";
-import { BGMConfigs } from "../const/bgm";
-import { Depths } from "../const/depths";
+import BlinkingScore from "../BlinkingScore";
+import { japanFoodSet } from "../../config/japanFood";
+import { CATEGORY_BUCKET, CATEGORY_DROPPABLES, CATEGORY_TERRAIN } from "../../const/collisions";
+import { BGMConfigs } from "../../const/bgm";
+import { Depths } from "../../const/depths";
 import BucketMenu from "./BucketMenu";
-import { Action } from "../models/Input";
-import { duckSet } from "../config/ducks";
-import { DropBucketShockwave } from "../models/DropBucketShockwave";
+import { Action } from "../../models/Input";
+import { duckSet } from "../../config/ducks";
+import { DropBucketShockwave } from "../../models/DropBucketShockwave";
+import BaseScene from "../../scenes/BaseScene";
 
 export const GAME_OVER_TIME = 3000;
 export const DANGER_SPARK_TIME = 100;
@@ -34,6 +32,7 @@ export const COLLISION_SOUND_WAIT_TIME = 80;
 export const MERGE_SOUND_WAIT_TIME = 80;
 export const SCORE_BAR_WIDTH = 24;
 export const NEXT_DROPPABLE_TIME = 1000;
+const DROPPABLE_MOVE_ACCELERATION = 2;
 
 export type DropBucketOptions = {
   scene: GameScene;
@@ -100,7 +99,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   private bucketImage: Phaser.GameObjects.Image;
   private bucketProgressRatio = 0;
   private shockwaveController = new DropBucketShockwave(this.scene);
-  private shockSound = this.scene.sound.add('sfx:shock');
+  private shockSound = (this.scene as BaseScene).soundManager?.sound.add('sfx:shock');
+  private droppableMoveSpeed = 0;
 
   public bgm: BackgroundMusic | null = null;
   private elevatorDistance: number;
@@ -197,7 +197,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       const y = pointer.worldY;
 
       if (Phaser.Geom.Rectangle.Contains(rect, x, y)) {
-        this.handleLeftClick();
+        this.drop();
       }
     });
 
@@ -324,7 +324,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     });
 
     const sfx = this.scene.registry.get('sfx:bucket') as SFX | undefined;
-    if (sfx) sfx.playRandomSFXFromCategory(this.scene, 'in');
+    if (sfx) sfx.playRandomSFXFromCategory(this.getScene(), 'in');
 
     const hide = this.bucketImage.postFX.addReveal(undefined, 0, 1);
     hide.progress = 1;
@@ -342,6 +342,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
         this.bucketImage.clearFX();
       })
     })
+
+    // Reset Camera Distortion for Minigames
+    this.getGameScene()?.setChromaticEffect(1, 1000);
 
     new BlinkingText(this.scene, 'Memory Chamber disconncted', this.x, this.y, { fadeInTime: 250, movementY: 100, fontSize: 24, duration: 1000 });
     this.getGameScene()?.bucketUnmountFinished(this);
@@ -361,8 +364,11 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
     // Init bgm
     if (!this.bgm) {
-      this.bgm = new BackgroundMusic(this.scene, bgmConfig);
+      this.bgm = new BackgroundMusic(this.getScene(), bgmConfig);
     }
+    
+    // Remove Camera Distortion for Minigames
+    this.getGameScene()?.setChromaticEffect(0, 1000);
 
     // Start Music
     this.bgm.play();
@@ -371,7 +377,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.restartBucket();
 
     const sfx = this.scene.registry.get('sfx:bucket') as SFX | undefined;
-    if (sfx) sfx.playRandomSFXFromCategory(this.scene, 'out');
+    if (sfx) sfx.playRandomSFXFromCategory(this.getScene(), 'out');
 
     this.scene.tweens.addCounter({
       from: 0,
@@ -402,13 +408,15 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     return this.droppableSet ?? flagSet;
   }
 
-  public handleLeftClick (): void {
+  // Trigger drop of next droppable
+  public drop (): void {
     if (this.nextDroppable) {
       this.nextDroppable.untether();
       this.nextDroppableTime = NEXT_DROPPABLE_TIME;
     }
   }
 
+  // Triggered by droppables once untethered
   public handleDrop (): void {
     if (this.nextDroppable) this.droppables.push(this.nextDroppable);
     this.scoreLabel.resetMultiplier();
@@ -454,6 +462,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   private fadeInDroppable (droppable: Droppable, duration = 500): void {
     droppable.alpha = 0;
     const bokehFX = droppable.postFX.addBokeh(0, 0, 0);
+    console.log('duration', duration);
 
     this.scene.tweens.addCounter({
       from: 0,
@@ -461,6 +470,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       duration: duration,
       ease: Phaser.Math.Easing.Quadratic.Out,
       onUpdate: (tween) => {
+        console.log('fading in dropppbale',tween.getValue());
         droppable.alpha = tween.getValue();
         bokehFX.radius = (1 - tween.getValue()) * 2;
       },
@@ -483,7 +493,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       if (instrument) {
         const pan = (x - this.getBounds().centerX) / (this.bucketWidth / 2);
         const volume = scaleNumberRange(Math.min(score.scoreIncrement, 20), [0, 20], [0.5, 1]);
-        instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, pan, volume);
+        instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.getScene(), pan, volume);
       }
       this.mergeSoundWaitTime = MERGE_SOUND_WAIT_TIME;
     }
@@ -497,7 +507,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     if (!instrument) return;
     const pan = Phaser.Math.Clamp((source.body.position.x - this.getBounds().centerX) / (this.bucketWidth / 2), -1, 1);
     const volume = scaleNumberRange(Math.min(force, 17), [0, 20], [0, 1]);
-    instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, pan, volume);
+    instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.getScene(), pan, volume);
     this.collisionSoundWaitTime = COLLISION_SOUND_WAIT_TIME;
     if (contactVertex) this.triggerSparkParticle(contactVertex);
   }
@@ -514,7 +524,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     const instrument = this.scene.registry.get('instument:gong') as Instrument | undefined;
     if (instrument) {
       const volume = 0.5 * this.bucketProgressRatio + 0.5;
-      instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.scene, 0, volume);
+      instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.getScene(), 0, volume);
     }
   }
 
@@ -535,6 +545,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
   public getBGMConfig (): BackgroundMusicConfig | undefined {
     return BGMConfigs.find(c => c.key === this.bgmKey);
+  }
+
+  public getScene (): BaseScene {
+    return this.scene as BaseScene;
   }
 
   // private moveRelativeY (relativeTargetY: number, duration = 15000): void {
@@ -612,7 +626,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // const droppable = new Droppable(this, tier + 1, false, parentBucket, spawnPosition.x, spawnPosition.y, 'flags');
     droppable.hasCollided = true;
 
-    this.fadeInDroppable(droppable, nextTier);
+    this.fadeInDroppable(droppable);
 
     // Do Score calculation
     const scoreObject = this.scoreLabel.grantScore(nextTier);
@@ -743,7 +757,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
   public triggerDanger (): void {
     this.isDanger = true;
-    this.shockSound.play();
+    this.shockSound?.play();
     this.dangerSparkTime = 0;
     // this.scene.cameras.main.zoomTo(1.1, 100, 'Power2');
   }
@@ -752,7 +766,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.isDanger = false;
     this.dangerTime = GAME_OVER_TIME;
     this.dangerSparkTime = 0;
-    this.shockSound.stop();
+    this.shockSound?.stop();
     // this.scene.cameras.main.zoomTo(1, 100, 'Power2');
   }
 
@@ -763,15 +777,15 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   private triggerDestroyPhase (): void {
     if (!this.bgm) return;
 
-    this.shockSound.stop();
+    this.shockSound?.stop();
     this.isDanger = false;
     const bgm = this.bgm;
     this.endDroppablesLength = this.droppables.length;
     this.currentPhase = BucketPhase.DESTROY;
     // this.totalDroppablesForDestruction = this.droppables.length;
-    new BlinkingText(this.scene, 'The memory\nfades...', this.x, this.y, { fontSize: 42, duration: 1500, fadeInTime: 500, flashingDuration: 750, movementY: 200 });
+    new BlinkingText(this.getScene(), 'The memory\nfades...', this.x, this.y, { fontSize: 42, duration: 1500, fadeInTime: 500, flashingDuration: 750, movementY: 200 });
     
-    this.getGameScene()?.getPlayerCharacter()?.sfxBank?.playRandomSFXFromCategory(this.scene, 'annoyed');
+    this.getGameScene()?.getPlayerCharacter()?.sfxBank?.playRandomSFXFromCategory(this.getScene(), 'annoyed');
 
     if (this.nextDroppable) {
       this.explode(this.nextDroppable, { drum: 'drum:taiko' });
@@ -779,7 +793,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
 
     const touchy = this.scene.registry.get('instrument:touchy') as Instrument | undefined;
-    if (touchy) touchy.playRandomNote(this.scene, 0, 1);
+    if (touchy) touchy.playRandomNote(this.getScene(), 0, 1);
 
     this.scene.time.delayedCall(1500, () => {
       this.scene.tweens.addCounter({
@@ -796,8 +810,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       this.scene.cameras.main.rotateTo(Phaser.Math.DegToRad(-180), undefined, 5000, Phaser.Math.Easing.Quadratic.InOut);
 
       this.scene.time.delayedCall(1500, () => {
-        new BlinkingText(this.scene, '...but I am still\nin control', this.x, this.y, { fontSize: 42, duration: 1500, fadeInTime: 250, flashingDuration: 750, movementY: 100, rotation: Phaser.Math.DegToRad(-180)});
-        if (touchy) touchy.playRandomNote(this.scene, 0, 1);
+        new BlinkingText(this.getScene(), '...but I am still\nin control', this.x, this.y, { fontSize: 42, duration: 1500, fadeInTime: 250, flashingDuration: 750, movementY: 100, rotation: Phaser.Math.DegToRad(-180)});
+        if (touchy) touchy.playRandomNote(this.getScene(), 0, 1);
       });
   
       this.droppables.forEach(d => {
@@ -829,9 +843,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     })
   }
 
-  public rotateNextDroppable (): void {
+  public rotateNextDroppable (direction: 1 | -1): void {
     if (!this.nextDroppable) return;
-    this.nextDroppable.setRotation(this.nextDroppable.rotation + Phaser.Math.DegToRad(90));
+    this.nextDroppable.setRotation(this.nextDroppable.rotation + Phaser.Math.DegToRad(45 * direction));
   }
 
   public explode (droppable: Droppable, options?: { drum?: string }): void {
@@ -840,7 +854,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       if (drum) {
         const pan = (droppable.body.position.x - this.getBounds().centerX) / (this.bucketWidth / 2);
         const volume = 0.2 + (droppable.getTier() / this.options.droppableSet.droppableConfigs.length * 0.5)
-        drum.playRandomNote(this.scene, pan, volume);
+        drum.playRandomNote(this.getScene(), pan, volume);
       }
     }
 
@@ -859,7 +873,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   }
 
   public restartBucket (): void {
-    this.getGameScene()?.getPlayerCharacter()?.sfxBank?.playRandomSFXFromCategory(this.scene, 'restart');
+    this.getGameScene()?.getPlayerCharacter()?.sfxBank?.playRandomSFXFromCategory(this.getScene(), 'restart');
 
     this.resetEffects();
     this.bgm?.reset();
@@ -913,11 +927,26 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 		this.y += amount;
 	}
 
-  protected handleInputs (_delta: number): void {
+  protected handleInputs (delta: number): void {
     if (!this.isMounted() || !this.isActive()) return;
 
-    if (this.getGameScene()?.inputController?.justDown(Action.JUMP)) {
-      this.rotateNextDroppable();
+    const movementVector = this.getGameScene()?.inputController?.getMovementVector();
+    if (movementVector) {
+      if (movementVector.x !== 0 && this.nextDroppable) {
+        this.droppableMoveSpeed += DROPPABLE_MOVE_ACCELERATION / delta;
+        this.nextDroppable.x += this.droppableMoveSpeed * movementVector.x;
+      } else {
+        this.droppableMoveSpeed = 0;
+      }
+    }
+
+
+    if (this.getGameScene()?.inputController?.justDown(Action.ROTATE_PIECE_CW)) {
+      this.rotateNextDroppable(1);
+    } else if (this.getGameScene()?.inputController?.justDown(Action.ROTATE_PIECE_CCW)) {
+      this.rotateNextDroppable(-1);
+    } else if (this.getGameScene()?.inputController?.justDown(Action.DROP_PIECE)) {
+      this.drop();
     }
   }
 
@@ -1015,18 +1044,23 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     if (this.bucketActive) {
       // Handle next droppable position change with mouse position
       if (this.currentPhase === BucketPhase.DROP && this.nextDroppable && this.nextDroppable.isTethered()) {
-        const x = this.scene.game.input.mousePointer?.worldX;
-        const y = this.scene.game.input.mousePointer?.worldY;
+        // const x = this.scene.game.input.mousePointer?.worldX;
+        // const y = this.scene.game.input.mousePointer?.worldY;
 
-        if (x == undefined || y == undefined) {
-          this.nextDroppable.setX(this.dropSensorBody.position.x);
-          this.nextDroppable.setY(this.dropSensorBody.position.y);
-        } else {
-          this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , x));
-          this.nextDroppable.setY(getNumberInRange(this.dropSensorBody.bounds.min.y, this.dropSensorBody.bounds.max.y, y));
-        }
+        // if (x == undefined || y == undefined) {
+        //   this.nextDroppable.setX(this.dropSensorBody.position.x);
+        //   this.nextDroppable.setY(this.dropSensorBody.position.y);
+        // } else {
+        //   this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , x));
+        //   this.nextDroppable.setY(getNumberInRange(this.dropSensorBody.bounds.min.y, this.dropSensorBody.bounds.max.y, y));
+        // }
+
+        // Limit positions
+        this.nextDroppable.setY(this.dropSensorBody.position.y);
+        this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , this.nextDroppable.x));
         this.nextDroppable.setVelocity(0, 0);
       }
+
       this.calculateHighestAndLowestPoint();
 
       if (this.currentPhase === BucketPhase.DROP && this.highestDroppablePoint > this.gameOverThreshold) {

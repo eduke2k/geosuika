@@ -1,3 +1,5 @@
+import { FontName } from "../../types";
+
 const BASE_SCORE = 2;
 const MULTIPLIER_INCREMENT = 0.1;
 const MULTIPLIER_DURATION = 5000;
@@ -24,7 +26,7 @@ export default class ScoreLabel extends Phaser.GameObjects.Container {
     super(scene, x, y);
     scene.add.existing(this);
 
-    this.scoreText = this.scene.add.text(0, 0, 'asdasdasdasdsd', { font: "32px Coiny", align: "left" });
+    this.scoreText = this.scene.add.text(0, 0, '', { fontFamily: FontName.BOLD, fontSize: '32px', align: "left" });
     this.add(this.scoreText);
 
     // this.multiplierLabel = this.scene.add.text(20, 60, 'Multiplier', { font: "16px Coiny", align: "left" });

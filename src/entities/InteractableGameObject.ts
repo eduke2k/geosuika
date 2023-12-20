@@ -8,7 +8,7 @@ export default class InteractableGameObject extends GameObject {
   protected sensor: MatterJS.BodyType | undefined;
   protected glowTween: Phaser.Tweens.Tween | undefined;
 
-  public trigger (): void {
+  public trigger (_referenceCharacter: Character): void {
     console.log('nothing implemented');
   }
 
@@ -24,7 +24,6 @@ export default class InteractableGameObject extends GameObject {
   }
 
   public onCollisionEnd (_other: Character): void {
-    console.log('onCollisionEnd', this.constructor.name);
     if (this.isInteractable()) {
       if (this.glowTween) this.glowTween.stop();
       if (this.scene) this.glowTween = this.scene.tweens.add({ targets: this.glow, outerStrength: 0, ease: 'sine.inout', startDelay: 500, duration: 500 });

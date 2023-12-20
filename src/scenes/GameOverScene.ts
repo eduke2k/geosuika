@@ -1,11 +1,11 @@
 import Phaser from 'phaser'
-import { MenuItem } from '../types';
 import GameScene from './GameScene';
 import { LocalStorage } from '../models/LocalStorage';
 import { BackgroundMusicConfig } from '../models/BackgroundMusic';
+import BaseScene from './BaseScene';
 const MENU_ITEM_GAP = 0;
 
-export default class GameOverScene extends Phaser.Scene {
+export default class GameOverScene extends BaseScene {
   public container!: Phaser.GameObjects.Container;
 	public gameOverText!: Phaser.GameObjects.Text;
   public scoreHeadlineText!: Phaser.GameObjects.Text;
@@ -14,7 +14,7 @@ export default class GameOverScene extends Phaser.Scene {
   private score = 0;
   private bucketKey: string | undefined = undefined;
   private bgmConfig: BackgroundMusicConfig | undefined = undefined;
-  private baseMenuItems: MenuItem[] = [
+  private baseMenuItems: { label: string, key: string, url?: string }[] = [
     { label: 'Try again', key: 'retry' },
     { label: 'Leave Cabinet', key: 'disconnect' },
   ];
@@ -24,23 +24,23 @@ export default class GameOverScene extends Phaser.Scene {
 	}
 
 	public async create () {
+    super.create();
     this.cameras.main.alpha = 0;
 		this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
     this.container = this.add.container(0, 0);
 
-    this.gameOverText = this.add.text(0, 0, 'The Memory faded...', { font: "48px Coiny", align: "center" });
-    //  this.gameOverText = this.add.text(0, 0, 'Happy Birthday Achan!', { font: "48px Coiny", align: "center" });
+    this.gameOverText = this.add.text(0, 0, 'The Memory faded...', { font: "48px Kumar One", align: "center" });
     this.gameOverText.setOrigin(0.5, 0.5);
     this.container.add(this.gameOverText);
 
     // const rect = this.add.rectangle(0, this.gameOverText.y +  this.gameOverText.height + 50, 500, 100, 0x000000).setOrigin(0.5, 0.5);
     // this.container.add(rect);
 
-    this.scoreHeadlineText = this.add.text(0, this.gameOverText.y + this.gameOverText.height + 50 , 'FINAL SCORE', { font: "18px Coiny", align: "center" });
+    this.scoreHeadlineText = this.add.text(0, this.gameOverText.y + this.gameOverText.height + 50 , 'FINAL SCORE', { font: "18px Kumar One", align: "center" });
     this.scoreHeadlineText.setOrigin(0.5, 0.5);
     this.container.add(this.scoreHeadlineText);
 
-    this.scoreText = this.add.text(0, this.scoreHeadlineText.y + this.scoreHeadlineText.height + 10, this.score.toLocaleString(), { font: "48px Coiny", align: "center" });
+    this.scoreText = this.add.text(0, this.scoreHeadlineText.y + this.scoreHeadlineText.height + 10, this.score.toLocaleString(), { font: "48px Kumar One", align: "center" });
     this.scoreText.setOrigin(0.5, 0.5);
     this.container.add(this.scoreText);
 
@@ -67,7 +67,7 @@ export default class GameOverScene extends Phaser.Scene {
 
     menuItems.forEach((item) => {
       const text = item;
-      const t = this.add.text(0, y, text.label.toUpperCase(), { font: "32px Coiny", align: "center" });
+      const t = this.add.text(0, y, text.label.toUpperCase(), { font: "32px Kumar One", align: "center" });
       t.setOrigin(0.5, 0.5);
 
       this.container.add(t);
@@ -105,7 +105,7 @@ export default class GameOverScene extends Phaser.Scene {
 		})
   }
 
-  private handleAction (item: MenuItem): void {
+  private handleAction (item: { label: string, key: string, url?: string }): void {
     switch (item.key) {
       case 'retry': this.retry(); break;
       case 'disconnect': this.disconnect(); break;
@@ -121,7 +121,6 @@ export default class GameOverScene extends Phaser.Scene {
   private retry (): void {
     const gameScene = this.fadeOutToGameScene();
     gameScene?.restartBucket();
-
   }
 
   private fadeOutToGameScene (): GameScene | undefined {
@@ -152,5 +151,9 @@ export default class GameOverScene extends Phaser.Scene {
     this.score = data?.score ?? 0;
     this.bgmConfig = data?.bgmConfig;
     this.bucketKey = data?.bucketKey ?? undefined;
+  }
+
+  public update(time: number, delta: number): void {
+    super.update(time, delta);
   }
 }

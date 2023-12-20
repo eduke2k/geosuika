@@ -1,14 +1,12 @@
 import Phaser from 'phaser'
 // import Droppable from '../entities/Droppable';
-import DropBucket from '../entities/DropBucket';
+import DropBucket from '../entities/DropBucket/DropBucket';
 import { parseTiledProperties, scaleNumberRange } from '../functions/helper';
 import { PetalEmitter } from '../models/PetalEmitter';
 import chroma from 'chroma-js';
 import Dog from '../entities/Dog';
 import Arcade from '../entities/Arcade';
-import { Instrument } from '../models/Instrument';
-import BlinkingText from '../entities/BlinkingText';
-import { Action, InputController } from '../models/Input';
+import { Action } from '../models/Input';
 import { CATEGORY_TERRAIN } from '../const/collisions';
 import Character from '../entities/Character';
 import Achan from '../entities/Achan';
@@ -18,6 +16,7 @@ import RecyclingCan from '../entities/RecyclingCan';
 import ChromaticPostFX from '../shaders/ChromaticPostFX';
 import { SmallLamp, SmallLampFrame } from '../entities/SmallLamp';
 import GameObject from '../entities/GameObject';
+import BaseScene from './BaseScene';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -26,7 +25,7 @@ import GameObject from '../entities/GameObject';
 
 export type GameSceneState = 'play' | 'changeLayer';
 
-export default class GameScene extends Phaser.Scene {
+export default class GameScene extends BaseScene {
 	public state: GameSceneState = 'play';
 	public buckets: DropBucket[] = [];
 	public arcades: Arcade[] = [];
@@ -37,21 +36,21 @@ export default class GameScene extends Phaser.Scene {
 	public tilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 	public reveilableTilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 	public effectCircles: TilemapLayerEffectCircle[] = [];
-	public ignoreInputs = false;
 	public map: Phaser.Tilemaps.Tilemap | undefined = undefined;
 	private tilesets: Record<string, Phaser.Tilemaps.Tileset> = {};
 	private playerLight: Phaser.GameObjects.Light | undefined = undefined;
+  private breakerSound!: Phaser.Sound.BaseSound | undefined;
+  private riserSound!: Phaser.Sound.BaseSound | undefined;
+	private chromaticPostFX!: ChromaticPostFX;
 
 	// Active map stuff
 	private currentMap = '';
 	private currentMapLayer = '';
 	private staticMapCollisions: MatterJS.BodyType[] = [];
-
-	public inputController: InputController | null = null;
 	public bokehEffect: Phaser.FX.Bokeh | undefined;
 
 	// Layer change stuff
-	private layerChangeSprites: any[] = [];
+	// private layerChangeSprites: any[] = [];
 
 	constructor() {
 		super({ key: 'game-scene' })
@@ -79,18 +78,27 @@ export default class GameScene extends Phaser.Scene {
 	// 	)
 	// }
 
-	public startLayerChange (): void {
+	public setChromaticEffect (effect: number, duration: number): void {
+		if (!this.chromaticPostFX) return;
+		const pipeline = this.chromaticPostFX;
+		this.tweens.addCounter({
+			from: pipeline.getStrength(),
+			to: effect,
+			duration,
+			onUpdate: (tween) => {
+				pipeline.setStrength(tween.getValue());
+			},
+			onComplete: () => {
+				pipeline.setStrength(effect);
+			}
+		});
+	}
+
+	public startLayerChange (fadeIn = false): void {
+		this.riserSound?.play();
 		const duration = 1000;
-
-		// this.cameras.main.setPostPipeline(WarpPostFX);
-		// const pipeline = this.cameras.main.getPostPipeline(WarpPostFX) as any;
-		// pipeline.direction = {
-		// 	x: 0,
-		// 	y: 1
-		// }
-		// pipeline.smoothness = 1;
-
 		const currentPlayerLightRadius = this.playerLight?.radius ?? 400;
+		const currentAmbientRGB = this.lights.ambientColor;
 		const currentAmbient = Phaser.Display.Color.RGBToString(this.lights.ambientColor.r * 255, this.lights.ambientColor.g * 255, this.lights.ambientColor.b * 255);
 
 		this.tweens.addCounter({
@@ -102,30 +110,41 @@ export default class GameScene extends Phaser.Scene {
 				this.setTimeScaleFromTween(tween.getValue(), 1, 0.05);
 				this.playerLight?.setRadius((1 - tween.getValue()) * currentPlayerLightRadius);
 				this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix(currentAmbient, '#000000', tween.getValue()).hex()).color);
+				this.chromaticPostFX.setStrength(1 + tween.getValue() * 9);
 			},
 			onComplete: () => {
 				this.setTimeScale(0.05);
 				this.nextLayer(1);
-				this.tweens.addCounter({
-					from: 0,
-					to: 1,
-					duration: duration,
-					ease: Phaser.Math.Easing.Sine.In,
-					onUpdate: (tween) => {
-						this.setTimeScaleFromTween(tween.getValue(), 0.05, 1);
-						this.playerLight?.setRadius(tween.getValue() * currentPlayerLightRadius);
-						this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix('#000000', currentAmbient, tween.getValue()).hex()).color);
-					},
-					onComplete: () => {
-						this.setTimeScale(1);
-					}
-				});
+
+				if (fadeIn) {
+					this.tweens.addCounter({
+						from: 0,
+						to: 1,
+						duration: duration,
+						ease: Phaser.Math.Easing.Sine.In,
+						onUpdate: (tween) => {
+							this.setTimeScaleFromTween(tween.getValue(), 0.05, 1);
+							this.playerLight?.setRadius(tween.getValue() * currentPlayerLightRadius);
+							this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix('#000000', currentAmbient, tween.getValue()).hex()).color);
+							this.chromaticPostFX.setStrength(10 - tween.getValue() * 9);
+						},
+						onComplete: () => {
+							this.setTimeScale(1);
+						}
+					});
+				} else {
+					this.setTimeScale(1);
+					this.playerLight?.setRadius(currentPlayerLightRadius);
+					this.lights.setAmbientColor((currentAmbientRGB as any).color);
+					this.chromaticPostFX.setStrength(1);
+				}
 			}
 		});
 	}
 
 	public nextLayer (_direction: -1 | 1) {
 		const newLayer = this.getCurrentMapLayer() === 'main' ? 'japan' : 'main';
+		this.breakerSound?.play();
 
 		this.unloadActiveWorldLayer();
 		this.loadInWorldLayer(newLayer);
@@ -278,9 +297,26 @@ export default class GameScene extends Phaser.Scene {
 		}
 	}
 
-	public setBokehEffect (radius: number, duration: number, ease?: (v: number) => number ): void {
+	public setBokehEffect (radius: number, duration: number, ease?: (v: number) => number, onComplete?: () => void): void {
 		if (!this.bokehEffect) return;
-		this.tweens.add({ targets: this.bokehEffect, duration, ease, radius });
+		this.tweens.add({ targets: this.bokehEffect, duration, ease, radius, onComplete });
+	}
+
+	public pause (): void {
+		if (!this.bokehEffect) this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
+		this.setBokehEffect(2, 100, Phaser.Math.Easing.Sine.InOut, () => {
+			this.scene.launch('pause-scene');
+			this.scene.pause();
+		});
+		this.ignoreInputs = true;
+	}
+
+	public continue (): void {
+		console.log('continue');
+		this.ignoreInputs = false;
+		this.setBokehEffect(0, 100, Phaser.Math.Easing.Sine.InOut, () => {
+			this.bokehEffect?.destroy();
+		});
 	}
 
 	public triggerGameOver (score: number): void {
@@ -465,6 +501,9 @@ export default class GameScene extends Phaser.Scene {
 		this.buckets.forEach(b => {	b.destroy(); });
 		this.buckets = [];
 
+		this.objects.forEach(o => {	o.destroy(); });
+		this.objects = [];
+
 		// console.log(this.map);
 		// this.tilemapLayers = [];
 
@@ -496,7 +535,11 @@ export default class GameScene extends Phaser.Scene {
 		return map;
 	}
 
-	public create() {
+	public create () {
+		super.create();
+		this.breakerSound = this.soundManager?.sound.add('sfx:breaker');
+		this.riserSound = this.soundManager?.sound.add('sfx:riser');
+
 		// Enable Lights
 		this.lights.enable().setAmbientColor(0x0f101c);
 		this.playerLight = this.lights.addLight(0, 0, 400, 0xFFFFFF, 2);
@@ -504,11 +547,11 @@ export default class GameScene extends Phaser.Scene {
 		const achan = new Achan(this, 0, 0);
 		this.characters.push(achan);
 
-		this.inputController = new InputController(this);
 		this.map = this.loadMap('map2');
 		this.loadInWorldLayer('japan');
 
 		this.cameras.main.setPostPipeline(ChromaticPostFX);
+		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
 
 		const playerSpawn = this.map.getObjectLayer('triggers')?.objects.find(o => o.name === 'playerSpawn');
 		achan.setPosition(playerSpawn?.x, playerSpawn?.y);
@@ -523,6 +566,7 @@ export default class GameScene extends Phaser.Scene {
 	}
 
 	public update (time: number, delta: number): void {
+		super.update(time, delta);
 		const player = this.getPlayerCharacter();
 
 		// Let PlayerLight follow Player
@@ -534,7 +578,7 @@ export default class GameScene extends Phaser.Scene {
 		this.buckets.forEach(a => a.update(time, delta));
 		this.objects.forEach(a => a.update(time, delta));
 		
-		const mountedBucket = this.getMountedBucket();
+		// const mountedBucket = this.getMountedBucket();
 
 		// TILE UPDATE LOGIC
 		// const allVisibleTiles = this.getAllVisibleTiles();
@@ -557,33 +601,37 @@ export default class GameScene extends Phaser.Scene {
     // }
 
 		if (!this.ignoreInputs) {
-			if (this.inputController?.justDown(Action.DEBUG1)) {
-				if (mountedBucket) mountedBucket.rankUp();
+			if (this.inputController?.justDown(Action.PAUSE)) {
+				this.pause();
 			}
+
+			// if (this.inputController?.justDown(Action.DEBUG1)) {
+			// 	if (mountedBucket) mountedBucket.rankUp();
+			// }
 		
-			if (this.inputController?.isDown(Action.UP)) {
-				// this.elevator.moveY(-100 / delta);
-				if (mountedBucket) mountedBucket.moveY(-100 / delta);
-			}
+			// if (this.inputController?.isDown(Action.UP)) {
+			// 	// this.elevator.moveY(-100 / delta);
+			// 	if (mountedBucket) mountedBucket.moveY(-100 / delta);
+			// }
 		
-			if (this.inputController?.isDown(Action.DOWN)) {
-				// this.elevator.moveY(100 / delta);
-				if (mountedBucket) mountedBucket.moveY(100 / delta);
-			}
+			// if (this.inputController?.isDown(Action.DOWN)) {
+			// 	// this.elevator.moveY(100 / delta);
+			// 	if (mountedBucket) mountedBucket.moveY(100 / delta);
+			// }
 			
-			if (this.inputController?.justDown(Action.DEBUG2)) {
-				if (mountedBucket) mountedBucket.clearAllVisibleTiles();
-			} 
+			// if (this.inputController?.justDown(Action.DEBUG2)) {
+			// 	if (mountedBucket) mountedBucket.clearAllVisibleTiles();
+			// } 
 		
-			if (this.inputController?.justDown(Action.DEBUG3)) {
-				if (!mountedBucket || !mountedBucket.bgm) return;
-				const instrument = this.registry.get('instument:harp') as Instrument | undefined;
-				if (instrument) {
-					const chord = mountedBucket.bgm.getCurrentChord();
-					new BlinkingText(this, chord, mountedBucket.x, mountedBucket.y, { fontSize: 16, movementY: 100, duration: 1000 });
-					instrument.playRandomNoteInChord(chord, this, 0, 1);
-				}
-			}
+			// if (this.inputController?.justDown(Action.DEBUG3)) {
+			// 	if (!mountedBucket || !mountedBucket.bgm) return;
+			// 	const instrument = this.registry.get('instument:harp') as Instrument | undefined;
+			// 	if (instrument) {
+			// 		const chord = mountedBucket.bgm.getCurrentChord();
+			// 		new BlinkingText(this, chord, mountedBucket.x, mountedBucket.y, { fontSize: 16, movementY: 100, duration: 1000 });
+			// 		instrument.playRandomNoteInChord(chord, this, 0, 1);
+			// 	}
+			// }
 		}
 	}
 }

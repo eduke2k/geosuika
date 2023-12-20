@@ -159,7 +159,7 @@
                         {
                          "name":"gameOverThreshold",
                          "type":"int",
-                         "value":535
+                         "value":150
                         }, 
                         {
                          "name":"height",

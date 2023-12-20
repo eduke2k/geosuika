@@ -1,4 +1,5 @@
 import { Chord } from "../const/scales";
+import BaseScene from "../scenes/BaseScene";
 
 export type ChordProgressionMarker = {
   start: number;
@@ -32,15 +33,15 @@ export type BGMPatternConfig = {
 }[];
 
 export class BackgroundMusic {
-  private scene: Phaser.Scene;
+  private scene: BaseScene;
   private audio: Phaser.Sound.WebAudioSound[];
   public config: BackgroundMusicConfig;
   private currentLevel = 0;
 
-  public constructor(scene: Phaser.Scene, config: BackgroundMusicConfig) {
+  public constructor(scene: BaseScene, config: BackgroundMusicConfig) {
     this.scene = scene;
     this.config = config;
-    this.audio = config.audioKeys.map(k => scene.sound.add(k.key, { loop: true, volume: 0 }) as Phaser.Sound.WebAudioSound)
+    this.audio = config.audioKeys.map(k => scene.soundManager?.music.add(k.key, { loop: true, volume: 0 }) as Phaser.Sound.WebAudioSound)
     this.audio[0].on('looped', this.handleLoop, this);
   }
 

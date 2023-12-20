@@ -61,9 +61,10 @@ export default class Character extends GameObject {
       // console.log('collisionstart', event);
       // Check if player is within reach of interactbale game objects
       if (this.playerControlled) {
-        const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs).filter(o => o.active);
+        const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs);
         if (gameObjects.length > 0) {
-          this.interactableObjectsInReach.push(...gameObjects)
+          
+          this.interactableObjectsInReach.push(...gameObjects.filter(o => o.active));
           gameObjects[0].onCollisionStart(this);
         }
       }
@@ -73,10 +74,9 @@ export default class Character extends GameObject {
       // console.log('collisionend', event);
       // Check if player is within reach of interactbale game objects
       if (this.playerControlled) {
-        const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs).filter(o => o.active);
+        const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs);
         if (gameObjects.length > 0) {
-          console.log('collisionend', gameObjects[0]);
-          gameObjects[0].onCollisionEnd(this);
+          gameObjects.filter(o => o.active)[0]?.onCollisionEnd(this);
 
           gameObjects.forEach(o => {
             const index = this.interactableObjectsInReach.findIndex(r => r === o)
@@ -105,6 +105,10 @@ export default class Character extends GameObject {
 
     // Add to scene render list
     scene.add.existing(this);
+  }
+
+  public getBody (): MatterJS.BodyType | null {
+    return this.body as MatterJS.BodyType | null;
   }
 
   public isPlayerControlled (): boolean {
@@ -158,7 +162,7 @@ export default class Character extends GameObject {
       // Jumping
       if (this.onGround || this.onGroundThresholdTime > 0) {
         if (this.getGameScene()?.inputController?.justDown(Action.JUMP)) {
-          if (this.sfxBank) this.sfxBank.playRandomSFXFromCategory(this.scene, 'jump');
+          if (this.sfxBank) this.sfxBank.playRandomSFXFromCategory(this.scene as GameScene, 'jump');
           this.setVelocityY(-this.maxJumpStrength);
           this.justJumped = true;
           this.longPressJumpTime = 0;
@@ -168,8 +172,9 @@ export default class Character extends GameObject {
 
       // Interacting
       if (this.onGround && this.interactableObjectsInReach[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
+        console.log(this.interactableObjectsInReach);
         const targetObject = this.interactableObjectsInReach[0];
-        targetObject.trigger();
+        targetObject.trigger(this);
       }
 
       // Map layer changing mode

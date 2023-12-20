@@ -1,4 +1,5 @@
 import { pickRandom } from "../functions/helper";
+import BaseScene from "../scenes/BaseScene";
 
 export type SFXAutoConfig = {
   notes: number;
@@ -33,21 +34,21 @@ export class SFX {
     console.log(`-----registered new sfx bank: ${this.key}-----`, this);
   }
 
-  private playFromConfig (scene: Phaser.Scene, c: Phaser.Types.Sound.SoundMarker, pan?: number, volume?: number): void {
+  private playFromConfig (scene: BaseScene, c: Phaser.Types.Sound.SoundMarker, pan?: number, volume?: number): void {
     this.play(scene, { ...c, config: { pan: pan ?? 0, volume: volume ?? 1 }});
   }
 
-  public playIndex (scene: Phaser.Scene, index: number, pan: number, volume: number): void {
+  public playIndex (scene: BaseScene, index: number, pan: number, volume: number): void {
     const markerConfig = this.audioMarkerConfig[index];
     this.playFromConfig(scene, markerConfig, pan, volume);
   }
 
-  public playRandomNote (scene: Phaser.Scene, pan?: number, volume?: number): void {
+  public playRandomNote (scene: BaseScene, pan?: number, volume?: number): void {
     const markerConfig = pickRandom(this.audioMarkerConfig);
     this.playFromConfig(scene, markerConfig, pan, volume);
   }
 
-  public playRandomSFXFromCategory (scene: Phaser.Scene, category: string, pan?: number, volume?: number): void {
+  public playRandomSFXFromCategory (scene: BaseScene, category: string, pan?: number, volume?: number): void {
     const indices = this.audioMarkerMapping[category];
     if (indices === undefined) {
       console.warn(`could not find audio category ${category} in sound bank ${this.key}. Ignoring`);
@@ -71,7 +72,7 @@ export class SFX {
     this.playFromConfig(scene, config, pan, volume);
   }
 
-  private play (scene: Phaser.Scene, config: Phaser.Types.Sound.SoundMarker): void {
-    scene.sound.play(this.key, config);
+  private play (scene: BaseScene, config: Phaser.Types.Sound.SoundMarker): void {
+    scene.soundManager?.sound.play(this.key, config);
   }
 }

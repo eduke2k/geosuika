@@ -1,5 +1,6 @@
 import { BaseNote, Chord, chordNotes } from "../const/scales";
 import { pickRandom } from "../functions/helper";
+import BaseScene from "../scenes/BaseScene";
 
 export type InstrumentConfig = {
   key: string;
@@ -55,11 +56,11 @@ export class Instrument {
     return obj;
   }
 
-  private playFromConfig (scene: Phaser.Scene, c: Phaser.Types.Sound.SoundMarker, pan: number, volume: number): void {
+  private playFromConfig (scene: BaseScene, c: Phaser.Types.Sound.SoundMarker, pan: number, volume: number): void {
     this.play(scene, { ...c, config: { pan, volume }});
   }
 
-  public playChord (scene: Phaser.Scene, chord: Chord, pan: number, volume: number): void {
+  public playChord (scene: BaseScene, chord: Chord, pan: number, volume: number): void {
     const indices = this.audioMarkerIndices[chord];
 
     indices.forEach(i => {
@@ -68,23 +69,23 @@ export class Instrument {
     });
   }
 
-  public playIndex (scene: Phaser.Scene, index: number, pan: number, volume: number): void {
+  public playIndex (scene: BaseScene, index: number, pan: number, volume: number): void {
     const markerConfig = this.audioMarkerConfig[index];
     this.playFromConfig(scene, markerConfig, pan, volume);
   }
 
-  public playRandomNote (scene: Phaser.Scene, pan: number, volume: number): void {
+  public playRandomNote (scene: BaseScene, pan: number, volume: number): void {
     const markerConfig = pickRandom(this.audioMarkerConfig);
     this.playFromConfig(scene, markerConfig, pan, volume);
   }
 
-  public playRandomNoteInChord (chord: Chord, scene: Phaser.Scene, pan: number, volume: number): void {
+  public playRandomNoteInChord (chord: Chord, scene: BaseScene, pan: number, volume: number): void {
     const randomIndex = pickRandom(this.audioMarkerIndices[chord]);
     const markerConfig = this.audioMarkerConfig[randomIndex];
     this.playFromConfig(scene, markerConfig, pan, volume);
   }
 
-  private play (scene: Phaser.Scene, config: Phaser.Types.Sound.SoundMarker): void {
-    scene.sound.play(this.key, config);
+  private play (scene: BaseScene, config: Phaser.Types.Sound.SoundMarker): void {
+    scene.soundManager?.sound.play(this.key, config);
   }
 }

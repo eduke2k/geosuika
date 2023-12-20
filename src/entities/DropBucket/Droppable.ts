@@ -1,5 +1,5 @@
-import { CATEGORY_BUCKET, CATEGORY_DROPPABLES } from "../const/collisions";
-import { SingleDroppableConfig } from "../types";
+import { CATEGORY_BUCKET, CATEGORY_DROPPABLES } from "../../const/collisions";
+import { SingleDroppableConfig } from "../../types";
 import DropBucket from "./DropBucket";
 
 export type DroppableParams = {
@@ -127,7 +127,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     this.on('pointerup', () => {
       this.clearTint();
       // this.parentBucket.addEffectCircle(this.x, this.y, { effect: -2, toRadius: 960 })
-      this.parentBucket.explode(this, { drum: 'drum:taiko' });
+      this.parentBucket.explode(this, { drum: 'sfx:taiko' });
       this.parentBucket.updateElevatorPosition();
       this.parentBucket.handleDestroyedPhaseProgress();
     });

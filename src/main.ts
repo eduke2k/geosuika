@@ -8,6 +8,7 @@ import GameOverScene from './scenes/GameOverScene'
 import { WarpPostFX } from './shaders/WarpPostFX/WarpPostFX'
 import ShockwavePostFx from 'phaser3-rex-plugins/plugins/shockwavepipeline.js';
 import ChromaticPostFX from './shaders/ChromaticPostFX'
+import PauseScene from './scenes/PauseScene'
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
@@ -15,9 +16,22 @@ const config: Phaser.Types.Core.GameConfig = {
 	width: 1280,
 	height: 720,
 	antialias: true,
+	roundPixels: true,
+	input: {
+		gamepad: true
+	},
 	fps: {
 		limit: 60,
 	},
+	callbacks: {
+		preBoot: (game) => {
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore: Types for SoundManagerCreator are incomplete
+			game.music = Phaser.Sound.SoundManagerCreator.create(game);
+		}
+	},
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	// @ts-ignore: Types for pipeline are broken for some reason
 	pipeline: [WarpPostFX, ShockwavePostFx, ChromaticPostFX],
 	physics: {
 		default: 'matter',
@@ -37,7 +51,7 @@ const config: Phaser.Types.Core.GameConfig = {
 			}
 		}
 	},
-	scene: [BootScene, MainMenuScene, GameScene, HUDScene, GameOverScene]
+	scene: [BootScene, MainMenuScene, GameScene, HUDScene, GameOverScene, PauseScene]
 }
 
 export default new Phaser.Game(config)

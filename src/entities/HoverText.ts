@@ -1,6 +1,8 @@
 import { Depths } from "../const/depths";
+import { FontName } from "../types";
 
 export type HoverTextOptions = {
+  fontFamily?: FontName;
   fontSize?: number;
   duration?: number;
   movementY?: number;
@@ -35,7 +37,7 @@ export default class HoverText extends Phaser.GameObjects.Container {
     this.setDepth(options?.depth ?? Depths.TEXT_LAYER);
 
     this.textField = this.scene.add.text(0, 0, this.text, { align: "center" }).setOrigin(0.5, 0.5);
-    this.textField.setFontFamily('Coiny');
+    this.textField.setFontFamily(options?.fontFamily ?? FontName.REGULAR);
     this.textField.setFontSize(`${options?.fontSize ?? 12}px`);
     this.textField.setShadow(0, 2, 'black', 2, false, true);
     this.textField.alpha = 0;

@@ -3,7 +3,7 @@ import { Depths } from "../const/depths";
 import GameScene from "../scenes/GameScene";
 
 export default class GameObject extends Phaser.Physics.Matter.Sprite {
-  protected direction = 1;
+  protected direction: 1 | -1 = 1;
 
   constructor(
     scene: Phaser.Scene,
@@ -20,11 +20,15 @@ export default class GameObject extends Phaser.Physics.Matter.Sprite {
 
     this.setDepth(Depths.OBJECT_LAYER);
 
-    this.setCollisionCategory(CATEGORY_OBJECT)
+    this.setCollisionCategory(CATEGORY_OBJECT);
     this.setCollidesWith([CATEGORY_TERRAIN, CATEGORY_PLAYER]);
 
     // Add to scene render list
     scene.add.existing(this);
+  }
+
+  public setDirection (d: 1 | -1): void {
+    this.direction = d;
   }
 
   public getGameScene (): GameScene | undefined {
