@@ -2,7 +2,6 @@ import { CATEGORY_OBJECT, CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN } f
 import { BackgroundMusic } from "../models/BackgroundMusic";
 import { Instrument } from "../models/Instrument";
 import { LocalStorage } from "../models/LocalStorage";
-import BaseScene from "../scenes/BaseScene";
 import { FontName } from "../types";
 import BlinkingText from "./BlinkingText";
 import Character from "./Character";
@@ -92,10 +91,6 @@ export default class Arcade extends InteractableGameObject {
     const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
     this.highscoreTextfield.setText(highscoreText);
     this.highscoreTextfield.start();
-    this.setVelocityY(-5);
-
-    const sfx = this.scene.registry.get('instrument:musicbox') as Instrument | undefined;
-    if (sfx) sfx.playRandomNote(this.getScene(), 0, 0.2);
   }
 
   public onCollisionEnd (other: Character): void {
@@ -104,14 +99,9 @@ export default class Arcade extends InteractableGameObject {
     this.highscoreTextfield.end();
   }
 
-  public getScene (): BaseScene {
-    return this.scene as BaseScene;
-  }
-
   public destroy (): void {
     this.titleTextfield.destroy();
     this.highscoreTextfield.destroy();
-    if (this.sensor) this.scene.matter.world.remove(this.sensor);
     super.destroy();
   }
 

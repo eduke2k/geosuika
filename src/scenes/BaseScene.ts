@@ -18,9 +18,9 @@ export default class BaseScene extends Phaser.Scene {
     this.inputController = this.registry.get('input-controller');
   }
 
-  public update (_time: number, _delta: number): void {
+  public update (time: number, delta: number): void {
     if (!this.ignoreInputs) {
-      this.inputController?.update();
+      this.inputController?.update(time, delta);
     }
   }
 }

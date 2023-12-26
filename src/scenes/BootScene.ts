@@ -34,7 +34,13 @@ import BarJSON from './../assets/bar.json';
 import RecyclingCanPNG from './../assets/recycling.png';
 import RecyclingCanJSON from './../assets/recycling.json';
 import SmallLampPNG from './../assets/smallLamp.png';
-import SmallLampJSPN from './../assets/smallLamp.json';
+import SmallLampJSON from './../assets/smallLamp.json';
+import PortraitAchanPNG from './../assets/portrait_achan.png';
+import PortraitAchanJSON from './../assets/portrait_achan.json';
+import PortraitFallbackPNG from './../assets/portrait_fallback.png';
+import PortraitFallbackJSON from './../assets/portrait_fallback.json';
+import PortraitShibaPNG from './../assets/portrait_shiba.png';
+import PortraitShibaJSON from './../assets/portrait_shiba.json';
 
 // Images
 import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
@@ -43,9 +49,11 @@ import NoiseTextureJPG from './../assets/noise.png';
 
 // Audio SFX
 import HarpSFX from './../assets/sfx/harp.ogg';
+import PianoSFX from './../assets/sfx/piano.ogg';
 import BassSFX from './../assets/sfx/bass.ogg';
 import MergeSFX from './../assets/sfx/merge.ogg';
 import GongSFX from './../assets/sfx/gong.ogg';
+import GongEffectSFX from './../assets/sfx/gongeffect.ogg';
 import TaikoSFX from './../assets/sfx/taiko.ogg';
 import AscensionSFX from './../assets/sfx/ascension.ogg';
 import MusicBoxSFX from './../assets/sfx/musicbox.ogg';
@@ -59,6 +67,7 @@ import BreakerSFX from './../assets/sfx/breaker.ogg';
 import RiserSFX from './../assets/sfx/riser1sec.ogg';
 import SwitchSFX from './../assets/sfx/switch.ogg';
 import DroneRiseSFX from './../assets/sfx/drone-rise.ogg';
+import ArcadeHummingSFX from './../assets/sfx/arcadehumming.ogg';
 
 // BGM
 import MenuBGM from './../assets/music/menu.ogg';
@@ -77,6 +86,7 @@ import { stepsSFXConfig } from '../const/stepsSFX';
 import { switchSFXConfig } from '../const/switchSFX';
 import { taikoSFXConfig } from '../const/taikoSFX';
 import { InputController } from '../models/Input';
+import { gongEffectSFXConfig } from '../const/gongEffectSFX';
 
 const LOADING_BAR_HEIGHT = 25;
 const LOADING_BAR_WIDTH = 240;
@@ -115,7 +125,10 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.aseprite('dangerLine', DangerLinePNG, DangerLineJSON);
 		this.load.aseprite('petal', PetalPNG, PetalJSON);
 		this.load.aseprite('recyclingCan', RecyclingCanPNG, RecyclingCanJSON);
-		this.load.aseprite('smallLamp', SmallLampPNG, SmallLampJSPN);
+		this.load.aseprite('smallLamp', SmallLampPNG, SmallLampJSON);
+		this.load.aseprite('portrait:achan', PortraitAchanPNG, PortraitAchanJSON);
+		this.load.aseprite('portrait:shiba', PortraitShibaPNG, PortraitShibaJSON);
+		this.load.aseprite('portrait:fallback', PortraitFallbackPNG, PortraitFallbackJSON);
 
 		this.load.atlas('bar', BarPNG, BarJSON);
 
@@ -130,9 +143,11 @@ export default class MainMenuScene extends Phaser.Scene {
 		// Audio SFX
 		this.load.audio('sfx:shock', ShockSFX);
 		this.load.audio('sfx:harp', HarpSFX);
+		this.load.audio('sfx:piano', PianoSFX);
 		this.load.audio('sfx:bass', BassSFX);
 		this.load.audio('sfx:merge', MergeSFX);
 		this.load.audio('sfx:gong', GongSFX);
+		this.load.audio('sfx:gong-effect', GongEffectSFX);
 		this.load.audio('sfx:taiko', TaikoSFX);
 		this.load.audio('sfx:ascension', AscensionSFX);
 		this.load.audio('sfx:musicbox', MusicBoxSFX);
@@ -145,6 +160,7 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.audio('sfx:riser', RiserSFX);
 		this.load.audio('sfx:switch', SwitchSFX);
 		this.load.audio('sfx:drone-rise', DroneRiseSFX);
+		this.load.audio('sfx:arcade-humming', ArcadeHummingSFX);
 
 		// Load body shapes from JSON file generated using PhysicsEditor
 		this.load.json('shapes', TetrominosShapesJSON);
@@ -189,11 +205,12 @@ export default class MainMenuScene extends Phaser.Scene {
 
     console.log('--- Finished Loading Fonts ---');
 
-		this.registry.set('instument:harp', new Instrument({ key: 'sfx:harp', octaves: 3, audioMarkerDuration: 4 }));
-		// this.registry.set('instument:bass', new Instrument({ key: 'sfx:bass', octaves: 2, audioMarkerDuration: 4 }));
-		this.registry.set('instument:merge', new Instrument({ key: 'sfx:merge', octaves: 3, audioMarkerDuration: 4 }));
-		this.registry.set('instument:gong', new Instrument({ key: 'sfx:gong', octaves: 1, audioMarkerDuration: 8 }));
+		this.registry.set('instrument:harp', new Instrument({ key: 'sfx:harp', octaves: 3, audioMarkerDuration: 4 }));
+		this.registry.set('instrument:piano', new Instrument({ key: 'sfx:piano', octaves: 1, audioMarkerDuration: 6 }));
+		this.registry.set('instrument:merge', new Instrument({ key: 'sfx:merge', octaves: 3, audioMarkerDuration: 4 }));
+		this.registry.set('instrument:gong', new Instrument({ key: 'sfx:gong', octaves: 1, audioMarkerDuration: 8 }));
 		this.registry.set('sfx:taiko', new SFX('sfx:taiko', undefined, taikoSFXConfig));
+		this.registry.set('sfx:gong-effect', new SFX('sfx:gong-effect', undefined, gongEffectSFXConfig));
 		this.registry.set('sfx:bucket', new SFX('sfx:bucket', undefined, bucketSFXConfig));
 		this.registry.set('sfx:achan', new SFX('sfx:achan', undefined, achanSFXConfig));
 		this.registry.set('sfx:steps', new SFX('sfx:steps', undefined, stepsSFXConfig));
@@ -219,6 +236,7 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.registry.set('input-controller', new InputController());
 		console.log('--- Finished Creating Custom Controller Input ---');
 
-    this.scene.start('main-menu');
+    this.scene.start('main-menu-scene').remove();
+		// this.scene.launch('game-scene').launch('hud-scene').remove();
   }
 }

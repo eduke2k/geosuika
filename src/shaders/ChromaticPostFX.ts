@@ -5,21 +5,17 @@ precision mediump float;
 
 uniform sampler2D uMainSampler;
 uniform float uStrength;
+uniform vec2 uCenter;
 varying vec2 outTexCoord;
 
 vec2 computeUV( vec2 uv, float k, float kcube) {
-  vec2 t = uv - .5;
+  vec2 t = vec2(uv.x - uCenter.x, uv.y - uCenter.y);
   float r2 = t.x * t.x + t.y * t.y;
   float f = 0.;
   
-  if(kcube == 0.0) {
-    f = 1. + r2 * k;
-  } else {
-    f = 1. + r2 * (k + kcube * sqrt( r2 ));
-  }
+  f = kcube == 0.0 ? 1. + r2 * k : 1. + r2 * (k + kcube * sqrt( r2 ));
   
-  vec2 nUv = f * t + .5;
-  // nUv.y = 1. - nUv.y;
+  vec2 nUv = vec2(f * t.x + uCenter.x, f * t.y + uCenter.y);
 
   return nUv;
 }
@@ -42,6 +38,7 @@ void main() {
 
 export default class ChromaticPostFX extends Phaser.Renderer.WebGL.Pipelines.PostFXPipeline {
   private strength: number;
+  private center: {x: number, y: number};
 
   constructor (game: Phaser.Game) {
     super({
@@ -58,6 +55,7 @@ export default class ChromaticPostFX extends Phaser.Renderer.WebGL.Pipelines.Pos
     });
 
     this.strength = 1;
+    this.center = { x: 0.5, y: 0.5 };
   }
 
   onBoot () {
@@ -66,6 +64,7 @@ export default class ChromaticPostFX extends Phaser.Renderer.WebGL.Pipelines.Pos
 
   onPreRender () {
     this.set1f('uStrength', this.strength);
+    this.set2f('uCenter', this.center.x, this.center.y);
   }
 
   public getStrength () {
@@ -74,5 +73,16 @@ export default class ChromaticPostFX extends Phaser.Renderer.WebGL.Pipelines.Pos
 
   public setStrength (value: number) {
       this.strength = value;
+  }
+
+
+  public getCenter () {
+    return this.center;
+  }
+
+  public setCenter (x: number, y: number) {
+      this.center.x = x;
+      this.center.y = y;
+      this.set2f('uCenter', this.center.x, this.center.y);
   }
 }

@@ -4,16 +4,17 @@ import { getOtherInteractableGameObjectsFromCollisionPairs } from "../functions/
 import { Action } from "../models/Input";
 import { SFX } from "../models/SFX";
 import GameScene from "../scenes/GameScene";
-import HUDScene from "../scenes/HUDScene";
-import GameObject from "./GameObject";
 import InteractableGameObject from "./InteractableGameObject";
 
 const JUMP_PRESS_TIME = 150;
 const ON_GROUND_THRESHOLD = 150;
+const JUMP_BUFFER_TIME = 150;
+const BODY_LABELS_FOR_GROUND_CHECK = ['terrain', 'terrainObject', 'oneway-platform'];
 
 export type CharacterStates = 'idle' | 'run' | 'stop' | 'turn' | 'lookup' | 'lookdown' | 'lookup' | 'jump' | 'fall' | 'floating'
 
-export default class Character extends GameObject {
+export default class Character extends InteractableGameObject {
+  protected shadow: Phaser.FX.Shadow;
   protected movementBehaviour?: MovementBehaviour;
   protected stepSoundBehaviour?: StepSoundBehaviour;
   protected playerControlled = false;
@@ -25,11 +26,13 @@ export default class Character extends GameObject {
   public justLanded = false;
   public justJumped = false;
   public justSlided = false;
-  public floatingY: number | undefined = undefined;
-  public maxJumpStrength = 15;
+  public maxJumpStrength = 16;
   public airControl = 0.1;
   public longPressJumpTime = 0;
+  public jumpBufferTime = -1;
   public onGroundThresholdTime = 0;
+  public groundNormal: Phaser.Math.Vector2 | undefined;
+  public groundBody: MatterJS.BodyType | undefined;
   public interactableObjectsInReach: InteractableGameObject[] = [];
   public sfxBank: SFX | undefined;
   
@@ -47,18 +50,20 @@ export default class Character extends GameObject {
     this.setFriction(0);
     this.setPosition(x, y);
     this.setFixedRotation();
+    this.shadow = this.postFX.addShadow(0.5, 0.5, 0.05, 0.8, 0x000000, 4);
+
     this.sfxBank = this.scene.registry.get(sfxKey) as SFX | undefined;
 
     this.scene.matter.world.on('beforeupdate', () => {
       this.wasOnGround = this.onGround;
       this.onGround = false;
+      this.groundBody = undefined;
       this.justLanded = false;
       this.justSlided = false;
       this.justJumped = false;
     });
 
     this.scene.matter.world.on('collisionstart', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
-      // console.log('collisionstart', event);
       // Check if player is within reach of interactbale game objects
       if (this.playerControlled) {
         const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs);
@@ -89,8 +94,8 @@ export default class Character extends GameObject {
     this.scene.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
       // console.log('collisionactive', event);
       const terrainCollisions = event.pairs.filter(pair => 
-        (['terrain', 'terrainObject'].includes(pair.bodyA.label) && pair.bodyB.gameObject === this) ||
-        (['terrain', 'terrainObject'].includes(pair.bodyB.label) && pair.bodyA.gameObject === this)
+        (BODY_LABELS_FOR_GROUND_CHECK.includes(pair.bodyA.label) && !pair.bodyA.isSensor && pair.bodyB.gameObject === this) ||
+        (BODY_LABELS_FOR_GROUND_CHECK.includes(pair.bodyB.label) && !pair.bodyB.isSensor && pair.bodyA.gameObject === this)
       );
       this.groundCheck(terrainCollisions);
 
@@ -139,17 +144,32 @@ export default class Character extends GameObject {
     }
   }
 
+  protected jump (): void {
+    // Regular on ground jump
+    if (this.onGround || this.onGroundThresholdTime > 0) {
+      if (this.getGameScene()?.inputController?.isDown(Action.DOWN) && this.groundBody?.label === 'oneway-platform') {
+        // Drop down one way platform
+        this.getGameScene()?.dropDownOnewayPlatform(this.groundBody.id);
+      } else {
+        // Regualar jump
+        if (this.sfxBank) this.sfxBank.playRandomSFXFromCategory(this.scene as GameScene, 'jump');
+        this.setVelocityY(-this.maxJumpStrength);
+        this.justJumped = true;
+        this.longPressJumpTime = 0;
+        this.onGroundThresholdTime = 0;
+      }
+    } else if (this.jumpBufferTime < 0) {
+      // Buffer Jump inputs to immediately jump once on ground to make precise jumping inputs a bit easier
+      this.jumpBufferTime = JUMP_BUFFER_TIME;
+    }
+  }
+
   protected handleInputs (delta: number): void {
     if (!this.movementBehaviour) return;
-    const inputsDeactivated = (!this.playerControlled || this.freezeInputs || this.getGameScene()?.getState() !== 'play');
+    const inputsDeactivated = (!this.playerControlled || this.freezeInputs || this.getGameScene()?.ignoreInputs || this.getGameScene()?.getState() !== 'play');
 
     // Get movement vector depending on this characters control settings
     const movementVector = (!inputsDeactivated) ? (this.getGameScene()?.inputController?.getMovementVector() ?? new Phaser.Math.Vector2(0, 0)) : new Phaser.Math.Vector2(0, 0);
-
-    // Looking
-    if (movementVector.y !== 0 && movementVector.x === 0) {
-      this.movementBehaviour.handleLooking(movementVector, this.onGround);
-    }
 
     // Movement
     if (movementVector.x !== 0) {
@@ -160,19 +180,12 @@ export default class Character extends GameObject {
 
     if (!inputsDeactivated) {
       // Jumping
-      if (this.onGround || this.onGroundThresholdTime > 0) {
-        if (this.getGameScene()?.inputController?.justDown(Action.JUMP)) {
-          if (this.sfxBank) this.sfxBank.playRandomSFXFromCategory(this.scene as GameScene, 'jump');
-          this.setVelocityY(-this.maxJumpStrength);
-          this.justJumped = true;
-          this.longPressJumpTime = 0;
-          this.onGroundThresholdTime = 0;
-        }
+      if (this.getGameScene()?.inputController?.justDown(Action.JUMP) || this.jumpBufferTime >= 0) {
+        this.jump();
       }
 
       // Interacting
       if (this.onGround && this.interactableObjectsInReach[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
-        console.log(this.interactableObjectsInReach);
         const targetObject = this.interactableObjectsInReach[0];
         targetObject.trigger(this);
       }
@@ -226,28 +239,23 @@ export default class Character extends GameObject {
     if (movementVector.x !== 0) this.direction = movementVector.x > 0 ? 1 : -1;
   }
 
-  public getGameScene (): GameScene | undefined {
-    if (this.scene instanceof GameScene) return this.scene;
-    return;
-  }
-
   private groundCheck (collisions: Phaser.Types.Physics.Matter.MatterCollisionData[]): void {
     let onGround = false;
     const groundNormal = new Phaser.Math.Vector2(0, 0);
     collisions.forEach(pair => {
-      // const terrainBody = pair.bodyA.label === 'terrain' ? pair.bodyA : pair.bodyB;
-      // const characterBody = pair.bodyA.label !== 'terrain' ? pair.bodyA : pair.bodyB;
-      const inverseNormals = pair.bodyA.label !== 'terrain';
+      const inverseNormals = !BODY_LABELS_FOR_GROUND_CHECK.includes(pair.bodyA.label);
 
       const normal = new Phaser.Math.Vector2((pair as any).collision.normal);
       if (inverseNormals) normal.multiply({ x: -1, y: -1 });
       if (normal.y > 0.5) {
         onGround = true;
+        this.groundBody = inverseNormals ? pair.bodyB : pair.bodyA;
         this.onGroundThresholdTime = ON_GROUND_THRESHOLD;
         groundNormal.set(normal.x, normal.y);
       }
     });
     
+    this.groundNormal = groundNormal;
     this.onGround = onGround;
     this.justLanded = !this.wasOnGround && onGround;
   }
@@ -331,6 +339,10 @@ export default class Character extends GameObject {
       this.onGroundThresholdTime -= delta;
     }
 
+    if (this.jumpBufferTime >= 0 && !this.onGround) {
+      this.jumpBufferTime -= delta;
+    }
+
     // Handle Inputs
     this.handleInputs(delta);
 
@@ -338,9 +350,9 @@ export default class Character extends GameObject {
       this.stepSoundBehaviour?.justLanded();
     }
 
-    this.updateAnimations();
+    // Handle falling
+    if (this.state === 'fall') this.movementBehaviour?.handleFall();
 
-    const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
-    if (hudScene) hudScene.addDebugText(this.state);
+    this.updateAnimations();
   }
 }

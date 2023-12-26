@@ -1,24 +1,26 @@
 import { MovementBehaviour } from "../behaviour/MovementBehaviour";
 import { StepSoundBehaviour } from "../behaviour/StepSoundBehaviour";
-import { CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN, CATEGORY_TERRAIN_OBJECT } from "../const/collisions";
+import { CATEGORY_ONEWAY_PLATFORM, CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN, CATEGORY_TERRAIN_OBJECT } from "../const/collisions";
 import { Depths } from "../const/depths";
 import { SFX } from "../models/SFX";
+import GameScene from "../scenes/GameScene";
+import HUDScene from "../scenes/HUDScene";
 import Character from "./Character";
 
 export default class Achan extends Character {
-  private shadow: Phaser.FX.Shadow;
-
   constructor(
-    scene: Phaser.Scene,
+    scene: GameScene,
     x: number,
     y: number,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
     super(scene, x, y, 'achan', 'achan', 'sfx:achan', options);
     this.movementBehaviour = new MovementBehaviour(this);
+    this.interactable = false;
+    this.portraitKey = 'portrait:achan';
 
     const stepSFX = this.scene.registry.get('sfx:steps') as SFX | undefined;
-    if (stepSFX) this.stepSoundBehaviour = new StepSoundBehaviour(this.scene, stepSFX, [3, 7]);
+    if (stepSFX) this.stepSoundBehaviour = new StepSoundBehaviour(scene, stepSFX, [3, 7]);
 
     // Setup physics
     const Bodies = new Phaser.Physics.Matter.MatterPhysics(scene).bodies;
@@ -33,7 +35,7 @@ export default class Achan extends Character {
       collisionFilter: {
         group: 0,
         category: CATEGORY_PLAYER,
-        mask: CATEGORY_TERRAIN | CATEGORY_SENSOR | CATEGORY_TERRAIN_OBJECT
+        mask: CATEGORY_TERRAIN | CATEGORY_SENSOR | CATEGORY_TERRAIN_OBJECT | CATEGORY_ONEWAY_PLATFORM
       }
     });
 
@@ -52,12 +54,14 @@ export default class Achan extends Character {
     this.setFixedRotation();
     this.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
-    this.shadow = this.postFX.addShadow(0.5, 0.5, 0.05, 0.8, 0x000000, 4);
 		this.anims.createFromAseprite('achan');
     // this.play({ key: 'achan:idle', repeat: -1 });
   }
 
   public update (time: number, delta: number) {
     super.update(time, delta);
+
+    const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
+    if (hudScene) hudScene.addDebugText(this.state);
   }
 }

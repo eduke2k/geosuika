@@ -11,6 +11,7 @@ export class MovementBehaviour {
     public maxSpeed: number = 5;
     public acceleration: number = 10;
     public deacceleration: number = 15;
+    public terminalVelocity: number = 20;
 
     public constructor(character: Character, options?: MovementBehaviourOptions) {
         this.character = character;
@@ -21,14 +22,21 @@ export class MovementBehaviour {
         }
     }
 
-    public handleLooking (movementVector: Phaser.Math.Vector2, onGround: boolean) {
-        if (!onGround) return;
-
-        if (movementVector.y > 0) {
-            this.character.play({ key: `${this.character.name}:lookup`, repeat: -1 }, true);
-        } else {
-            this.character.play({ key: `${this.character.name}:lookdown`, repeat: -1 }, true);
+    private getGroundVector (): Phaser.Math.Vector2 {
+        const cloned = this.character.groundNormal?.clone();
+        if (cloned) {
+            const normal = cloned.x > 0 ? cloned.normalizeRightHand() : cloned.normalizeLeftHand();
+            normal.set( normal.x * -1, normal.y);
+            return normal;
         }
+        return new Phaser.Math.Vector2(0, 0);
+    }
+
+    public addSlideCorrectionForce (delta: number): void {
+        // Extra force for slope slide correction
+        const groundVector = this.getGroundVector();
+        const force = new Phaser.Math.Vector2(groundVector.x, groundVector.y).normalize().scale(groundVector.y / 1.25 / delta);
+        this.character.applyForce(force);
     }
 
     public handleMovement (movementVector: Phaser.Math.Vector2, accelerationMultiplier: number, delta: number) {
@@ -48,6 +56,7 @@ export class MovementBehaviour {
         }
 
         this.character.setVelocityX(newVX);
+        this.addSlideCorrectionForce(delta);
     }
 
     public handleNoMovement (delta: number, accelerationMultiplier: number) {
@@ -61,5 +70,11 @@ export class MovementBehaviour {
         if (originalSign !== newSign) newVX = 0;
 
         this.character.setVelocityX(newVX);
+        this.addSlideCorrectionForce(delta);
+    }
+
+    public handleFall (): void {
+        const vY = this.character.getVelocity().y ?? 0;
+        if (vY > this.terminalVelocity) this.character.setVelocityY(this.terminalVelocity);
     }
 }

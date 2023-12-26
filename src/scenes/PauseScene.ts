@@ -2,24 +2,45 @@ import Phaser from 'phaser'
 import GameScene from './GameScene';
 import { Action } from '../models/Input';
 import BaseScene from './BaseScene';
+import DropBucket from '../entities/DropBucket/DropBucket';
+import { MenuList } from '../models/Menu';
+
+export type PauseSceneInitData = {
+  bucket?: DropBucket;
+}
 
 export default class PauseScene extends BaseScene {
+  private bucket: DropBucket | undefined;
+  private menu: MenuList | undefined;
+
 	constructor() {
 		super({ key: 'pause-scene' });
 	}
 
 	public create () {
     super.create();
+
+
+    this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: 28, textColor: '#888', activeTextColor: '#FFF' });
+    this.menu.addItem({ enabled: true, key: 'continue', label: 'Continue' });
+    if (this.bucket) {
+      this.menu.addItem({ enabled: true, key: 'retry', label: 'Restart' });
+      this.menu.addItem({ enabled: true, key: 'disconnect', label: 'Disconnect' });
+    }
+    this.menu.addItem({ enabled: true, key: 'exit', label: 'Exit Game' });
+
+    this.menu.onActivated = this.handleAction.bind(this);
+    this.menu.y = this.game.canvas.height - this.menu.getBounds().height - 64 + 10;
   }
 
-  // private handleAction (item: { label: string, key: string, url?: string }): void {
-  //   switch (item.key) {
-  //     case 'continue': this.continue(); break;
-  //     case 'retry': this.retry(); break;
-  //     case 'disconnect': this.disconnect(); break;
-  //     case 'exit': this.exit(); break;
-  //   }
-  // }
+  private handleAction (key: string): void {
+    switch (key) {
+      case 'continue': this.continue(); break;
+      case 'retry': this.retry(); break;
+      case 'disconnect': this.disconnect(); break;
+      case 'exit': this.exit(); break;
+    }
+  }
 
   private continue (): void {
     const gameScene = this.scene.get('game-scene') as GameScene | undefined;
@@ -29,7 +50,10 @@ export default class PauseScene extends BaseScene {
   }
 
   private exit (): void {
-    console.log('exit');
+    this.cameras.main.fadeOut(1000);
+    this.time.delayedCall(1000, () => {
+      this.scene.start('main-menu-scene').stop('game-scene').stop('pause-scene').stop('hud-scene');
+    });
   }
 
   private disconnect (): void {
@@ -67,8 +91,20 @@ export default class PauseScene extends BaseScene {
 
   public update (time: number, delta: number): void {
     super.update(time, delta);
-    if (this.inputController?.justDown(Action.PAUSE)) {
-      this.continue();
+    if (!this.ignoreInputs) {
+      if (this.inputController?.justDown(Action.PAUSE)) {
+        this.continue();
+      } else if (this.inputController?.justDown(Action.DOWN)) {
+        this.menu?.nextItem();
+      } else if (this.inputController?.justDown(Action.UP)) {
+        this.menu?.prevItem();
+      } else if (this.inputController?.justDown(Action.CONFIRM)) {
+        this.menu?.executeAction();
+      }
     }
+  }
+
+  public init (data: PauseSceneInitData) {
+    this.bucket = data.bucket;
   }
 }

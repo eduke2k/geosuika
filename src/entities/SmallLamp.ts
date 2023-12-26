@@ -58,8 +58,8 @@ export class SmallLamp extends GameObject {
   }
 
   public destroy (): void {
-    if (this.constraint) this.scene.matter.world.remove(this.constraint);
-    if (this.light) this.scene.lights.removeLight(this.light);
+    if (this.constraint && this.scene) this.scene.matter.world.remove(this.constraint);
+    if (this.light && this.scene) this.scene.lights.removeLight(this.light);
     super.destroy();
   }
 

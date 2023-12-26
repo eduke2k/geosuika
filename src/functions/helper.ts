@@ -88,9 +88,11 @@ export const generateChordProgressionFromPattern = (pattern: BGMPatternConfig): 
 export function getOtherInteractableGameObjectsFromCollisionPairs<T> (reference: T, pairs: Phaser.Types.Physics.Matter.MatterCollisionData[]): InteractableGameObject[] {
   const result: InteractableGameObject[] = [];
   pairs.forEach(pair => {
-    const other = pair.bodyA.gameObject === reference ? pair.bodyB : pair.bodyA;
-    if (other.gameObject instanceof InteractableGameObject && other.gameObject.isInteractable()) {
-      result.push(other.gameObject);
+    if (pair.bodyA.gameObject === reference || pair.bodyB.gameObject === reference) {
+      const other = pair.bodyA.gameObject === reference ? pair.bodyB : pair.bodyA;
+        if (other.gameObject instanceof InteractableGameObject && other.gameObject.isInteractable()) {
+          result.push(other.gameObject);
+        }
     }
   })
 
@@ -107,5 +109,13 @@ export function getRelativePositionToCanvas (position: { x: number, y: number },
   return {
     x: (position.x - camera.worldView.x) * camera.zoom,
     y: (position.y - camera.worldView.y) * camera.zoom
+  }
+}
+
+export function getNormalizedRelativePositionToCanvas (position: { x: number, y: number },  camera: Phaser.Cameras.Scene2D.Camera) {
+  const viewport = { w: camera.scene.game.canvas.width, h: camera.scene.game.canvas.width };
+  return {
+    x: ((position.x - camera.worldView.x) * camera.zoom) / viewport.w,
+    y: ((position.y - camera.worldView.y) * camera.zoom) / viewport.h
   }
 }

@@ -1,5 +1,10 @@
-import { GamePadButtonId, GamepadInput } from "./GamepadInput";
+import { GamePadButtonId, GamepadInput, GamepadType } from "./GamepadInput";
 import { KeyboardInput } from "./KeyboardInput";
+
+export enum ControllerType {
+   KEYBOARD = 'keyboard',
+   GAMEPAD = 'gamepad',
+}
 
 export enum Action {
     UP,
@@ -112,14 +117,10 @@ export class InputController {
     public gamepad: GamepadInput | undefined;
     public keyboard: KeyboardInput;
     // public keyboardControls: Controls = {};
-    public activeControllerType: 'keyboard' | 'gamepad' = 'keyboard';
+    public activeControllerType: ControllerType = ControllerType.KEYBOARD;
+    public justChangedType = false;
 
     public constructor() {
-        // Add Listeners for keyboard keys
-        // Object.keys(controlMapping).forEach(a => {
-        //     this.keyboardControls[a] = controlMapping[a].keyboard.map(keyCode => scene.input.keyboard!.addKey(keyCode));
-        // });
-
         // Register custom keyboard controller that works in tandem with the gamepad controller
         const allRegisteredKeys = [...new Set(Object.keys(controlMapping).map(c => { return controlMapping[c].keyboard }).flat())];
         this.keyboard = new KeyboardInput(allRegisteredKeys);
@@ -138,15 +139,27 @@ export class InputController {
                 console.log('no active gamepad setup up yet. setting up now', e);
                 this.gamepad = new GamepadInput(e.gamepad);
             }
-          });
+        });
     }
 
-    public update (): void {
-        if (this.activeControllerType === 'gamepad') {
-            this.gamepad?.update();
-        } else if (this.activeControllerType === 'keyboard') {
-            this.keyboard?.update();
+    public getActiveGamepadType (): GamepadType | undefined {
+        return this.gamepad?.type;
+    }
+
+    public update (time: number, delta: number): void {
+        this.justChangedType = false;
+        const gamepadTimestamp = this.gamepad?.timestamp ?? 0;
+        const keyboardTimestamp = this.keyboard?.timestamp ?? 0;
+
+        const wasType = this.activeControllerType;
+        this.activeControllerType = keyboardTimestamp >= gamepadTimestamp ? ControllerType.KEYBOARD : ControllerType.GAMEPAD;
+        if (wasType !== this.activeControllerType) {
+            console.log('active controller just changed to', this.activeControllerType);
+            this.justChangedType = true;
         }
+
+        this.gamepad?.update(time, delta, this.activeControllerType === 'gamepad');
+        this.keyboard?.update(time, delta, this.activeControllerType === 'keyboard');
     }
 
     public getMovementVector (): Phaser.Math.Vector2 {

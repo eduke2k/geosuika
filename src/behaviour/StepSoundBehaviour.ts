@@ -1,14 +1,15 @@
 import { SFX } from "../models/SFX";
+import BaseScene from "../scenes/BaseScene";
 
 export class StepSoundBehaviour {
-    private scene: Phaser.Scene;
+    private scene: BaseScene;
     private sfx: SFX;
     private stepsOnFrames: number[] = [];
     private lastStepFrameIndex = -1
     private slideTriggered = false;
     private volumeMultiplier = 0.5;
 
-    public constructor(scene: Phaser.Scene, sfx: SFX, stepOnFrames: number[]) {
+    public constructor(scene: BaseScene, sfx: SFX, stepOnFrames: number[]) {
         this.scene = scene;
         this.sfx = sfx;
         this.stepsOnFrames = stepOnFrames;

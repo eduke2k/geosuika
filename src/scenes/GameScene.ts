@@ -1,22 +1,25 @@
 import Phaser from 'phaser'
 // import Droppable from '../entities/Droppable';
 import DropBucket from '../entities/DropBucket/DropBucket';
-import { parseTiledProperties, scaleNumberRange } from '../functions/helper';
+import { getNormalizedRelativePositionToCanvas, parseTiledProperties, scaleNumberRange } from '../functions/helper';
 import { PetalEmitter } from '../models/PetalEmitter';
 import chroma from 'chroma-js';
 import Dog from '../entities/Dog';
 import Arcade from '../entities/Arcade';
 import { Action } from '../models/Input';
-import { CATEGORY_TERRAIN } from '../const/collisions';
+import { CATEGORY_ONEWAY_PLATFORM, CATEGORY_TERRAIN } from '../const/collisions';
 import Character from '../entities/Character';
 import Achan from '../entities/Achan';
-import { EffectCircleOptions, TilemapLayerEffectCircle } from '../entities/TilemapLayerEffectCircle';
+// import { EffectCircleOptions, TilemapLayerEffectCircle } from '../entities/TilemapLayerEffectCircle';
 import { SFX } from '../models/SFX';
 import RecyclingCan from '../entities/RecyclingCan';
 import ChromaticPostFX from '../shaders/ChromaticPostFX';
 import { SmallLamp, SmallLampFrame } from '../entities/SmallLamp';
 import GameObject from '../entities/GameObject';
 import BaseScene from './BaseScene';
+import CinematicBarsFX from '../shaders/CinematicBarsFX';
+import { StaticOneWayPlatform } from '../entities/Platforms/StaticOneWayPlatform';
+import { SoundSource2d } from '../entities/Sound/SoundSource2d';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -25,28 +28,37 @@ import BaseScene from './BaseScene';
 
 export type GameSceneState = 'play' | 'changeLayer';
 
+type LevelBounds = {
+	ambientColor?: string;
+	rect: Phaser.Geom.Rectangle;
+}
+
+
 export default class GameScene extends BaseScene {
 	public state: GameSceneState = 'play';
 	public buckets: DropBucket[] = [];
 	public arcades: Arcade[] = [];
 	public objects: GameObject[] = [];
-	// public dog: Dog | undefined = undefined;
 	public characters: Character[] = [];
+	public soundSources2d: SoundSource2d[] = [];
+	public playerCharacter: Character | undefined;
 	public petalEmitter = new PetalEmitter(this);
 	public tilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
-	public reveilableTilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
-	public effectCircles: TilemapLayerEffectCircle[] = [];
+	// public reveilableTilemapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
+	// public effectCircles: TilemapLayerEffectCircle[] = [];
 	public map: Phaser.Tilemaps.Tilemap | undefined = undefined;
 	private tilesets: Record<string, Phaser.Tilemaps.Tileset> = {};
 	private playerLight: Phaser.GameObjects.Light | undefined = undefined;
   private breakerSound!: Phaser.Sound.BaseSound | undefined;
   private riserSound!: Phaser.Sound.BaseSound | undefined;
 	private chromaticPostFX!: ChromaticPostFX;
+	private cinematicBarsFX!: CinematicBarsFX;
 
 	// Active map stuff
 	private currentMap = '';
 	private currentMapLayer = '';
 	private staticMapCollisions: MatterJS.BodyType[] = [];
+	private staticOneWayPlatforms: StaticOneWayPlatform[] = [];
 	public bokehEffect: Phaser.FX.Bokeh | undefined;
 
 	// Layer change stuff
@@ -78,6 +90,22 @@ export default class GameScene extends BaseScene {
 	// 	)
 	// }
 
+	public setCinematicBar (strength: number, duration: number): void {
+		if (!this.cinematicBarsFX) return;
+		const pipeline = this.cinematicBarsFX;
+		this.tweens.addCounter({
+			from: pipeline.getStrength(),
+			to: strength,
+			duration,
+			onUpdate: (tween) => {
+				pipeline.setStrength(tween.getValue());
+			},
+			onComplete: () => {
+				pipeline.setStrength(strength);
+			}
+		});
+	}
+
 	public setChromaticEffect (effect: number, duration: number): void {
 		if (!this.chromaticPostFX) return;
 		const pipeline = this.chromaticPostFX;
@@ -98,7 +126,6 @@ export default class GameScene extends BaseScene {
 		this.riserSound?.play();
 		const duration = 1000;
 		const currentPlayerLightRadius = this.playerLight?.radius ?? 400;
-		const currentAmbientRGB = this.lights.ambientColor;
 		const currentAmbient = Phaser.Display.Color.RGBToString(this.lights.ambientColor.r * 255, this.lights.ambientColor.g * 255, this.lights.ambientColor.b * 255);
 
 		this.tweens.addCounter({
@@ -135,7 +162,6 @@ export default class GameScene extends BaseScene {
 				} else {
 					this.setTimeScale(1);
 					this.playerLight?.setRadius(currentPlayerLightRadius);
-					this.lights.setAmbientColor((currentAmbientRGB as any).color);
 					this.chromaticPostFX.setStrength(1);
 				}
 			}
@@ -154,16 +180,16 @@ export default class GameScene extends BaseScene {
 		this.state = 'play';
 	}
 
-  public destroyEffectCircle (circle: TilemapLayerEffectCircle): void {
-    const index = this.effectCircles.findIndex(c => c === circle);
-    if (index > -1) this.effectCircles.splice(index, 1);
-    circle.destroy();
-  }
+  // public destroyEffectCircle (circle: TilemapLayerEffectCircle): void {
+  //   const index = this.effectCircles.findIndex(c => c === circle);
+  //   if (index > -1) this.effectCircles.splice(index, 1);
+  //   circle.destroy();
+  // }
 
-  public addEffectCircle (x: number, y: number, options?: EffectCircleOptions): void {
-    const circle = new TilemapLayerEffectCircle(this, x, y, options);
-    this.effectCircles.push(circle);
-  }
+  // public addEffectCircle (x: number, y: number, options?: EffectCircleOptions): void {
+  //   const circle = new TilemapLayerEffectCircle(this, x, y, options);
+  //   this.effectCircles.push(circle);
+  // }
 
   // private getNearestCircle (t: Phaser.Tilemaps.Tile): { distance: number; circle: TilemapLayerEffectCircle } | undefined {
   //   const distances = this.effectCircles.map(c => ({
@@ -236,9 +262,9 @@ export default class GameScene extends BaseScene {
 		});  
 	}
 
-	public getReveilableTilemapLayers ():  Phaser.Tilemaps.TilemapLayer[] {
-		return this.reveilableTilemapLayers;
-	}
+	// public getReveilableTilemapLayers ():  Phaser.Tilemaps.TilemapLayer[] {
+	// 	return this.reveilableTilemapLayers;
+	// }
 
 	public getAllTilemapLayers ():  Phaser.Tilemaps.TilemapLayer[] {
 		return this.tilemapLayers;
@@ -261,7 +287,8 @@ export default class GameScene extends BaseScene {
 	}
 
 	public getPlayerCharacter (): Character | undefined {
-		return this.characters.find(c => c.isPlayerControlled())
+		return this.playerCharacter;
+		// return this.characters.find(c => c.isPlayerControlled())
 	}
 
 	public bucketUnmountFinished (_bucket: DropBucket): void {
@@ -312,7 +339,6 @@ export default class GameScene extends BaseScene {
 	}
 
 	public continue (): void {
-		console.log('continue');
 		this.ignoreInputs = false;
 		this.setBokehEffect(0, 100, Phaser.Math.Easing.Sine.InOut, () => {
 			this.bokehEffect?.destroy();
@@ -338,6 +364,11 @@ export default class GameScene extends BaseScene {
 		// });
 	}
 
+	public dropDownOnewayPlatform (bodyId: number): void {
+		const platform = this.staticOneWayPlatforms.find(p => p.body.id === bodyId);
+		if (platform) platform.disableCollision();
+	}
+
 	public loadInWorldLayer (layerName: string): void {
 		if (!this.map) {
 			console.error(`Could not load in map layer '${layerName}' because map is not set in GameScenee`);
@@ -351,6 +382,7 @@ export default class GameScene extends BaseScene {
 		// const detailsLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_details`));
 		// const foregroundLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_foreground`));
 		const objectLayer = this.map.objects.find(l => l.name.startsWith(`${layerName}_objects`));
+		const bounds: LevelBounds[] = [];
 
 		// Add available map layers to rendering pipe
 		if (terrainLayer) {
@@ -381,9 +413,10 @@ export default class GameScene extends BaseScene {
 		const Body = new Phaser.Physics.Matter.MatterPhysics(this).body;
 		if (objectLayer) {
 			objectLayer.objects.forEach(o => {
-				if (o.type === 'collision') {
+				const properties = parseTiledProperties(o.properties);
+				if (['collision'].includes(o.type)) {
 					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-						this.staticMapCollisions.push(this.matter.add.rectangle(
+						const body = this.matter.add.rectangle(
 							o.x + (o.width / 2),
 							o.y + (o.height / 2),
 							o.width,
@@ -393,14 +426,26 @@ export default class GameScene extends BaseScene {
 								label: o.name,
 								collisionFilter: {
 									group: 0,
-									category: CATEGORY_TERRAIN
+									category: o.type === 'collision' ? CATEGORY_TERRAIN : CATEGORY_ONEWAY_PLATFORM,
 								}
 							},
-						));
+						)
+						this.staticMapCollisions.push(body);
 					} else if (o.polygon && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
 						const body = this.matter.add.fromVertices(0, 0, o.polygon, { isStatic: true, label: o.name });
 						Body.setPosition(body, { x: o.x + body.centerOffset.x, y: o.y + body.centerOffset.y}, false);
 						this.staticMapCollisions.push(body);
+					}
+				} else if (o.type === 'oneway-collision') {
+					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
+						this.staticOneWayPlatforms.push(new StaticOneWayPlatform(this, o.x, o.y, o.width, o.height));
+					}
+				} else if (o.type === 'bounds') {
+					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
+						bounds.push({
+							ambientColor: properties.ambient?.toString(),
+							rect: new Phaser.Geom.Rectangle(o.x, o.y, o.width, o.height)
+						});
 					}
 				}
 			});
@@ -411,16 +456,25 @@ export default class GameScene extends BaseScene {
 		const bucketQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const arcadesQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const objectsQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+		const soundSource2dQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+
+		// Apply new camera bounds if player character is within one
+		const currentBounds = this.getFirstRectWithinBounds(bounds, { x: this.playerCharacter?.getBody()?.position.x ?? 0, y: this.playerCharacter?.getBody()?.position.y ?? 0 });
+		this.cameras.main.setBounds(currentBounds.rect.x, currentBounds.rect.y, currentBounds.rect.width, currentBounds.rect.height);
+		const hex = currentBounds.ambientColor ? `#${currentBounds.ambientColor?.substring(3)}` : '#000000';
+		console.log(hex);
+		this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(hex).color);
 
 		if (objectLayer) {
 			objectLayer.objects.forEach(o => {
-				if (['bucket', 'arcade', 'character', 'staticObject', 'object'].includes(o.type)) {
+				if (['bucket', 'arcade', 'character', 'staticObject', 'object', 'soundSource2d'].includes(o.type) && currentBounds.rect.contains(o.x ?? 0, o.y ?? 0)) {
 					switch (o.type) {
 						case 'character': {	charactersQueue.push(o); break;	}
 						case 'staticObject': { staticObjectsQueue.push(o); break; }
 						case 'object': { objectsQueue.push(o); break; }
 						case 'bucket': { bucketQueue.push(o); break; }
 						case 'arcade': { arcadesQueue.push(o); break; }
+						case 'soundSource2d': { soundSource2dQueue.push(o); break; }
 					}
 				}
 			});
@@ -483,12 +537,39 @@ export default class GameScene extends BaseScene {
 				this.characters.push(dog);
 			}
 		});
+
+		if (this.playerCharacter) {
+			const reference = this.playerCharacter;
+			soundSource2dQueue.forEach(o => {
+				const properties = parseTiledProperties(o.properties);
+				const audioKey = properties.key.toString();
+				const reach = parseInt(properties.reach.toString());
+				const volume = parseFloat(properties.volume.toString());
+				this.soundSources2d.push(new SoundSource2d(this, o.x ?? 0, o.y ?? 0, reference, { audioKey, reach, volume }));
+			});
+		}
+	}
+
+	private getFirstRectWithinBounds (bounds: LevelBounds[], pos: { x: number, y: number }): LevelBounds {
+		for (let i = 0; i < bounds.length; i++) {
+			if (bounds[i].rect.contains(pos.x, pos.y)) {
+				return bounds[i];
+			}
+		}
+
+		// Fall back to full map bounds
+		return {
+			rect: new Phaser.Geom.Rectangle(0, 0, this.map?.widthInPixels, this.map?.heightInPixels)
+		}
 	}
 
 	public unloadActiveWorldLayer (): void {
 		// Remove all static collisions
 		this.matter.world.remove(this.staticMapCollisions);
 		this.staticMapCollisions = [];
+
+		this.staticOneWayPlatforms.forEach(s => s.destroy());
+		this.staticOneWayPlatforms = [];
 
 		// Remove active tileset
 		this.tilemapLayers.forEach(l => { 
@@ -498,11 +579,17 @@ export default class GameScene extends BaseScene {
 		this.arcades.forEach(a => {	a.destroy(); });
 		this.arcades = [];
 
+		this.characters.forEach(a => {	a.destroy(); });
+		this.characters = [];
+
 		this.buckets.forEach(b => {	b.destroy(); });
 		this.buckets = [];
 
 		this.objects.forEach(o => {	o.destroy(); });
 		this.objects = [];
+
+		this.soundSources2d.forEach(o => {	o.destroy(); });
+		this.soundSources2d = [];
 
 		// console.log(this.map);
 		// this.tilemapLayers = [];
@@ -523,7 +610,6 @@ export default class GameScene extends BaseScene {
 
 		// create the Tilemap
 		const map = this.make.tilemap({ key: mapKey });
-		this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
 		map.tilesets.forEach(t => {
 			const tileset = map.addTilesetImage(t.name);
@@ -535,30 +621,43 @@ export default class GameScene extends BaseScene {
 		return map;
 	}
 
+	public init () {
+		// Clear arrays. Those might still be filled with obsolete data from an earlier game scene instance
+		this.tilemapLayers = [];
+		this.buckets = [];
+		this.arcades = [];
+		this.objects = [];
+		this.characters = [];
+		this.soundSources2d = [];
+	}
+
 	public create () {
 		super.create();
+
 		this.breakerSound = this.soundManager?.sound.add('sfx:breaker');
 		this.riserSound = this.soundManager?.sound.add('sfx:riser');
+		this.ignoreInputs = false;
 
 		// Enable Lights
-		this.lights.enable().setAmbientColor(0x0f101c);
+		this.lights.enable();
 		this.playerLight = this.lights.addLight(0, 0, 400, 0xFFFFFF, 2);
 
 		const achan = new Achan(this, 0, 0);
-		this.characters.push(achan);
+		this.playerCharacter = achan;
 
 		this.map = this.loadMap('map2');
-		this.loadInWorldLayer('japan');
-
-		this.cameras.main.setPostPipeline(ChromaticPostFX);
-		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
-
 		const playerSpawn = this.map.getObjectLayer('triggers')?.objects.find(o => o.name === 'playerSpawn');
 		achan.setPosition(playerSpawn?.x, playerSpawn?.y);
 
+		this.loadInWorldLayer('japan');
+
+		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX]);
+		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
+		this.cinematicBarsFX = this.cameras.main.getPostPipeline(CinematicBarsFX) as CinematicBarsFX;
+
 		const playerCharacter = this.getPlayerCharacter();
 		if (playerCharacter) {
-			this.cameraFollowEntity({ object: playerCharacter, instant: false });
+			this.cameraFollowEntity({ object: playerCharacter, instant: true });
 		}
 
 		// Camera Settings
@@ -573,65 +672,22 @@ export default class GameScene extends BaseScene {
 		this.playerLight?.setPosition(player?.body?.position.x, player?.body?.position.y);
 
 		this.petalEmitter.update(time, delta);
+		this.playerCharacter?.update(time, delta);
 		this.characters.forEach(c => c.update(time, delta));
 		this.arcades.forEach(a => a.update(time, delta));
 		this.buckets.forEach(a => a.update(time, delta));
 		this.objects.forEach(a => a.update(time, delta));
-		
-		// const mountedBucket = this.getMountedBucket();
+		this.soundSources2d.forEach(s => s.update(time, delta));
+		this.staticOneWayPlatforms.forEach(a => { if (this.playerCharacter) a.update(this.playerCharacter) });
 
-		// TILE UPDATE LOGIC
-		// const allVisibleTiles = this.getAllVisibleTiles();
-		// if (player && player.body) {
-		// 	this.updateTileTargetProgressByDistance(player.body.position, allVisibleTiles);
-		// }
-		// this.updateTiles(allVisibleTiles, delta);
-
-    // EFFECT CIRCLE LOGIC
-    // if (this.effectCircles.length > 0) {
-    //   this.getReveilableTilemapLayers().forEach(tl => {
-    //     tl.getTilesWithinWorldXY(this.cameras.main.worldView.left, this.cameras.main.worldView.top, this.cameras.main.worldView.width, this.cameras.main.worldView.height).forEach(t => {
-    //       const nearest = this.getNearestCircle(t);
-    //       if (nearest) {
-    //         const affection = Math.max(scaleNumberRange(nearest.distance, [128, 0], [0, 1]) * nearest.circle.getInverseProgress(), 0) * nearest.circle.getEffect();
-    //         this.updateTileProgress(t, nearest.circle.getColor(), affection, delta);
-    //       }
-    //     });  
-    //   });
-    // }
+		// Update chromaticPostFX center position
+		const normalizedPlayerPosition = getNormalizedRelativePositionToCanvas({ x: player?.getBody()?.position.x ?? 0, y: player?.getBody()?.position.y ?? 0 }, this.cameras.main);
+		this.chromaticPostFX.setCenter(normalizedPlayerPosition.x, normalizedPlayerPosition.y);
 
 		if (!this.ignoreInputs) {
 			if (this.inputController?.justDown(Action.PAUSE)) {
 				this.pause();
 			}
-
-			// if (this.inputController?.justDown(Action.DEBUG1)) {
-			// 	if (mountedBucket) mountedBucket.rankUp();
-			// }
-		
-			// if (this.inputController?.isDown(Action.UP)) {
-			// 	// this.elevator.moveY(-100 / delta);
-			// 	if (mountedBucket) mountedBucket.moveY(-100 / delta);
-			// }
-		
-			// if (this.inputController?.isDown(Action.DOWN)) {
-			// 	// this.elevator.moveY(100 / delta);
-			// 	if (mountedBucket) mountedBucket.moveY(100 / delta);
-			// }
-			
-			// if (this.inputController?.justDown(Action.DEBUG2)) {
-			// 	if (mountedBucket) mountedBucket.clearAllVisibleTiles();
-			// } 
-		
-			// if (this.inputController?.justDown(Action.DEBUG3)) {
-			// 	if (!mountedBucket || !mountedBucket.bgm) return;
-			// 	const instrument = this.registry.get('instument:harp') as Instrument | undefined;
-			// 	if (instrument) {
-			// 		const chord = mountedBucket.bgm.getCurrentChord();
-			// 		new BlinkingText(this, chord, mountedBucket.x, mountedBucket.y, { fontSize: 16, movementY: 100, duration: 1000 });
-			// 		instrument.playRandomNoteInChord(chord, this, 0, 1);
-			// 	}
-			// }
 		}
 	}
 }

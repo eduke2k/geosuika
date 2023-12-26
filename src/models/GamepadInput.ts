@@ -1,5 +1,10 @@
 import { CustomInput } from "./CustomInput";
 
+export enum GamepadType {
+  PLAYSTATIOIN = 'playstation',
+  XBOX = 'xbox'
+}
+
 type ButtonState = {
   id: GamePadButtonId,
   isDown: boolean;
@@ -29,15 +34,15 @@ export enum GamePadButtonId {
 export class GamepadInput implements CustomInput {
   // public gamepad: Gamepad;
   public index: number = -1;
-  public type: 'playstation' | 'xbox';
+  public type: GamepadType;
   public leftStick: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   public rightStick: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   public buttons: ButtonState[] = [];
+  public timestamp = 0;
 
   public constructor(gamepad: Gamepad) {
-    console.log('constructing ControllerInput', gamepad);
     // Very cheap way of matching controller id to vendor. Might not work in all browsers and will fall back to xbox
-    this.type = (gamepad.id.indexOf('054c') > -1) ? 'playstation' : 'xbox';
+    this.type = (gamepad.id.indexOf('054c') > -1) ? GamepadType.PLAYSTATIOIN : GamepadType.XBOX;
     this.index = gamepad.index;
 
     // Initialize indexed buttons array
@@ -90,13 +95,17 @@ export class GamepadInput implements CustomInput {
     return this.buttons[index]?.isDown;
   }
 
-  public update (): void {
+  public update (_time: number, _delta: number, active: boolean): void {
     // Find gamepad by index
     const gamepads: (Gamepad | null)[] = navigator.getGamepads ? navigator.getGamepads() : ((navigator as any).webkitGetGamepads ? (navigator as any).webkitGetGamepads : [])
     if (!gamepads) return;
 
     const gamepad = gamepads[this.index];
     if (!gamepad) return;
+
+    this.timestamp = gamepad.timestamp;
+
+    if (!active) return;
 
     // Copy stick vectors
     this.leftStick.set(gamepad.axes[0], gamepad.axes[1]);
@@ -107,5 +116,6 @@ export class GamepadInput implements CustomInput {
       const index = this.getIndexByButton(i);
       if (index !== undefined && this.buttons[index]) this.handleBinaryButton(this.buttons[index], b.pressed);
     });
+
   }
 }

@@ -1,7 +1,10 @@
 import { MovementBehaviour } from "../behaviour/MovementBehaviour";
 import { CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN } from "../const/collisions";
 import { Depths } from "../const/depths";
+import { testDialog } from "../dialog/test";
 import Character from "./Character";
+
+const sensorPadding = 20;
 
 export default class Dog extends Character {
   constructor(
@@ -12,6 +15,11 @@ export default class Dog extends Character {
   ) {
     super(scene, x, y, 'dog', 'flags', '', options);
     this.movementBehaviour = new MovementBehaviour(this);
+    this.setPipeline('Light2D');
+    this.interactable = true;
+    this.portraitKey = 'portrait:shiba';
+    this.portraitScale = 6;
+    this.dialog = testDialog;
 
     // Setup physics
     const Bodies = new Phaser.Physics.Matter.MatterPhysics(scene).bodies;
@@ -38,10 +46,24 @@ export default class Dog extends Character {
     this.movementBehaviour.deacceleration = 10;
 
     this.setExistingBody(rect);
-    this.setDepth(Depths.PLAYER_LAYER);
+    this.setDepth(Depths.CHARACTER_LAYER);
     this.setScale(0.5);
     this.setPosition(x, y);
     this.setFixedRotation();
+
+    this.sensor = this.scene.matter.add.rectangle(0, 0, (150 + sensorPadding) * this.scale, (260 + sensorPadding) * this.scale, {
+      collisionFilter: {
+        group: 0,
+        category: CATEGORY_SENSOR,
+        mask: CATEGORY_PLAYER
+      },
+      label: 'dog-sensor',
+      isStatic: true,
+      isSensor: true
+    });
+
+    this.sensor.gameObject = this;
+
     this.play({ key: 'idle', repeat: -1 });
   }
 

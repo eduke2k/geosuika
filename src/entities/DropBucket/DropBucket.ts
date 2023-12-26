@@ -32,7 +32,7 @@ export const COLLISION_SOUND_WAIT_TIME = 80;
 export const MERGE_SOUND_WAIT_TIME = 80;
 export const SCORE_BAR_WIDTH = 24;
 export const NEXT_DROPPABLE_TIME = 1000;
-const DROPPABLE_MOVE_ACCELERATION = 2;
+const DROPPABLE_MOVE_ACCELERATION = 3;
 
 export type DropBucketOptions = {
   scene: GameScene;
@@ -60,6 +60,9 @@ export enum BucketPhase {
   DESTROY = 'destroy'
 }
 
+/**
+ * Drop Bucket in a classic suikagame style
+ */
 export default class DropBucket extends Phaser.Physics.Matter.Image {
   private options: DropBucketOptions;
 	private endY: number;
@@ -462,7 +465,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   private fadeInDroppable (droppable: Droppable, duration = 500): void {
     droppable.alpha = 0;
     const bokehFX = droppable.postFX.addBokeh(0, 0, 0);
-    console.log('duration', duration);
 
     this.scene.tweens.addCounter({
       from: 0,
@@ -470,7 +472,6 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       duration: duration,
       ease: Phaser.Math.Easing.Quadratic.Out,
       onUpdate: (tween) => {
-        console.log('fading in dropppbale',tween.getValue());
         droppable.alpha = tween.getValue();
         bokehFX.radius = (1 - tween.getValue()) * 2;
       },
@@ -489,7 +490,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     if (!this.bgm) return;
 
     if (this.mergeSoundWaitTime <= 0) {
-      const instrument = this.scene.registry.get('instument:merge') as Instrument | undefined;
+      const instrument = this.scene.registry.get('instrument:merge') as Instrument | undefined;
       if (instrument) {
         const pan = (x - this.getBounds().centerX) / (this.bucketWidth / 2);
         const volume = scaleNumberRange(Math.min(score.scoreIncrement, 20), [0, 20], [0.5, 1]);
@@ -503,7 +504,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     if (!this.bgm) return;
 
     if (!source.body || this.collisionSoundWaitTime > 0) return;
-    const instrument = this.scene.registry.get('instument:harp') as Instrument | undefined;
+    const instrument = this.scene.registry.get('instrument:harp') as Instrument | undefined;
     if (!instrument) return;
     const pan = Phaser.Math.Clamp((source.body.position.x - this.getBounds().centerX) / (this.bucketWidth / 2), -1, 1);
     const volume = scaleNumberRange(Math.min(force, 17), [0, 20], [0, 1]);
@@ -521,7 +522,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // this.elevator.moveRelativeY(-(this.elevatorDistance / this.bgm.getTotalProgressLength()) * this.bgm.getProgress(progressLevel));
     this.moveToAbsoluteY(this.startY - (this.elevatorDistance * this.bucketProgressRatio));
 
-    const instrument = this.scene.registry.get('instument:gong') as Instrument | undefined;
+    const instrument = this.scene.registry.get('instrument:gong') as Instrument | undefined;
     if (instrument) {
       const volume = 0.5 * this.bucketProgressRatio + 0.5;
       instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.getScene(), 0, volume);
@@ -647,7 +648,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.getGameScene()?.petalEmitter.triggerWind(spawnPosition.x, spawnPosition.y, scaleNumberRange(Math.min(scoreObject.scoreIncrement, 20), [0, 20], [0, 1]));
 
     // Spawn tilemap layer wave effect circle
-    this.getGameScene()?.addEffectCircle(spawnPosition.x, spawnPosition.y, { effect: 1, toRadius: 720 })
+    // this.getGameScene()?.addEffectCircle(spawnPosition.x, spawnPosition.y, { effect: 1, toRadius: 720 })
 
     // Spawn score visualizer
     new BlinkingScore(this.scene, scoreObject.scoreIncrement, scoreObject.currentMultiplier, spawnPosition.x, spawnPosition.y);
@@ -906,14 +907,14 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     return 0xe31010;
   }
 
-  public clearAllVisibleTiles (): void {
-    this.getGameScene()?.getReveilableTilemapLayers().forEach(tl => {
-      tl.forEachTile(t => {
-        this.getGameScene()?.revealTile(t);
-        this.getGameScene()?.updateTileProgress(t, '#FFFFFF', 0, 100);
-      });  
-    });
-  }
+  // public clearAllVisibleTiles (): void {
+  //   this.getGameScene()?.getReveilableTilemapLayers().forEach(tl => {
+  //     tl.forEachTile(t => {
+  //       this.getGameScene()?.revealTile(t);
+  //       this.getGameScene()?.updateTileProgress(t, '#FFFFFF', 0, 100);
+  //     });  
+  //   });
+  // }
 
   // private getNearestCircle (t: Phaser.Tilemaps.Tile): { distance: number; circle: TilemapLayerEffectCircle } | undefined {
   //   const distances = this.effectCircles.map(c => ({
@@ -933,8 +934,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     const movementVector = this.getGameScene()?.inputController?.getMovementVector();
     if (movementVector) {
       if (movementVector.x !== 0 && this.nextDroppable) {
-        this.droppableMoveSpeed += DROPPABLE_MOVE_ACCELERATION / delta;
-        this.nextDroppable.x += this.droppableMoveSpeed * movementVector.x;
+        if (this.droppableMoveSpeed !== 0 && Math.sign(movementVector.x) !== Math.sign(this.droppableMoveSpeed)) this.droppableMoveSpeed = 0;
+        this.droppableMoveSpeed += DROPPABLE_MOVE_ACCELERATION  * movementVector.x / delta;
+        this.nextDroppable.x += this.droppableMoveSpeed;
       } else {
         this.droppableMoveSpeed = 0;
       }
@@ -951,8 +953,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   }
 
   public destroy (): void {
-    this.scene.matter.world.off('collisionstart', this.onCollisionStart, this);
-    this.scene.matter.world.off('collisionactive', this.onCollisionActive, this);
+    if (this.scene) {
+      this.scene.matter.world.off('collisionstart', this.onCollisionStart, this);
+      this.scene.matter.world.off('collisionactive', this.onCollisionActive, this);
+    }
     if (this.dropSensorBody) this.scene.matter.world.remove(this.dropSensorBody);
     if (this.leftWallBody) this.scene.matter.world.remove(this.leftWallBody);
     if (this.rightWallBody) this.scene.matter.world.remove(this.rightWallBody);
@@ -1044,20 +1048,18 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     if (this.bucketActive) {
       // Handle next droppable position change with mouse position
       if (this.currentPhase === BucketPhase.DROP && this.nextDroppable && this.nextDroppable.isTethered()) {
-        // const x = this.scene.game.input.mousePointer?.worldX;
-        // const y = this.scene.game.input.mousePointer?.worldY;
+        const mousePointer = this.scene.cameras.main.getWorldPoint(this.scene.input.mousePointer?.x, this.scene.input.mousePointer?.y);
+        const rect = this.getBodyBounds();
 
-        // if (x == undefined || y == undefined) {
-        //   this.nextDroppable.setX(this.dropSensorBody.position.x);
-        //   this.nextDroppable.setY(this.dropSensorBody.position.y);
-        // } else {
-        //   this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , x));
-        //   this.nextDroppable.setY(getNumberInRange(this.dropSensorBody.bounds.min.y, this.dropSensorBody.bounds.max.y, y));
-        // }
-
-        // Limit positions
+        if (rect && Phaser.Geom.Rectangle.Contains(rect, mousePointer.x, mousePointer.y)) {
+          // Apply position via mouse inputs IF the mouse is within the bucket
+          this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , mousePointer.x));
+          // this.nextDeroppable.setY(getNumberInRange(this.dropSensorBody.bounds.min.y, this.dropSensorBody.bounds.max.y, mousePointer.y));
+        } else {
+          // Apply position limites via controller inputs
+          this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , this.nextDroppable.x));
+        }
         this.nextDroppable.setY(this.dropSensorBody.position.y);
-        this.nextDroppable.setX(getNumberInRange(this.dropSensorBody.bounds.min.x + DROPPABLE_EXTRA_PADDING + ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2), this.dropSensorBody.bounds.max.x - DROPPABLE_EXTRA_PADDING - ((this.nextDroppable.getBodyBounds()?.width ?? 0) / 2) , this.nextDroppable.x));
         this.nextDroppable.setVelocity(0, 0);
       }
 

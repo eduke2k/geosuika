@@ -7,6 +7,7 @@ const s1 = `
   uniform sampler2D iChannel1;
   uniform sampler2D iChannel2;
   uniform float uPlanetSize;
+  uniform float uIntensity;
 
   varying vec2 fragCoord;
   #define iResolution resolution
@@ -31,7 +32,7 @@ const s1 = `
   const vec3 offset=vec3(1.5,2.,-1.5);
 
   float wind(vec3 p) {
-    float d=max(0.,dist-max(0.,length(p)-uPlanetSize)/uPlanetSize)/dist; // for distortion and glow area
+    float d=max(0.,(dist * (uIntensity))-max(0.,length(p)-uPlanetSize)/uPlanetSize)/(dist * (uIntensity)); // for distortion and glow area
     float x=max(0.2,p.x*2.); // to increase glow on left side
     p.y*=1.+max(0.,-p.x-uPlanetSize*.25)*1.5; // left side distortion (cheesy)
     p-=d*normalize(p)*perturb; // spheric distortion of flow
@@ -40,7 +41,7 @@ const s1 = `
     for (int i=0; i<iterations; i++) {  
       p=abs(p)/dot(p,p)-fractparam; // the magic formula for the hot flow
     }
-    return length(p)*(1.+d*glow*x)+d*glow*x; // return the result with glow applied
+    return length(p)*(1.+d*glow*uIntensity*x)+d*glow*uIntensity*x; // return the result with glow applied
   }
 
   void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
@@ -103,14 +104,17 @@ void main(void) {
 export default class PlanetFX {
   private scene: Phaser.Scene;
   private planetSize: number;
+  private intensity: number;
   private shader1: Phaser.GameObjects.Shader;
 
-  constructor (scene: Phaser.Scene, planetSize: number, renderWidth: number, renderHeight: number) {
+  constructor (scene: Phaser.Scene, planetSize: number, intensity: number, renderWidth: number, renderHeight: number) {
     this.scene = scene;
     
     this.planetSize = planetSize;
+    this.intensity = intensity;
     const baseShader1 = new Phaser.Display.BaseShader('BufferA', s1, undefined, {
-      uPlanetSize: { key: 'uPlanetSize', type: '1f', value: 0.3 }
+      uPlanetSize: { key: 'uPlanetSize', type: '1f', value: 0.3 },
+      uIntensity: { key: 'uIntensity', type: '1f', value: 1 }
     });
 
     this.shader1 = scene.add.shader(baseShader1, 0, 0, renderWidth, renderHeight);
@@ -129,6 +133,15 @@ export default class PlanetFX {
 
   public createShaderImage (): Phaser.GameObjects.Image {
     return this.scene.add.image(0, 0, 'planetFX2').setBlendMode(Phaser.BlendModes.ADD);
+  }
+
+  public setIntensity (intensity: number): void {
+    this.shader1.setUniform('uIntensity.value', intensity);
+    this.intensity = intensity;
+  }
+
+  public getIntensity (): number {
+    return this.intensity;
   }
 
   public setPlanetSize (size: number): void {
