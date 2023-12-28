@@ -35,7 +35,9 @@ export class MovementBehaviour {
     public addSlideCorrectionForce (delta: number): void {
         // Extra force for slope slide correction
         const groundVector = this.getGroundVector();
-        const force = new Phaser.Math.Vector2(groundVector.x, groundVector.y).normalize().scale(groundVector.y / 1.25 / delta);
+
+        const forceConstant = (groundVector.y < 0.25 && groundVector.y > 0.23) ? 24 : 16.5; 
+        const force = new Phaser.Math.Vector2(groundVector.x, groundVector.y).normalize().scale(groundVector.y / (forceConstant / (this.character.getBody()?.mass ?? 1)) / delta);
         this.character.applyForce(force);
     }
 

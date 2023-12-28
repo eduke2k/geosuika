@@ -30,7 +30,7 @@ export default class Achan extends Character {
       friction: 0,
       frictionAir: 0,
       frictionStatic: 0,
-      chamfer: { radius: 3 },
+      chamfer: { radius: 7 },
       render: { sprite: { xOffset: 0, yOffset: 0.08 }},
       collisionFilter: {
         group: 0,
