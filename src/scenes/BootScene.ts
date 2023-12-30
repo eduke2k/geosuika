@@ -87,6 +87,7 @@ import { switchSFXConfig } from '../const/switchSFX';
 import { taikoSFXConfig } from '../const/taikoSFX';
 import { InputController } from '../models/Input';
 import { gongEffectSFXConfig } from '../const/gongEffectSFX';
+import CirclingDotsFX from '../shaders/CirclingDotsFX';
 
 const LOADING_BAR_HEIGHT = 25;
 const LOADING_BAR_WIDTH = 240;
@@ -95,6 +96,7 @@ const LOADING_BAR_PADDING = 12;
 export default class MainMenuScene extends Phaser.Scene {
 	private progressBar!: Phaser.GameObjects.Graphics;
 	private progressBox!: Phaser.GameObjects.Graphics;
+  private circlingDotsFX: CirclingDotsFX | undefined;
 
 	constructor() {
 		super({ key: 'boot-scene', active: true })
@@ -197,7 +199,12 @@ export default class MainMenuScene extends Phaser.Scene {
 	}
 
 	public async create () {
-    console.log('--- Creating Boot Scene ---');
+    this.circlingDotsFX = new CirclingDotsFX(this, 1280, 720);
+    const image = this.circlingDotsFX.createShaderImage();
+    image.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
+    image.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
+
+		console.log('--- Creating Boot Scene ---');
 
     await new FontFaceObserver('Barlow Condensed Light').load();
 		await new FontFaceObserver('Barlow Condensed Regular').load();
@@ -236,7 +243,7 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.registry.set('input-controller', new InputController());
 		console.log('--- Finished Creating Custom Controller Input ---');
 
-    this.scene.start('main-menu-scene').remove();
+    // this.scene.start('main-menu-scene').remove();
 		// this.scene.launch('game-scene').launch('hud-scene').remove();
   }
 }
