@@ -17,6 +17,7 @@ export enum Action {
     CONFIRM,
     CANCEL,
     PAUSE,
+    BACK,
     DROP_PIECE,
     ROTATE_PIECE_CW,
     ROTATE_PIECE_CCW,
@@ -81,6 +82,13 @@ export const controlMapping: Record<string, { keyboard: number[], gamepad: numbe
     [Action.LAYER_CHANGE]: {
         gamepad: [ GamePadButtonId.BUTTON_R1],
         keyboard: [Phaser.Input.Keyboard.KeyCodes.F]
+    },
+    [Action.BACK]: {
+        gamepad: [ GamePadButtonId.BUTTON_B],
+        keyboard: [
+            Phaser.Input.Keyboard.KeyCodes.ESC,
+            Phaser.Input.Keyboard.KeyCodes.TAB
+        ]
     },
     [Action.PAUSE]: {
         gamepad: [ GamePadButtonId.BUTTON_START],

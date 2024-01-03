@@ -88,29 +88,41 @@ import { taikoSFXConfig } from '../const/taikoSFX';
 import { InputController } from '../models/Input';
 import { gongEffectSFXConfig } from '../const/gongEffectSFX';
 import CirclingDotsFX from '../shaders/CirclingDotsFX';
+import { scaleNumberRange } from '../functions/helper';
 
-const LOADING_BAR_HEIGHT = 25;
-const LOADING_BAR_WIDTH = 240;
-const LOADING_BAR_PADDING = 12;
+// const LOADING_BAR_HEIGHT = 25;
+// const LOADING_BAR_WIDTH = 240;
+// const LOADING_BAR_PADDING = 12;
+
+const skipAnimation = true;
 
 export default class MainMenuScene extends Phaser.Scene {
-	private progressBar!: Phaser.GameObjects.Graphics;
-	private progressBox!: Phaser.GameObjects.Graphics;
+	// private progressBar!: Phaser.GameObjects.Graphics;
+	// private progressBox!: Phaser.GameObjects.Graphics;
   private circlingDotsFX: CirclingDotsFX | undefined;
+	private circlingDotsFXImage: Phaser.GameObjects.Image | undefined;
+	private percentageText: Phaser.GameObjects.Text | undefined;
 
 	constructor() {
 		super({ key: 'boot-scene', active: true })
 	}
 
 	public preload () {
-		this.progressBar = this.add.graphics();
-		this.progressBox = this.add.graphics();
-		this.progressBox.fillStyle(0x222222, 0.8);
-		this.progressBox.fillRect(
-			(this.game.canvas.width / 2) - (LOADING_BAR_WIDTH / 2),
-			(this.game.canvas.height / 2) - (LOADING_BAR_HEIGHT / 2),
-			LOADING_BAR_WIDTH, LOADING_BAR_HEIGHT
-		);
+    this.circlingDotsFX = new CirclingDotsFX(this, 0.05, 1280, 720);
+    this.circlingDotsFXImage = this.circlingDotsFX.createShaderImage();
+    this.circlingDotsFXImage.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
+    this.circlingDotsFXImage.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
+
+		this.percentageText = this.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2, '0%', { fontFamily: 'Arial', fontSize: '12px', color: 'white' }).setOrigin(0.5, 0.5).setAlign('center')
+
+		// this.progressBar = this.add.graphics();
+		// this.progressBox = this.add.graphics();
+		// this.progressBox.fillStyle(0x222222, 0.8);
+		// this.progressBox.fillRect(
+		// 	(this.game.canvas.width / 2) - (LOADING_BAR_WIDTH / 2),
+		// 	(this.game.canvas.height / 2) - (LOADING_BAR_HEIGHT / 2),
+		// 	LOADING_BAR_WIDTH, LOADING_BAR_HEIGHT
+		// );
 
 		// IMPORTANT: When adding new aseprite sprites, don't forget to load their animations in the create-method.
 		this.load.aseprite('arcade', ArcadePNG, ArcadeJSON);
@@ -180,12 +192,13 @@ export default class MainMenuScene extends Phaser.Scene {
 		// this.load.image('red', 'assets/particles/red.png')
 
 		this.load.on('progress', (value: number) => {
-			this.progressBar.clear();
-			this.progressBar.fillStyle(0xffffff, 1);
-			this.progressBar.fillRect(
-				(this.game.canvas.width / 2) - ((LOADING_BAR_WIDTH - LOADING_BAR_PADDING) / 2),
-				(this.game.canvas.height / 2) - ((LOADING_BAR_HEIGHT - LOADING_BAR_PADDING) / 2),
-				(LOADING_BAR_WIDTH - LOADING_BAR_PADDING)  * value, LOADING_BAR_HEIGHT - LOADING_BAR_PADDING);
+			this.percentageText?.setText(`${Math.round(value * 100)}%`);
+			// this.progressBar.clear();
+			// this.progressBar.fillStyle(0xffffff, 1);
+			// this.progressBar.fillRect(
+			// 	(this.game.canvas.width / 2) - ((LOADING_BAR_WIDTH - LOADING_BAR_PADDING) / 2),
+			// 	(this.game.canvas.height / 2) - ((LOADING_BAR_HEIGHT - LOADING_BAR_PADDING) / 2),
+			// 	(LOADING_BAR_WIDTH - LOADING_BAR_PADDING)  * value, LOADING_BAR_HEIGHT - LOADING_BAR_PADDING);
 		});
 
 		this.load.on('loaderror', (file: any) => {
@@ -193,18 +206,22 @@ export default class MainMenuScene extends Phaser.Scene {
 		});
 	
 		this.load.on('complete', () => {
-			this.progressBar.destroy();
-			this.progressBox.destroy();
+			// this.progressBar.destroy();
+			// this.progressBox.destroy();
 		});
 	}
 
-	public async create () {
-    this.circlingDotsFX = new CirclingDotsFX(this, 1280, 720);
-    const image = this.circlingDotsFX.createShaderImage();
-    image.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
-    image.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
+	private initSettings (): void {
+		const soundVolume = localStorage.getItem('cor:sfx-volume');
+		if (soundVolume === null) localStorage.setItem('cor:sfx-volume', '1');
+		const musicVolume = localStorage.getItem('cor:music-volume');
+		if (musicVolume === null) localStorage.setItem('cor:music-volume', '1');
+	}
 
+	public async create () {
 		console.log('--- Creating Boot Scene ---');
+
+		this.initSettings();
 
     await new FontFaceObserver('Barlow Condensed Light').load();
 		await new FontFaceObserver('Barlow Condensed Regular').load();
@@ -242,6 +259,33 @@ export default class MainMenuScene extends Phaser.Scene {
 
 		this.registry.set('input-controller', new InputController());
 		console.log('--- Finished Creating Custom Controller Input ---');
+
+		if (skipAnimation) {
+			this.scene.start('main-menu-scene').remove();
+			return;
+		} 
+
+		this.tweens.add({
+			targets: this.percentageText,
+			alpha: 0,
+			duration: 1500,
+			ease: Phaser.Math.Easing.Quadratic.In,
+		})
+
+		const startDistance = this.circlingDotsFX?.getDistance() ?? 0.05;
+		this.tweens.addCounter({
+			from: 0,
+			to: 1,
+			duration: 2500,
+			ease: Phaser.Math.Easing.Quadratic.In,
+			onUpdate: (tween) => {
+				this.circlingDotsFX?.setDistance(scaleNumberRange(tween.getValue(), [0, 1], [startDistance, 0.8]));
+				this.circlingDotsFXImage?.setAlpha(1 - tween.getValue());
+			},
+			onComplete: () => {
+				this.scene.start('main-menu-scene').remove();
+			}
+		})
 
     // this.scene.start('main-menu-scene').remove();
 		// this.scene.launch('game-scene').launch('hud-scene').remove();

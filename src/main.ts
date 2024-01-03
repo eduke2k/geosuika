@@ -11,6 +11,7 @@ import ChromaticPostFX from './shaders/ChromaticPostFX'
 import PauseScene from './scenes/PauseScene'
 import { DialogScene } from './scenes/DialogScene'
 import CinematicBarsFX from './shaders/CinematicBarsFX'
+import OptionsScene from './scenes/OptionsScene'
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
@@ -53,7 +54,7 @@ const config: Phaser.Types.Core.GameConfig = {
 			}
 		}
 	},
-	scene: [BootScene, MainMenuScene, GameScene, DialogScene, HUDScene, GameOverScene, PauseScene]
+	scene: [BootScene, MainMenuScene, GameScene, DialogScene, HUDScene, GameOverScene, PauseScene, OptionsScene]
 }
 
 export default new Phaser.Game(config)

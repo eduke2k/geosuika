@@ -7,13 +7,15 @@ import BaseScene from './BaseScene';
 import { FontName } from '../types';
 import { SFX } from '../models/SFX';
 import { Instrument } from '../models/Instrument';
-import GlowRingFX from '../shaders/GlowRingFX';
+// import GlowRingFX from '../shaders/GlowRingFX';
 import { GamepadType } from '../models/GamepadInput';
+
+const skipAnimation = true;
 
 export default class MainMenuScene extends BaseScene {
   // private lensFlareFX: LensFlareFX | undefined;
   private planetFX: PlanetFX | undefined;
-  private glowRingFX: GlowRingFX | undefined;
+  // private glowRingFX: GlowRingFX | undefined;
   private anyKeyText: Phaser.GameObjects.Text | undefined;
   private bgm: Phaser.Sound.WebAudioSound | Phaser.Sound.NoAudioSound | Phaser.Sound.HTML5AudioSound | undefined;
   private menu: MenuList | undefined;
@@ -34,9 +36,13 @@ export default class MainMenuScene extends BaseScene {
     switch (key) {
       case 'play': this.startGame(); break;
       case 'controls': console.log('implement me'); break;
-      case 'options': console.log('implement me'); break;
+      case 'options': this.showOptions(); break;
       case 'credits': console.log('implement me'); break;
     }
+  }
+
+  private showOptions (): void {
+    this.scene.launch('options-scene', this);
   }
 
   private startGame (): void {
@@ -159,6 +165,16 @@ export default class MainMenuScene extends BaseScene {
     });
   }
 
+  public focus (): void {
+    super.focus();
+    this.menu?.setAlpha(1);
+  }
+
+  public blur (): void {
+    super.blur();
+    this.menu?.setAlpha(0);
+  }
+
 	public async create () {
     super.create();
 
@@ -166,7 +182,7 @@ export default class MainMenuScene extends BaseScene {
     const duration = 2000;
     this.cameras.main.fadeIn(duration);
 
-    this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: 28, textColor: '#888', activeTextColor: '#FFF' });
+    this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: 28, textColor: '#888', activeTextColor: '#FFF', alignment: 'center' });
     this.menu.addItem({ enabled: true, key: 'play', label: 'Play' });
     this.menu.addItem({ enabled: true, key: 'controls', label: 'Controls' });
     this.menu.addItem({ enabled: true, key: 'options', label: 'Options' });
@@ -179,19 +195,6 @@ export default class MainMenuScene extends BaseScene {
     this.anyKeyText = this.add.text(this.game.canvas.width / 2, this.game.canvas.height - 128, '???', { fontFamily: FontName.LIGHT, fontSize: 28, color: '#FFF' } ).setOrigin(0.5, 0.5);
     if (this.inputController) this.updateAnyKeyText(this.inputController);
     this.anyKeyText.alpha = 0;
-
-    this.time.delayedCall(duration / 2, () => {
-      this.tweens.add({
-        targets: this.anyKeyText,
-        alpha: 1,
-        y: (this.anyKeyText?.y ?? 0) - 10,
-        duration: duration / 4,
-        ease: Phaser.Math.Easing.Quadratic.Out,
-        onComplete: () => {
-          this.ignoreInputs = false;
-        }
-      });
-    });
 
     // Start music
     this.bgm = this.soundManager?.music.add('bgm:menu', { loop: true });
@@ -221,6 +224,24 @@ export default class MainMenuScene extends BaseScene {
     // const image2 = this.glowRingFX.createShaderImage();
     // image2.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
     // image2.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
+
+    if (skipAnimation) {
+      this.showMenu();
+      return;
+    } else {
+      this.time.delayedCall(duration / 2, () => {
+        this.tweens.add({
+          targets: this.anyKeyText,
+          alpha: 1,
+          y: (this.anyKeyText?.y ?? 0) - 10,
+          duration: duration / 4,
+          ease: Phaser.Math.Easing.Quadratic.Out,
+          onComplete: () => {
+            this.ignoreInputs = false;
+          }
+        });
+      });
+    }
   }
 
   private updateAnyKeyText (input: InputController): void {

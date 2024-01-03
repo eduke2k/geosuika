@@ -20,6 +20,7 @@ import BaseScene from './BaseScene';
 import CinematicBarsFX from '../shaders/CinematicBarsFX';
 import { StaticOneWayPlatform } from '../entities/Platforms/StaticOneWayPlatform';
 import { SoundSource2d } from '../entities/Sound/SoundSource2d';
+import { PauseSceneInitData } from './PauseScene';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -332,7 +333,11 @@ export default class GameScene extends BaseScene {
 	public pause (): void {
 		if (!this.bokehEffect) this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
 		this.setBokehEffect(2, 100, Phaser.Math.Easing.Sine.InOut, () => {
-			this.scene.launch('pause-scene');
+			console.log(this.getMountedBucket());
+			const payload: PauseSceneInitData = {
+				bucket: this.getMountedBucket()
+			}
+			this.scene.launch('pause-scene', payload);
 			this.scene.pause();
 		});
 		this.ignoreInputs = true;

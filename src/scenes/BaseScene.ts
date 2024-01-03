@@ -18,6 +18,14 @@ export default class BaseScene extends Phaser.Scene {
     this.inputController = this.registry.get('input-controller');
   }
 
+  public blur (): void {
+    this.ignoreInputs = true;
+  }
+
+  public focus (): void {
+    this.ignoreInputs = false;
+  }
+
   public update (time: number, delta: number): void {
     if (!this.ignoreInputs) {
       this.inputController?.update(time, delta);
