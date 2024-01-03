@@ -82,6 +82,7 @@ const s2 = `
 precision mediump float;
 uniform vec2 resolution;
 uniform sampler2D iChannel0;
+uniform vec2 uCenter;
 varying vec2 fragCoord;
 
 vec4 texture(sampler2D s, vec2 c) {
@@ -94,7 +95,11 @@ vec4 texture(sampler2D s, vec2 c, float b) {
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 uv = fragCoord.xy / resolution.xy;
-  fragColor = texture(iChannel0,uv);
+  // vec2 R = resolution.xy;
+  // vec2 U = .55*abs(fragCoord + fragCoord - R)/R.y - 0.5;
+  // vec2 C = vec2(resolution.x * uCenter.x, resolution.y * uCenter.y);
+  // fragColor = texture(iChannel0, (U.x>U.y ? U : U.yx) + C.xy/R);
+  fragColor = texture(iChannel0, uv);
 }
 
 void main(void) {
@@ -105,13 +110,16 @@ export default class PlanetFX {
   private scene: Phaser.Scene;
   private planetSize: number;
   private intensity: number;
+  private center: Phaser.Types.Math.Vector2Like;
   private shader1: Phaser.GameObjects.Shader;
+  private shader2: Phaser.GameObjects.Shader;
 
-  constructor (scene: Phaser.Scene, planetSize: number, intensity: number, renderWidth: number, renderHeight: number) {
+  constructor (scene: Phaser.Scene, planetSize: number, intensity: number, center: Phaser.Types.Math.Vector2Like, renderWidth: number, renderHeight: number) {
     this.scene = scene;
     
     this.planetSize = planetSize;
     this.intensity = intensity;
+    this.center = {...center};
     const baseShader1 = new Phaser.Display.BaseShader('BufferA', s1, undefined, {
       uPlanetSize: { key: 'uPlanetSize', type: '1f', value: 0.3 },
       uIntensity: { key: 'uIntensity', type: '1f', value: 1 }
@@ -121,14 +129,16 @@ export default class PlanetFX {
     this.shader1.setRenderToTexture('planetFX1');
     this.setPlanetSize(this.planetSize);
 
-    const baseShader2 = new Phaser.Display.BaseShader('BufferB', s2);
-    const shader2 = scene.add.shader(baseShader2, 0, 0, renderWidth, renderHeight);
-    shader2.setRenderToTexture('planetFX2');
+    const baseShader2 = new Phaser.Display.BaseShader('BufferB', s2, undefined, {
+      uCenter: { key: 'uCenter', type: '2f', value: center },
+    });
+    this.shader2 = scene.add.shader(baseShader2, 0, 0, renderWidth, renderHeight);
+    this.shader2.setRenderToTexture('planetFX2');
 
     this.shader1.setSampler2D('iChannel0', 'planetFX2');
     this.shader1.setSampler2D('iChannel1', 'texture:noise');
     this.shader1.setSampler2D('iChannel2', 'texture:earth');
-    shader2.setSampler2D('iChannel0', 'planetFX1');
+    this.shader2.setSampler2D('iChannel0', 'planetFX1');
   }
 
   public createShaderImage (): Phaser.GameObjects.Image {
@@ -151,5 +161,15 @@ export default class PlanetFX {
 
   public getPlanetSize (): number {
     return this.planetSize;
+  }
+
+  public getCenter (): Phaser.Types.Math.Vector2Like {
+    return this.center;
+  }
+
+  public setCenter (x: number, y: number): void {
+    this.center.x = x;
+    this.center.y = y;
+    this.shader2.setUniform('uCenter.value', this.center);
   }
 }

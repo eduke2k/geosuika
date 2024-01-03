@@ -10,7 +10,7 @@ import { Instrument } from '../models/Instrument';
 // import GlowRingFX from '../shaders/GlowRingFX';
 import { GamepadType } from '../models/GamepadInput';
 
-const skipAnimation = true;
+const skipAnimation = false;
 
 export default class MainMenuScene extends BaseScene {
   // private lensFlareFX: LensFlareFX | undefined;
@@ -19,6 +19,8 @@ export default class MainMenuScene extends BaseScene {
   private anyKeyText: Phaser.GameObjects.Text | undefined;
   private bgm: Phaser.Sound.WebAudioSound | Phaser.Sound.NoAudioSound | Phaser.Sound.HTML5AudioSound | undefined;
   private menu: MenuList | undefined;
+  private logo: Phaser.GameObjects.Image | undefined;
+  private logoScale = 1;
   private state: 'preMenu' | 'menu' = 'preMenu'
   
   // private menuItems: MenuItem[] = [
@@ -101,16 +103,43 @@ export default class MainMenuScene extends BaseScene {
 
   private handleMenuChange (_key: string): void {
     const initial = this.planetFX?.getPlanetSize();
-    if (!initial) return;
-    this.tweens.addCounter({
-      from: initial + 0.03,
-      to: initial,
-      duration: 300,
-      ease: Phaser.Math.Easing.Quadratic.Out,
-      onUpdate: (tween) => {
-        this.planetFX?.setPlanetSize(tween.getValue());
-      }
-    })
+    if (initial) {
+      this.tweens.addCounter({
+        from: initial + 0.03,
+        to: initial,
+        duration: 300,
+        ease: Phaser.Math.Easing.Quadratic.Out,
+        onUpdate: (tween) => {
+          this.planetFX?.setPlanetSize(tween.getValue());
+        }
+      })
+    }
+
+
+    const center = this.planetFX?.getCenter();
+    if (center) {
+      // const initialX = center.x;
+      // const initialY = center.y;
+
+      const targetX = Math.random();
+      const targetY = Math.random();
+
+      this.planetFX?.setCenter(targetX, targetY);
+
+      console.log(targetX, targetY);
+
+      // this.tweens.addCounter({
+      //   from: 0,
+      //   to: 1,
+      //   duration: 1500,
+      //   ease: Phaser.Math.Easing.Quadratic.Out,
+      //   onUpdate: (tween) => {
+      //     const valX = (initialX ?? 0) + ((targetX - (initialX ?? 0)) * tween.getValue());
+      //     const valY = (initialY ?? 0) + ((targetY - (initialY ?? 0)) * tween.getValue());
+      //     this.planetFX?.setCenter(valX, valY);
+      //   }
+      // })
+    }
   }
 
   public showMenu (): void {
@@ -129,6 +158,15 @@ export default class MainMenuScene extends BaseScene {
         ease: Phaser.Math.Easing.Quadratic.Out
       });
     }
+
+    this.tweens.add({
+      targets: this.logo,
+      alpha: 1,
+      scale: this.logoScale,
+      y: this.game.canvas.height / 4,
+      duration,
+      ease: Phaser.Math.Easing.Sine.InOut,
+    });
 
     this.tweens.addCounter({
       from: this.planetFX?.getPlanetSize() ?? 0,
@@ -168,11 +206,13 @@ export default class MainMenuScene extends BaseScene {
   public focus (): void {
     super.focus();
     this.menu?.setAlpha(1);
+    this.logo?.setAlpha(1);
   }
 
   public blur (): void {
     super.blur();
     this.menu?.setAlpha(0);
+    this.logo?.setAlpha(0);
   }
 
 	public async create () {
@@ -203,7 +243,7 @@ export default class MainMenuScene extends BaseScene {
     // this.lensFlareFX = new LensFlareFX(this, this.game.canvas.width / 2, this.game.canvas.height / 2);
     // this.lensFlareFX.createShaderImage();
 
-    this.planetFX = new PlanetFX(this, .3, 1, 1280, 720);
+    this.planetFX = new PlanetFX(this, .3, 1, { x: 0.5, y: 0.5 }, 1280, 720);
     const image = this.planetFX.createShaderImage();
     image.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
     image.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
@@ -218,6 +258,18 @@ export default class MainMenuScene extends BaseScene {
       onUpdate: (tween) => {
         this.planetFX?.setPlanetSize(tween.getValue())
       }
+    });
+
+    this.logo = this.add.image(this.game.canvas.width / 2, (this.game.canvas.height / 2) - 20, 'logo').setOrigin(0.5, 0.5).setAlpha(0);
+    this.logoScale = (this.game.canvas.width - (this.game.canvas.width / 4)) / this.logo.width;
+    this.logo.setScale(this.logoScale * 0.7);
+
+    this.tweens.add({
+      targets: this.logo,
+      alpha: 1,
+      scale: this.logoScale * 0.8,
+      duration,
+      ease: Phaser.Math.Easing.Quadratic.Out,
     });
 
     // this.glowRingFX =  new GlowRingFX(this, 2.0, 1280, 720);

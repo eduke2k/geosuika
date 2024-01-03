@@ -7,7 +7,7 @@ type ButtonState = {
 }
 
 const defaultWhitelist = [
-  'F5', 'F12'
+  'F5', 'F11', 'F12'
 ]
 
 export class KeyboardInput implements CustomInput {

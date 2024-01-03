@@ -46,6 +46,7 @@ import PortraitShibaJSON from './../assets/portrait_shiba.json';
 import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
 import EarthTextureJPG from './../assets/earth.jpg';
 import NoiseTextureJPG from './../assets/noise.png';
+import LogoPNG from './../assets/logo.png';
 
 // Audio SFX
 import HarpSFX from './../assets/sfx/harp.ogg';
@@ -150,6 +151,7 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.image('bucket:japanese-house', JapaneseHouseBucketPNG);
 		this.load.image('texture:earth', EarthTextureJPG);
 		this.load.image('texture:noise', NoiseTextureJPG);
+		this.load.image('logo', LogoPNG);
 
 		// Global BGM
 		this.load.audio('bgm:menu', MenuBGM);
