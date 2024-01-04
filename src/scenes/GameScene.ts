@@ -13,7 +13,7 @@ import Achan from '../entities/Achan';
 // import { EffectCircleOptions, TilemapLayerEffectCircle } from '../entities/TilemapLayerEffectCircle';
 import { SFX } from '../models/SFX';
 import RecyclingCan from '../entities/RecyclingCan';
-import ChromaticPostFX from '../shaders/ChromaticPostFX';
+import ChromaticPostFX, { CHROMATIC_BASE_STRENGTH } from '../shaders/ChromaticPostFX';
 import { SmallLamp, SmallLampFrame } from '../entities/SmallLamp';
 import GameObject from '../entities/GameObject';
 import BaseScene from './BaseScene';
@@ -163,7 +163,7 @@ export default class GameScene extends BaseScene {
 				} else {
 					this.setTimeScale(1);
 					this.playerLight?.setRadius(currentPlayerLightRadius);
-					this.chromaticPostFX.setStrength(1);
+					this.chromaticPostFX.setStrength(CHROMATIC_BASE_STRENGTH);
 				}
 			}
 		});

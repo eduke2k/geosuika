@@ -23,18 +23,20 @@ vec2 computeUV( vec2 uv, float k, float kcube) {
 void main() {
   vec2 uv = outTexCoord;
   
-    float k = -.1 * uStrength;
-    float kcube = -.1 * uStrength;
-    
-    float offset = .01;
-    
-    float red = texture2D(uMainSampler, computeUV(uv, k + offset, kcube ) ).r; 
-    float green = texture2D(uMainSampler, computeUV(uv, k, kcube ) ).g; 
-    float blue = texture2D(uMainSampler, computeUV(uv, k - offset, kcube ) ).b; 
-    
-    gl_FragColor = vec4( red, green, blue, 1.);
+  float k = -.1 * uStrength;
+  float kcube = -.1 * uStrength;
+  
+  float offset = .01 * uStrength;
+  
+  float red = texture2D(uMainSampler, computeUV(uv, k + offset, kcube ) ).r; 
+  float green = texture2D(uMainSampler, computeUV(uv, k, kcube ) ).g; 
+  float blue = texture2D(uMainSampler, computeUV(uv, k - offset, kcube ) ).b; 
+  
+  gl_FragColor = vec4(red, green, blue, 1.);
 }
 `;
+
+export const CHROMATIC_BASE_STRENGTH = 0.5;
 
 export default class ChromaticPostFX extends Phaser.Renderer.WebGL.Pipelines.PostFXPipeline {
   private strength: number;
@@ -45,16 +47,9 @@ export default class ChromaticPostFX extends Phaser.Renderer.WebGL.Pipelines.Pos
       game,
       renderTarget: true,
       fragShader
-      // uniforms: [
-      //   'uProjectionMatrix',
-      //   'uMainSampler',
-      //   'uTime',
-      //   'uSpeed',
-      //   'uBendFactor'
-      // ]
     });
 
-    this.strength = 1;
+    this.strength = CHROMATIC_BASE_STRENGTH;
     this.center = { x: 0.5, y: 0.5 };
   }
 
@@ -74,7 +69,6 @@ export default class ChromaticPostFX extends Phaser.Renderer.WebGL.Pipelines.Pos
   public setStrength (value: number) {
       this.strength = value;
   }
-
 
   public getCenter () {
     return this.center;

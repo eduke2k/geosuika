@@ -97,6 +97,20 @@ import { scaleNumberRange } from '../functions/helper';
 
 const skipAnimation = true;
 
+const NATIVE_AR = 16 / 9;
+function handleResize() {
+	const canvas = document.getElementsByTagName('canvas')[0];
+	if (canvas) {
+		const width = window.innerWidth;
+		const height = window.innerHeight;
+		const ar = width / height;
+		const canvasWidth = NATIVE_AR >= ar ? width : height * NATIVE_AR;
+		const canvasHeight = NATIVE_AR < ar ? height : width / NATIVE_AR;
+		canvas.style.width = `${canvasWidth}px`;
+		canvas.style.height = `${canvasHeight}px`;
+	}
+}
+
 export default class MainMenuScene extends Phaser.Scene {
 	// private progressBar!: Phaser.GameObjects.Graphics;
 	// private progressBox!: Phaser.GameObjects.Graphics;
@@ -109,6 +123,9 @@ export default class MainMenuScene extends Phaser.Scene {
 	}
 
 	public preload () {
+		window.addEventListener('resize', handleResize);
+		handleResize();
+
     this.circlingDotsFX = new CirclingDotsFX(this, 0.05, 1280, 720);
     this.circlingDotsFXImage = this.circlingDotsFX.createShaderImage();
     this.circlingDotsFXImage.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
@@ -222,7 +239,6 @@ export default class MainMenuScene extends Phaser.Scene {
 
 	public async create () {
 		console.log('--- Creating Boot Scene ---');
-
 		this.initSettings();
 
     await new FontFaceObserver('Barlow Condensed Light').load();

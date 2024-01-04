@@ -121,7 +121,6 @@ export default class Arcade extends InteractableGameObject {
     if (!this.linkedBucket) {
       new BlinkingText(this.scene, 'Not connected', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000 });
     } else {
-
       this.isLoading = true;
 
       // This freeze inputs of player character

@@ -97,7 +97,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   private bgmDataLoading = false;
   private collisionSoundWaitTime = 0;
   private mergeSoundWaitTime = 0;
-  private nextDroppableTime = 0;
+  private nextDroppableTime = 100;
   private targetScore: number;
   private bucketImage: Phaser.GameObjects.Image;
   private bucketProgressRatio = 0;
@@ -397,12 +397,9 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // Make bucket playable
     this.bucketActive = true;
 
-    // Init first drop
-    this.initNextDroppable();
-
     // Make all bucket assets visible
     this.setBucketAssetVisibility(true);
-
+  
     // Move bucket back to start
     this.y = this.startY;
   }
@@ -890,10 +887,17 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
     [...this.droppables].forEach(d => { this.explode(d); });
     this.droppables = [];
+    this.nextDroppableTime = 100;
     this.scoreLabel.restart();
     this.isGameOver = false;
     this.moveToAbsoluteY(this.startY, 500);
-    this.initNextDroppable();
+
+    // Wait a tick before initializing first bucket. Otherwise, drop action might be still "justDown"
+    this.scene.time.delayedCall(50, () => {
+      // Init first drop
+      console.log('waited 50ms to init droppable', this.getGameScene()?.inputController?.justDown(Action.DROP_PIECE));
+      // this.initNextDroppable();
+    })
   }
 
   public getDangerPercentage (): number {

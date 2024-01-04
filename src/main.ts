@@ -13,11 +13,14 @@ import { DialogScene } from './scenes/DialogScene'
 import CinematicBarsFX from './shaders/CinematicBarsFX'
 import OptionsScene from './scenes/OptionsScene'
 
+const NATIVE_WIDTH = 1280;
+const NATIVE_HEIGHT = 720;
+
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
 	parent: 'app',
-	width: 1280,
-	height: 720,
+	width: NATIVE_WIDTH,
+	height: NATIVE_HEIGHT,
 	antialias: true,
 	roundPixels: true,
 	input: {
