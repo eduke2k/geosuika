@@ -14,7 +14,7 @@ void main() {
   // Pixel colour
   vec4 Color = (uv.y < amount || uv.y > 1.0-amount) ? vec4(.0,.0,.0,1.) : texture2D(uMainSampler, uv);
 
-  // Outputt
+  // Output
   gl_FragColor = Color;
 }
 `;

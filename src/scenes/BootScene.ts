@@ -75,6 +75,7 @@ import MenuBGM from './../assets/music/menu.ogg';
 
 // Tiles
 import JapanTilesPNG from './../assets/tilesets/tilesheet_japan.png';
+import JapanTiles2xPNG from './../assets/tilesets/tilesheet_japan_2x.png';
 import MainTilesPNG from './../assets/tilesets/tilesheet_main.png';
 import map2JSON from './../assets/tilesets/map2.json';
 
@@ -89,15 +90,12 @@ import { taikoSFXConfig } from '../const/taikoSFX';
 import { InputController } from '../models/Input';
 import { gongEffectSFXConfig } from '../const/gongEffectSFX';
 import CirclingDotsFX from '../shaders/CirclingDotsFX';
-import { scaleNumberRange } from '../functions/helper';
+import { scaleNumberRange } from '../functions/numbers';
+import BaseScene from './BaseScene';
+import { NATIVE_AR, OPTION_KEYS } from '../const/const';
 
-// const LOADING_BAR_HEIGHT = 25;
-// const LOADING_BAR_WIDTH = 240;
-// const LOADING_BAR_PADDING = 12;
+const skipAnimation = false;
 
-const skipAnimation = true;
-
-const NATIVE_AR = 16 / 9;
 function handleResize() {
 	const canvas = document.getElementsByTagName('canvas')[0];
 	if (canvas) {
@@ -111,7 +109,7 @@ function handleResize() {
 	}
 }
 
-export default class MainMenuScene extends Phaser.Scene {
+export default class BootScene extends BaseScene {
 	// private progressBar!: Phaser.GameObjects.Graphics;
 	// private progressBox!: Phaser.GameObjects.Graphics;
   private circlingDotsFX: CirclingDotsFX | undefined;
@@ -126,12 +124,13 @@ export default class MainMenuScene extends Phaser.Scene {
 		window.addEventListener('resize', handleResize);
 		handleResize();
 
-    this.circlingDotsFX = new CirclingDotsFX(this, 0.05, 1280, 720);
+		const postFXResolution = parseFloat(localStorage.getItem(OPTION_KEYS.POSTFX_RESOLUTION) ?? '1');
+    this.circlingDotsFX = new CirclingDotsFX(this, 0.05, this.game.canvas.width * postFXResolution, this.game.canvas.height * postFXResolution);
     this.circlingDotsFXImage = this.circlingDotsFX.createShaderImage();
     this.circlingDotsFXImage.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
     this.circlingDotsFXImage.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
 
-		this.percentageText = this.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2, '0%', { fontFamily: 'Arial', fontSize: '12px', color: 'white' }).setOrigin(0.5, 0.5).setAlign('center')
+		this.percentageText = this.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2, '0%', { fontFamily: 'Arial', fontSize: this.scaled(12), color: 'white' }).setOrigin(0.5, 0.5).setAlign('center')
 
 		// this.progressBar = this.add.graphics();
 		// this.progressBox = this.add.graphics();
@@ -199,7 +198,7 @@ export default class MainMenuScene extends Phaser.Scene {
 		this.load.json('shapes', TetrominosShapesJSON);
 
 		// load tilesets
-		this.load.image('tilesheet_japan', JapanTilesPNG);
+		this.load.image('tilesheet_japan', this.game.canvas.height > 720 ? JapanTiles2xPNG : JapanTilesPNG);
 		this.load.image('tilesheet_main', MainTilesPNG);
 
 		// load map files
@@ -231,13 +230,24 @@ export default class MainMenuScene extends Phaser.Scene {
 	}
 
 	private initSettings (): void {
-		const soundVolume = localStorage.getItem('cor:sfx-volume');
-		if (soundVolume === null) localStorage.setItem('cor:sfx-volume', '1');
-		const musicVolume = localStorage.getItem('cor:music-volume');
-		if (musicVolume === null) localStorage.setItem('cor:music-volume', '1');
+		const soundVolume = localStorage.getItem(OPTION_KEYS.SFX_VOLUME);
+		if (soundVolume === null) localStorage.setItem(OPTION_KEYS.SFX_VOLUME, '1');
+		this.soundManager?.sound.setVolume(soundVolume === null ? 1 : parseFloat(soundVolume));
+
+		const musicVolume = localStorage.getItem(OPTION_KEYS.MUSIC_VOLUME);
+		if (musicVolume === null) localStorage.setItem(OPTION_KEYS.MUSIC_VOLUME, '1');
+		this.soundManager?.music.setVolume(musicVolume === null ? 1 : parseFloat(musicVolume));
+
+		const resolution = localStorage.getItem(OPTION_KEYS.RESOLUTION);
+		if (resolution === null) localStorage.setItem(OPTION_KEYS.RESOLUTION, '0');
+
+		const postFXResolution = localStorage.getItem(OPTION_KEYS.POSTFX_RESOLUTION);
+		if (postFXResolution === null) localStorage.setItem(OPTION_KEYS.POSTFX_RESOLUTION, '1');
 	}
 
 	public async create () {
+		super.create();
+	
 		console.log('--- Creating Boot Scene ---');
 		this.initSettings();
 
@@ -306,6 +316,6 @@ export default class MainMenuScene extends Phaser.Scene {
 		})
 
     // this.scene.start('main-menu-scene').remove();
-		// this.scene.launch('game-scene').launch('hud-scene').remove();
+		this.scene.launch('game-scene').launch('hud-scene').remove();
   }
 }

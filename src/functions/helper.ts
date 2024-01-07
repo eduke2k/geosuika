@@ -26,10 +26,6 @@ export function pickRandom<T> (array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-export function scaleNumberRange (value: number, [inMin, inMax]: number[], [outMin, outMax]: number[]): number {
-  return (value - inMin) / (inMax - inMin) * (outMax - outMin) + outMin;
-}
-
 export function sizeFromVertices (polygon: Phaser.Types.Math.Vector2Like[]): { width: number, height: number } {
   let minx = 0;
   let miny = 0;

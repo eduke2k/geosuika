@@ -1,7 +1,8 @@
 import chroma from "chroma-js";
 import { flagSet } from "../../config/flags";
 import { tetrominosSet } from "../../config/tetrominos";
-import { getNumberInRange, randomIntFromInterval, scaleNumberRange, shuffleArray, syncTranslation } from "../../functions/helper";
+import { getNumberInRange, randomIntFromInterval, shuffleArray, syncTranslation } from "../../functions/helper";
+import { scaleNumberRange } from '../../functions/numbers';
 import { BackgroundMusic, BackgroundMusicConfig } from "../../models/BackgroundMusic";
 import { SFX } from "../../models/SFX";
 import { Instrument } from "../../models/Instrument";
@@ -297,9 +298,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
   }
 
-  public getGameScene (): GameScene | undefined {
-    if (this.scene instanceof GameScene) return this.scene;
-    return;
+  public getGameScene (): GameScene {
+    return this.scene as GameScene;
   }
 
   public getBucketPhase (): BucketPhase {
@@ -1014,13 +1014,13 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
     
     // Handle automatic zoom
-    if (Math.abs((this.targetZoom - this.scene.cameras.main.zoom)) > 0.001) {
-      const currentZoom = this.scene.cameras.main.zoom;
-      const increment = ((this.targetZoom - currentZoom) / 500 * delta);
-      this.scene.cameras.main.setZoom(currentZoom + increment);
-    } else {
-      this.scene.cameras.main.setZoom(this.targetZoom);
-    }
+    // if (Math.abs((this.targetZoom - this.scene.cameras.main.zoom)) > 0.001) {
+    //   const currentZoom = this.scene.cameras.main.zoom;
+    //   const increment = ((this.targetZoom - currentZoom) / 500 * delta);
+    //   this.scene.cameras.main.setZoom(this.getGameScene().scaled(currentZoom + increment));
+    // } else {
+    //   this.scene.cameras.main.setZoom(this.getGameScene().scaled(this.targetZoom));
+    // }
 
     // Set Score position
     syncTranslation(this.scoreLabel, this.dropSensorBody, this.getBody().angle, { x: (((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) + this.bucketThickness + 32), y: -(this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y) / 2 });

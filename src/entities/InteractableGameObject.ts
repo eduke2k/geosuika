@@ -8,9 +8,8 @@ import GameObject from "./GameObject";
 export default class InteractableGameObject extends GameObject {
   protected interactable = false;
   protected highlighted = false;
-  protected glow = this.postFX.addGlow(0xFFFFFF, 0, 0, false, 0.4, 5);
   protected sensor: MatterJS.BodyType | undefined;
-  protected glowTween: Phaser.Tweens.Tween | undefined;
+  // protected glowTween: Phaser.Tweens.Tween | undefined;
   public portraitKey = 'portrait:fallback';
   public portraitScale = 4;
   public dialog: DialogJSON | undefined;
@@ -49,15 +48,15 @@ export default class InteractableGameObject extends GameObject {
       this.setVelocityY(-5);
       const sfx = this.scene.registry.get('instrument:musicbox') as Instrument | undefined;
       if (sfx) sfx.playRandomNote(this.getScene(), 0, 0.2);
-      if (this.glowTween) this.glowTween.stop();
-      if (this.scene) this.glowTween = this.scene.tweens.add({ targets: this.glow, outerStrength: 10, ease: 'sine.inout', duration: 250 });
+      // if (this.glowTween) this.glowTween.stop();
+      // if (this.scene) this.glowTween = this.scene.tweens.add({ targets: this.glow, outerStrength: 10, ease: 'sine.inout', duration: 250 });
     }
   }
 
   public onCollisionEnd (_other: Character): void {
     if (this.isInteractable()) {
-      if (this.glowTween) this.glowTween.stop();
-      if (this.scene) this.glowTween = this.scene.tweens.add({ targets: this.glow, outerStrength: 0, ease: 'sine.inout', startDelay: 500, duration: 500 });
+      // if (this.glowTween) this.glowTween.stop();
+      // if (this.scene) this.glowTween = this.scene.tweens.add({ targets: this.glow, outerStrength: 0, ease: 'sine.inout', startDelay: 500, duration: 500 });
     }
   }
 
@@ -66,8 +65,8 @@ export default class InteractableGameObject extends GameObject {
   }
 
   public destroy (): void {
-    if (this.glowTween) this.glowTween.stop();
-    this.glowTween = undefined;
+    // if (this.glowTween) this.glowTween.stop();
+    // this.glowTween = undefined;
     if (this.sensor && this.scene) this.scene.matter.world.remove(this.sensor);
     super.destroy();
   }

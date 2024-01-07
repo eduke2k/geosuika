@@ -1,7 +1,8 @@
 import Phaser from 'phaser'
 // import Droppable from '../entities/Droppable';
 import DropBucket from '../entities/DropBucket/DropBucket';
-import { getNormalizedRelativePositionToCanvas, parseTiledProperties, scaleNumberRange } from '../functions/helper';
+import { getNormalizedRelativePositionToCanvas, parseTiledProperties } from '../functions/helper';
+import { scaleNumberRange } from '../functions/numbers';
 import { PetalEmitter } from '../models/PetalEmitter';
 import chroma from 'chroma-js';
 import Dog from '../entities/Dog';
@@ -397,6 +398,7 @@ export default class GameScene extends BaseScene {
 				existingLayer.setVisible(true);
 			} else {
 				const tileset = this.tilesets[(terrainLayer?.properties as { name: string, value: string }[]).find(k => k.name === 'tileset')?.value ?? ''];
+				console.log(tileset);
 				const layer = this.map.createLayer(terrainLayer.name, tileset);
 				if (layer) {
 					layer?.setPipeline('Light2D');
@@ -617,7 +619,10 @@ export default class GameScene extends BaseScene {
 		const map = this.make.tilemap({ key: mapKey });
 
 		map.tilesets.forEach(t => {
-			const tileset = map.addTilesetImage(t.name);
+			// This will determine if the double resolution tilemap images are being used or not. Double resoluton means the tileset image config needs
+			// to be doubled as well
+			const scale = this.game.canvas.height > 720 ? 2 : 1;
+			const tileset = map.addTilesetImage(t.name, undefined, map.tileHeight * scale, map.tileHeight * scale, t.tileMargin * scale, t.tileSpacing * scale);
 			if (tileset) this.tilesets[t.name] = tileset;
 		});
 		// const tilesetJapan = map.addTilesetImage('tilesheet_japan');
@@ -667,6 +672,7 @@ export default class GameScene extends BaseScene {
 
 		// Camera Settings
 		this.cameras.main.fadeIn(1000);
+		this.cameras.main.setZoom(this.scaled(1));
 	}
 
 	public update (time: number, delta: number): void {

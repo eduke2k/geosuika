@@ -1,6 +1,7 @@
 import { Depths } from "../const/depths";
 import { Petal } from "../entities/Petal";
-import { randomIntFromInterval, scaleNumberRange } from "../functions/helper";
+import { randomIntFromInterval } from "../functions/helper";
+import { scaleNumberRange } from "../functions/numbers";
 
 const MAX_FREQUENCY = 250;
 const MIN_FREQUENCY = 5000;

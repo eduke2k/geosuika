@@ -9,6 +9,9 @@ import { SFX } from '../models/SFX';
 import { Instrument } from '../models/Instrument';
 // import GlowRingFX from '../shaders/GlowRingFX';
 import { GamepadType } from '../models/GamepadInput';
+import ScalePostFX from '../shaders/ScalePostFX';
+import { scaleNumberRange } from '../functions/numbers';
+import { OPTION_KEYS } from '../const/const';
 
 const skipAnimation = false;
 
@@ -51,12 +54,42 @@ export default class MainMenuScene extends BaseScene {
     this.ignoreInputs = true;
     const duration = 3500;
 
+    this.logo?.setPostPipeline(ScalePostFX);
+    const pipe = this.logo?.getPostPipeline(ScalePostFX) as ScalePostFX;
+    if (pipe && pipe instanceof ScalePostFX) {
+      pipe.setAmount(0.8);
+      pipe.setAlpha(1);
+    }
+
     (this.registry.get('sfx:gong-effect') as SFX | undefined)?.playRandomSFXFromCategory(this, 'deep');
     (this.registry.get('instrument:piano') as Instrument | undefined)?.playRandomNote(this, 0, 1);
 
     this.time.delayedCall(duration / 2, () => {
       this.cameras.main.fadeOut(duration / 2);
     });
+
+    this.tweens.add({
+      targets: this.logo,
+      scale: this.logoScale * 1.2,
+      duration,
+      ease: Phaser.Math.Easing.Sine.InOut,
+    })
+
+    if (pipe && pipe instanceof ScalePostFX) {
+      this.tweens.addCounter({
+        from: 0,
+        to: 1,
+        duration,
+        ease: Phaser.Math.Easing.Sine.InOut,
+        onUpdate: (tween) => {
+          pipe.setAmount(scaleNumberRange(tween.getValue(), [0, 1], [0.8, 1]) );
+          pipe.setAlpha(1 - tween.getValue());
+        },
+        onComplete: () => {
+          this.logo?.clearFX();
+        }
+      });
+    }
 
     this.tweens.add({
       targets: this.menu,
@@ -147,6 +180,13 @@ export default class MainMenuScene extends BaseScene {
     const duration = 3000;
     this.ignoreInputs = true;
 
+    this.logo?.setPostPipeline(ScalePostFX);
+    const pipe = this.logo?.getPostPipeline(ScalePostFX) as ScalePostFX;
+    if (pipe && pipe instanceof ScalePostFX) {
+      pipe.setAmount(0.8);
+      pipe.setAlpha(1);
+    }
+
     (this.registry.get('sfx:gong-effect') as SFX | undefined)?.playRandomSFXFromCategory(this, 'deep');
     (this.registry.get('instrument:piano') as Instrument | undefined)?.playRandomNote(this, 0, 1);
 
@@ -159,11 +199,27 @@ export default class MainMenuScene extends BaseScene {
       });
     }
 
+    if (pipe && pipe instanceof ScalePostFX) {
+      this.tweens.addCounter({
+        from: 0,
+        to: 1,
+        duration,
+        ease: Phaser.Math.Easing.Sine.InOut,
+        onUpdate: (tween) => {
+          pipe.setAmount(scaleNumberRange(tween.getValue(), [0, 1], [0.8, 1]) );
+          pipe.setAlpha(1 - tween.getValue());
+        },
+        onComplete: () => {
+          this.logo?.clearFX();
+        }
+      });
+    }
+
     this.tweens.add({
       targets: this.logo,
       alpha: 1,
       scale: this.logoScale,
-      y: this.game.canvas.height / 4,
+      y: this.game.canvas.height / 3,
       duration,
       ease: Phaser.Math.Easing.Sine.InOut,
     });
@@ -220,9 +276,10 @@ export default class MainMenuScene extends BaseScene {
 
     // this.cameras.main.postFX.addBlur(0, 2, 2, 10, 0xffffff, 2);
     const duration = 2000;
+
     this.cameras.main.fadeIn(duration);
 
-    this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: 28, textColor: '#888', activeTextColor: '#FFF', alignment: 'center' });
+    this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: this.scaled(28), textColor: '#888', activeTextColor: '#FFF', alignment: 'center' });
     this.menu.addItem({ enabled: true, key: 'play', label: 'Play' });
     this.menu.addItem({ enabled: true, key: 'controls', label: 'Controls' });
     this.menu.addItem({ enabled: true, key: 'options', label: 'Options' });
@@ -230,9 +287,9 @@ export default class MainMenuScene extends BaseScene {
     this.menu.onActivated = this.handleMenuAction.bind(this);
     this.menu.onChange = this.handleMenuChange.bind(this);
     this.menu.alpha = 0;
-    this.menu.y = this.game.canvas.height - this.menu.getBounds().height - 64 + 10;
+    this.menu.y = this.game.canvas.height - this.menu.getBounds().height - this.scaled(64) + this.scaled(10);
 
-    this.anyKeyText = this.add.text(this.game.canvas.width / 2, this.game.canvas.height - 128, '???', { fontFamily: FontName.LIGHT, fontSize: 28, color: '#FFF' } ).setOrigin(0.5, 0.5);
+    this.anyKeyText = this.add.text(this.game.canvas.width / 2, this.game.canvas.height - 128, '???', { fontFamily: FontName.REGULAR, fontSize: this.scaled(22), color: '#FFF' } ).setOrigin(0.5, 0.5);
     if (this.inputController) this.updateAnyKeyText(this.inputController);
     this.anyKeyText.alpha = 0;
 
@@ -243,10 +300,11 @@ export default class MainMenuScene extends BaseScene {
     // this.lensFlareFX = new LensFlareFX(this, this.game.canvas.width / 2, this.game.canvas.height / 2);
     // this.lensFlareFX.createShaderImage();
 
-    this.planetFX = new PlanetFX(this, .3, 1, { x: 0.5, y: 0.5 }, 1280, 720);
+    const postFXResolution = parseFloat(localStorage.getItem(OPTION_KEYS.POSTFX_RESOLUTION) ?? '1');
+    this.planetFX = new PlanetFX(this, .3, 1, { x: 0.5, y: 0.5 }, this.game.canvas.width * postFXResolution, this.game.canvas.height * postFXResolution);
     const image = this.planetFX.createShaderImage();
     image.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
-    image.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
+    image.setDisplaySize(this.game.canvas.width, this.game.canvas.height);
 
     const targetSize = this.planetFX?.getPlanetSize() ?? 1;
 
@@ -261,13 +319,13 @@ export default class MainMenuScene extends BaseScene {
     });
 
     this.logo = this.add.image(this.game.canvas.width / 2, (this.game.canvas.height / 2) - 20, 'logo').setOrigin(0.5, 0.5).setAlpha(0);
-    this.logoScale = (this.game.canvas.width - (this.game.canvas.width / 4)) / this.logo.width;
-    this.logo.setScale(this.logoScale * 0.7);
+    this.logoScale = (this.game.canvas.width - (this.game.canvas.width / 3)) / this.logo.width;
+    this.logo.setScale(this.logoScale * 0.9);
 
     this.tweens.add({
       targets: this.logo,
       alpha: 1,
-      scale: this.logoScale * 0.8,
+      scale: this.logoScale,
       duration,
       ease: Phaser.Math.Easing.Quadratic.Out,
     });
@@ -299,8 +357,8 @@ export default class MainMenuScene extends BaseScene {
   private updateAnyKeyText (input: InputController): void {
     if (!this.anyKeyText) return;
     switch(input.activeControllerType) {
-      case ControllerType.KEYBOARD: this.anyKeyText.text = 'Press Enter key'; break;
-      case ControllerType.GAMEPAD: this.anyKeyText.text = `Press ${input.getActiveGamepadType() === GamepadType.PLAYSTATIOIN ? 'X' : 'A'} button`; break;
+      case ControllerType.KEYBOARD: this.anyKeyText.text = 'Press Enter key'.toUpperCase(); break;
+      case ControllerType.GAMEPAD: this.anyKeyText.text = `Press ${input.getActiveGamepadType() === GamepadType.PLAYSTATIOIN ? 'X' : 'A'} button`.toUpperCase(); break;
     }
   }
 

@@ -8,13 +8,16 @@ export type MenuItemParams = {
   key: string;
   label: string;
   enabled: boolean;
+  uppercase?: boolean;
+  smallText?: boolean;
+  padding?: number;
 };
 
 export class MenuItem {
   public parent: MenuList;
   public text: Phaser.GameObjects.Text;
   public key: string;
-  public enabled: boolean = true;
+  public enabled: boolean;
   public focused: boolean;
   public pipeline: Phaser.FX.Blur | undefined
 
@@ -22,7 +25,17 @@ export class MenuItem {
     this.parent = parent;
     this.key = options.key;
     this.focused = false;
-    this.text = parent.scene.add.text(x, y, options.label, { fontFamily: FontName.REGULAR, fontSize: parent.fontSize, color: parent.textColor, align: "center" });
+    this.enabled = options.enabled;
+
+    this.text = parent.scene.add.text(
+      x, y, options.uppercase ? options.label.toUpperCase() : options.label,
+      {
+        fontFamily: options.smallText ? FontName.BOLD : FontName.REGULAR,
+        fontSize: options.smallText ? parent.fontSize * 0.7 : parent.fontSize,
+        color: parent.textColor,
+        align: "center" 
+      }
+    );
     
     switch (this.parent.alignment) {
       case 'center': this.text.setOrigin(0.5, 0); break;
@@ -58,8 +71,77 @@ export type SliderMenuItemParams = MenuItemParams & {
   minValue: number;
   maxValue: number;
   increment: number;
+  suffix?: string;
+  prefix?: string;
   onUpdate: (value: string | number) => void;
 };
+
+export type SelectorMenuItemParams = MenuItemParams & {
+  currentIndex: number;
+  options: string[];
+  onUpdate: (value: number) => void;
+};
+
+export class MenuSubheadline extends MenuItem {
+  public constructor(parent: MenuList, x: number, y: number, key: string, text: string) {
+    super(parent, x, y, { key, label: text, enabled: false, uppercase: true, smallText: true });
+  }
+}
+
+export class SelectorMenuItem extends MenuItem {
+  private currentIndex: number;
+  private valueText: Phaser.GameObjects.Text;
+  private options: string[];
+  private onUpdate: (value: number) => void;
+
+  public constructor(parent: MenuList, x: number, y: number, params: SelectorMenuItemParams) {
+    super(parent, x, y, params);
+    this.currentIndex = params.currentIndex ?? 0;
+    this.options = [...params.options];
+    this.onUpdate = params.onUpdate;
+
+    this.valueText = parent.scene.add.text(x + parent.scene.scaled(500), y, this.getCurrentValue(), { fontFamily: FontName.REGULAR, fontSize: parent.fontSize, color: parent.textColor, align: "center" }).setOrigin(1, 0);
+    this.parent.add(this.valueText);
+  }
+
+  public getCurrentIndex (): number {
+    return this.currentIndex;
+  }
+
+  public getCurrentValue (): string {
+    return this.options[this.currentIndex] ?? '???';
+  }
+
+  public setNewIndex (value: number): void {
+    this.currentIndex = value;
+    this.valueText.setText(this.getCurrentValue());
+    this.onUpdate(this.currentIndex);
+  }
+
+  private calculateNewIndex (increment: number): number {
+    return Math.abs((this.currentIndex + increment) % this.options.length);
+  }
+
+  public increaseValue (): void {
+    const newIndex = this.calculateNewIndex(1);
+    this.setNewIndex(newIndex);
+  }
+
+  public decreaseValue (): void {
+    const newIndex = this.calculateNewIndex(-1);
+    this.setNewIndex(newIndex);
+  }
+
+  public focus (): void {
+    super.focus();
+    this.valueText.setColor(this.parent.activeTextColor);
+  }
+
+  public blur (): void {
+    super.blur();
+    this.valueText.setColor(this.parent.textColor);
+  }
+}
 
 export class SliderMenuItem extends MenuItem {
   private value: number;
@@ -67,6 +149,8 @@ export class SliderMenuItem extends MenuItem {
   private minValue: number;
   private maxValue: number;
   private increment: number;
+  private prefix?: string;
+  private suffix?: string;
   private onUpdate: (value: number | string) => void;
 
   public constructor(parent: MenuList, x: number, y: number, params: SliderMenuItemParams) {
@@ -75,10 +159,16 @@ export class SliderMenuItem extends MenuItem {
     this.minValue = params.minValue;
     this.maxValue = params.maxValue;
     this.increment = params.increment;
+    this.prefix = params.prefix;
+    this.suffix = params.suffix;
     this.onUpdate = params.onUpdate;
 
-    this.valueText = parent.scene.add.text(x + 500, y, this.value.toString(), { fontFamily: FontName.REGULAR, fontSize: parent.fontSize, color: parent.textColor, align: "center" }).setOrigin(1, 0);
+    this.valueText = parent.scene.add.text(x + parent.scene.scaled(500), y, this.getValueLabel(), { fontFamily: FontName.REGULAR, fontSize: parent.fontSize, color: parent.textColor, align: "center" }).setOrigin(1, 0);
     this.parent.add(this.valueText);
+  }
+
+  private getValueLabel (): string {
+    return `${this.prefix ?? ''}${this.value.toString()}${this.suffix ?? ''}`;
   }
 
   public getValue (): number {
@@ -87,7 +177,7 @@ export class SliderMenuItem extends MenuItem {
 
   public setValue (value: number): void {
     this.value = Math.min(this.maxValue, Math.max(this.minValue, value));
-    this.valueText.setText(this.value.toString());
+    this.valueText.setText(this.getValueLabel());
     this.onUpdate(this.value);
   }
 
@@ -129,7 +219,7 @@ export type MenuOptions = {
 export class MenuList extends Phaser.GameObjects.Container {
   private gap = 8;
   public scene: BaseScene;
-  private items: (MenuItem | SliderMenuItem)[] = [];
+  private items: (MenuItem | SliderMenuItem | SelectorMenuItem | MenuSubheadline)[] = [];
   public fontSize: number;
   public alignment: MenuOptions['alignment'] = 'center'
   public textColor: string;
@@ -159,13 +249,13 @@ export class MenuList extends Phaser.GameObjects.Container {
     scene.add.existing(this);
   }
 
-  private getNextItemYPosition (): number {
+  private getNextItemYPosition (extraPadding = 0): number {
     const lastItem = this.items[this.items.length - 1];
-    return lastItem ? ((lastItem.text.getBounds()?.bottom - this.y ) ?? 0) + this.gap : 0;
+    return lastItem ? ((lastItem.text.getBounds()?.bottom - this.y ) ?? 0) + this.scene.scaled(this.gap) + this.scene.scaled(extraPadding) : 0;
   }
 
   public addItem(params: MenuItemParams): void {
-    const item = new MenuItem(this, 0, this.getNextItemYPosition(), params);
+    const item = new MenuItem(this, 0, this.getNextItemYPosition(params.padding), params);
     this.items.push(item);
     this.focusFirstItem();
   }
@@ -174,6 +264,17 @@ export class MenuList extends Phaser.GameObjects.Container {
     const item = new SliderMenuItem(this, 0, this.getNextItemYPosition(), params);
     this.items.push(item);
     this.focusFirstItem();
+  }
+
+  public addSelectorItem(params: SelectorMenuItemParams): void {
+    const item = new SelectorMenuItem(this, 0, this.getNextItemYPosition(), params);
+    this.items.push(item);
+    this.focusFirstItem();
+  }
+
+  public addSubheadline (key: string, label: string): void {
+    const item = new MenuSubheadline(this, 0, this.getNextItemYPosition(30), key, label);
+    this.items.push(item);
   }
 
   /**
@@ -199,6 +300,7 @@ export class MenuList extends Phaser.GameObjects.Container {
   private focusFirstItem(): void {
     if (!this.getFocusedItem()) {
       const index = this.items.findIndex(item => item.enabled);
+      console.log(this.items.findIndex(item => item.enabled));
       if (index > -1) {
         this.items[index].focus();
       }
@@ -260,7 +362,7 @@ export class MenuList extends Phaser.GameObjects.Container {
 
   public increaseIncrement (): void {
     const focusedItem = this.getFocusedItem();
-    if (focusedItem instanceof SliderMenuItem) {
+    if (focusedItem instanceof SliderMenuItem || focusedItem instanceof SelectorMenuItem) {
       focusedItem.increaseValue();
       this.switchSFX?.playRandomSFXFromCategory(this.scene, 'switch');
     }
@@ -268,7 +370,7 @@ export class MenuList extends Phaser.GameObjects.Container {
 
   public decreaseIncrement (): void {
     const focusedItem = this.getFocusedItem();
-    if (focusedItem instanceof SliderMenuItem) {
+    if (focusedItem instanceof SliderMenuItem || focusedItem instanceof SelectorMenuItem) {
       focusedItem.decreaseValue();
       this.switchSFX?.playRandomSFXFromCategory(this.scene, 'switch');
     }

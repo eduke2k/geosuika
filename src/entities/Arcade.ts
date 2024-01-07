@@ -1,19 +1,17 @@
 import { CATEGORY_OBJECT, CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN } from "../const/collisions";
 import { BackgroundMusic } from "../models/BackgroundMusic";
 import { Instrument } from "../models/Instrument";
-import { LocalStorage } from "../models/LocalStorage";
-import { FontName } from "../types";
+import HUDScene from "../scenes/HUDScene";
 import BlinkingText from "./BlinkingText";
 import Character from "./Character";
 import DropBucket from "./DropBucket/DropBucket";
-import HoverText from "./HoverText";
 import InteractableGameObject from "./InteractableGameObject";
 
 export default class Arcade extends InteractableGameObject {
-  private linkedBucket: DropBucket | undefined;
+  public linkedBucket: DropBucket | undefined;
   private isLoading = false;
-  private titleTextfield: HoverText;
-  private highscoreTextfield: HoverText;
+  // private titleTextfield: HoverText;
+  // private highscoreTextfield: HoverText;
 
   constructor(
     scene: Phaser.Scene,
@@ -76,39 +74,41 @@ export default class Arcade extends InteractableGameObject {
 
     this.play({ key: 'arcade:idle', repeat: -1 });
 
-    this.titleTextfield = new HoverText(this.scene, this.linkedBucket?.getBGMConfig()?.title ?? '???', this.x, this.y - (this.displayHeight / 2) - 64, { fontFamily: FontName.REGULAR, fontSize: 24, movementY: 16, duration: 250 });
+    // this.titleTextfield = new HoverText(this.scene, this.linkedBucket?.getBGMConfig()?.title ?? '???', this.x, this.y - (this.displayHeight / 2) - 64, { fontFamily: FontName.REGULAR, fontSize: 24, movementY: 16, duration: 250 });
     
-    const highscore = LocalStorage.getHighscore(this.linkedBucket?.name ?? '')
-    const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
-    this.highscoreTextfield = new HoverText(this.scene, highscoreText, this.x, this.titleTextfield.y + 24, { fontFamily: FontName.BOLD, fontSize: 18, movementY: 16, duration: 250 });
+    // const highscore = LocalStorage.getHighscore(this.linkedBucket?.name ?? '')
+    // const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
+    // this.highscoreTextfield = new HoverText(this.scene, highscoreText, this.x, this.titleTextfield.y + 24, { fontFamily: FontName.BOLD, fontSize: 18, movementY: 16, duration: 250 });
   }
 
   public onCollisionStart (other: Character): void {
     super.onCollisionStart(other);
-    this.titleTextfield.start();
+    // this.titleTextfield.start();
 
-    const highscore = LocalStorage.getHighscore(this.linkedBucket?.name ?? '')
-    const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
-    this.highscoreTextfield.setText(highscoreText);
-    this.highscoreTextfield.start();
+    // const highscore = LocalStorage.getHighscore(this.linkedBucket?.name ?? '')
+    // const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
+    // this.highscoreTextfield.setText(highscoreText);
+    // this.highscoreTextfield.start();
+    (this.scene.scene.get('hud-scene') as HUDScene).showArcadeInfo(this);
   }
 
   public onCollisionEnd (other: Character): void {
     super.onCollisionEnd(other);
-    this.titleTextfield.end();
-    this.highscoreTextfield.end();
+    // this.titleTextfield.end();
+    // this.highscoreTextfield.end();
+    (this.scene.scene.get('hud-scene') as HUDScene).hideArcadeInfo(this);
   }
 
   public destroy (): void {
-    this.titleTextfield.destroy();
-    this.highscoreTextfield.destroy();
+    // this.titleTextfield.destroy();
+    // this.highscoreTextfield.destroy();
     super.destroy();
   }
 
   public trigger (referenceCharacter: Character): void {
     if (this.isLoading) return;
-    this.titleTextfield.end();
-    this.highscoreTextfield.end();
+    // this.titleTextfield.end();
+    // this.highscoreTextfield.end();
 
     // place character
     const referenceBody = referenceCharacter.getBody()

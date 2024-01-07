@@ -11,16 +11,22 @@ import ChromaticPostFX from './shaders/ChromaticPostFX'
 import PauseScene from './scenes/PauseScene'
 import { DialogScene } from './scenes/DialogScene'
 import CinematicBarsFX from './shaders/CinematicBarsFX'
+import ScalePostFX from './shaders/ScalePostFX';
 import OptionsScene from './scenes/OptionsScene'
+import { OPTION_KEYS, RESOLUTIONS } from './const/const'
+// import { NATIVE_HEIGHT, NATIVE_WIDTH } from './const/const'
 
-const NATIVE_WIDTH = 1280;
-const NATIVE_HEIGHT = 720;
+const reolsutionIndex = parseInt(localStorage.getItem(OPTION_KEYS.RESOLUTION) ?? '0');
+const resolutionString = RESOLUTIONS[reolsutionIndex];
+const resolution = resolutionString.split('x');
+const width = parseInt(resolution[0]) ?? 1280;
+const height = parseInt(resolution[1]) ?? 720;
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
 	parent: 'app',
-	width: NATIVE_WIDTH,
-	height: NATIVE_HEIGHT,
+	width,
+	height,
 	antialias: true,
 	roundPixels: true,
 	input: {
@@ -38,7 +44,7 @@ const config: Phaser.Types.Core.GameConfig = {
 	},
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore: Types for pipeline are broken for some reason
-	pipeline: [WarpPostFX, ShockwavePostFx, ChromaticPostFX, CinematicBarsFX],
+	pipeline: [WarpPostFX, ShockwavePostFx, ChromaticPostFX, CinematicBarsFX, ScalePostFX],
 	physics: {
 		default: 'matter',
 		matter: {
@@ -47,14 +53,14 @@ const config: Phaser.Types.Core.GameConfig = {
 			},
 			positionIterations: 8,
 			velocityIterations: 8,
-			debug: {
-				showSensors: true,
-				// showCollisions: true,
-				showVelocity: true,
-				showBounds: true,
-				showSeparation: false,
-				showBody: true,
-			}
+			// debug: {
+			// 	showSensors: true,
+			// 	// showCollisions: true,
+			// 	showVelocity: true,
+			// 	showBounds: true,
+			// 	showSeparation: false,
+			// 	showBody: true,
+			// }
 		}
 	},
 	scene: [BootScene, MainMenuScene, GameScene, DialogScene, HUDScene, GameOverScene, PauseScene, OptionsScene]
