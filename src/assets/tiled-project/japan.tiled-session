@@ -1,0 +1,51 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "",
+    "expandedProjectPaths": [
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "#tilesheet_japan": {
+            "scaleInDock": 1
+        },
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json": {
+            "scale": 0.18577880859374998,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2048.1345686313166,
+                "y": 2115.4188842893755
+            }
+        },
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json#tilesheet_japan": {
+            "scaleInDock": 1
+        },
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json#tilesheet_main": {
+            "scaleInDock": 1
+        },
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json": {
+            "scale": 0.5,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 787,
+                "y": 3816
+            }
+        },
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_japan": {
+            "scaleInDock": 1
+        },
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_main": {
+            "scaleInDock": 1
+        }
+    },
+    "openFiles": [
+    ],
+    "project": "japan.tiled-project",
+    "property.type": "object",
+    "recentFiles": [
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json",
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json"
+    ]
+}

@@ -14,6 +14,7 @@ import CinematicBarsFX from './shaders/CinematicBarsFX'
 import ScalePostFX from './shaders/ScalePostFX';
 import OptionsScene from './scenes/OptionsScene'
 import { OPTION_KEYS, RESOLUTIONS } from './const/const'
+// import WaterFX from './shaders/WaterFX'
 // import { NATIVE_HEIGHT, NATIVE_WIDTH } from './const/const'
 
 const reolsutionIndex = parseInt(localStorage.getItem(OPTION_KEYS.RESOLUTION) ?? '0');

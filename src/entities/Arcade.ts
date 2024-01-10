@@ -5,11 +5,13 @@ import HUDScene from "../scenes/HUDScene";
 import BlinkingText from "./BlinkingText";
 import Character from "./Character";
 import DropBucket from "./DropBucket/DropBucket";
+import { ArcadeInfo } from "./HUD/ArcadeInfo";
 import InteractableGameObject from "./InteractableGameObject";
 
 export default class Arcade extends InteractableGameObject {
   public linkedBucket: DropBucket | undefined;
   private isLoading = false;
+  private arcadeInfo: ArcadeInfo | undefined;
   // private titleTextfield: HoverText;
   // private highscoreTextfield: HoverText;
 
@@ -89,14 +91,16 @@ export default class Arcade extends InteractableGameObject {
     // const highscoreText = highscore > 0 ? `Best: ${highscore.toString()}` : 'No Highscore';
     // this.highscoreTextfield.setText(highscoreText);
     // this.highscoreTextfield.start();
-    (this.scene.scene.get('hud-scene') as HUDScene).showArcadeInfo(this);
+    if (!this.arcadeInfo) this.arcadeInfo = (this.scene.scene.get('hud-scene') as HUDScene).getArcadeInfo(this);
+    this.arcadeInfo.show();
   }
 
   public onCollisionEnd (other: Character): void {
     super.onCollisionEnd(other);
     // this.titleTextfield.end();
     // this.highscoreTextfield.end();
-    (this.scene.scene.get('hud-scene') as HUDScene).hideArcadeInfo(this);
+    // (this.scene.scene.get('hud-scene') as HUDScene).hideArcadeInfo(this);
+    this.arcadeInfo?.hide();
   }
 
   public destroy (): void {
@@ -126,18 +130,21 @@ export default class Arcade extends InteractableGameObject {
       // This freeze inputs of player character
       this.getGameScene()?.getPlayerCharacter()?.setFreezeInputs(true);
 
-      const loadingText = new BlinkingText(this.scene, '0%', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000, manualEnd: true });
+      // const loadingText = new BlinkingText(this.scene, '0%', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000, manualEnd: true });
+      
       BackgroundMusic.preloadByBGMKey(
         this.scene,
         this.linkedBucket.bgmKey,
         (value: number) => {
           const percentage = Math.round(value * 100);
-          loadingText.setText(`${percentage}%`);
+          this.arcadeInfo?.updateLoadingPercentage(percentage);
+          // loadingText.setText(`${percentage}%`);
         },
         () => {
-          loadingText.end();
+          // loadingText.end();
           this.isLoading = false;
           this.linkedBucket?.mountBucket();
+          this.arcadeInfo?.fadeOut();
         }
       );
 

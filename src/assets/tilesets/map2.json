@@ -201,8 +201,8 @@
                  "properties":[
                         {
                          "name":"bucket",
-                         "type":"string",
-                         "value":"japanBucket"
+                         "type":"object",
+                         "value":83
                         }],
                  "rotation":0,
                  "type":"arcade",
@@ -1524,7 +1524,7 @@
          "y":0
         }],
  "nextlayerid":16,
- "nextobjectid":157,
+ "nextobjectid":162,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

@@ -23,20 +23,15 @@ export default class HUDScene extends BaseScene {
 		this.debugText.setText(text);
 	}
 
-	public showArcadeInfo (arcade: Arcade): void {
+	public getArcadeInfo (arcade: Arcade): ArcadeInfo {
 		const arcadeInfo = this.arcadeInfos.find(a => a.arcade === arcade);
 		if (arcadeInfo) {
-			arcadeInfo.show();
+			return arcadeInfo;
 		} else {
 			const newAcadeInfo = new ArcadeInfo(this, arcade);
 			this.arcadeInfos.push(newAcadeInfo);
-			newAcadeInfo.show();
+			return newAcadeInfo;
 		}
-	}
-
-	public hideArcadeInfo (arcade: Arcade): void {
-		const arcadeInfo = this.arcadeInfos.find(a => a.arcade === arcade);
-		arcadeInfo?.hide();
 	}
 
 	public update (time: number, delta: number): void {

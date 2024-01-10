@@ -31,16 +31,27 @@ export class SoundSource2d {
     this.source?.play({ loop: true });
   }
 
-  public getDistance (): number {
-    return this.position.distance(new Phaser.Math.Vector2(this.reference?.getBody()?.position.x, this.reference?.getBody()?.position.y));
+  public getDistanceVector (): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(
+      Math.abs(this.position.x - (this.reference?.getBody()?.position.x ?? 0)),
+      Math.abs(this.position.y - (this.reference?.getBody()?.position.y ?? 0))
+    );
   }
 
-  public getNormalizedVolume (): number {
-    return Math.max(Math.min((1 - this.getDistance() / this.reach) * this.volume, 1), 0);
+  public getRelativeDistance (distance: number): number {
+    return (1 - distance / this.reach);
+  }
+
+  public getNormalizedPan (relativeDistance: number): number {
+    return Math.max(Math.min((relativeDistance / this.reach), 1), 0);
+  }
+
+  public getNormalizedVolume (relativeDistance: number): number {
+    return Math.max(Math.min(relativeDistance * this.volume, 1), 0);
   }
 
   public getSign (): number {
-    return Math.sign((this.reference?.getBody()?.position.x ?? 0) - this.position.x);
+    return Math.sign(this.position.x - (this.reference?.getBody()?.position.x ?? 0));
   }
 
   public destroy (): void {
@@ -50,8 +61,11 @@ export class SoundSource2d {
 
   public update (_time: number, _delta: number): void {
     if (!this.source) return;
-    const volume = this.getNormalizedVolume();
+    const distanceVector = this.getDistanceVector();
+    const relativeDistance = this.getRelativeDistance(distanceVector.length());
+
+    const volume = this.getNormalizedVolume(relativeDistance);
     this.source.setVolume(volume);
-    this.source.setPan(this.getSign() * (volume - 1));
+    this.source.setPan(this.getSign() * this.getNormalizedPan(distanceVector.x));
   }
 }

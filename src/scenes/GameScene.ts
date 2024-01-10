@@ -22,6 +22,8 @@ import CinematicBarsFX from '../shaders/CinematicBarsFX';
 import { StaticOneWayPlatform } from '../entities/Platforms/StaticOneWayPlatform';
 import { SoundSource2d } from '../entities/Sound/SoundSource2d';
 import { PauseSceneInitData } from './PauseScene';
+import { WaterRectangle } from '../entities/WaterRectangle';
+import WaterFX from '../shaders/WaterFX';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -55,6 +57,7 @@ export default class GameScene extends BaseScene {
   private riserSound!: Phaser.Sound.BaseSound | undefined;
 	private chromaticPostFX!: ChromaticPostFX;
 	private cinematicBarsFX!: CinematicBarsFX;
+	private waterRectangles: WaterRectangle[] = [];
 
 	// Active map stuff
 	private currentMap = '';
@@ -464,6 +467,7 @@ export default class GameScene extends BaseScene {
 		const arcadesQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const objectsQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const soundSource2dQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+		const waterShaderQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 
 		// Apply new camera bounds if player character is within one
 		const currentBounds = this.getFirstRectWithinBounds(bounds, { x: this.playerCharacter?.getBody()?.position.x ?? 0, y: this.playerCharacter?.getBody()?.position.y ?? 0 });
@@ -474,7 +478,7 @@ export default class GameScene extends BaseScene {
 
 		if (objectLayer) {
 			objectLayer.objects.forEach(o => {
-				if (['bucket', 'arcade', 'character', 'staticObject', 'object', 'soundSource2d'].includes(o.type) && currentBounds.rect.contains(o.x ?? 0, o.y ?? 0)) {
+				if (['bucket', 'arcade', 'character', 'staticObject', 'object', 'soundSource2d', 'waterShader'].includes(o.type) && currentBounds.rect.contains(o.x ?? 0, o.y ?? 0)) {
 					switch (o.type) {
 						case 'character': {	charactersQueue.push(o); break;	}
 						case 'staticObject': { staticObjectsQueue.push(o); break; }
@@ -482,10 +486,15 @@ export default class GameScene extends BaseScene {
 						case 'bucket': { bucketQueue.push(o); break; }
 						case 'arcade': { arcadesQueue.push(o); break; }
 						case 'soundSource2d': { soundSource2dQueue.push(o); break; }
+						case 'waterShader': { waterShaderQueue.push(o); break; }
 					}
 				}
 			});
 		}
+
+		waterShaderQueue.forEach(o => {
+			this.waterRectangles.push(new WaterRectangle(this, o.x ?? 0, o.y ?? 0, o.width ?? 1, o.height ?? 1));
+		});
 
 		staticObjectsQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
@@ -507,7 +516,6 @@ export default class GameScene extends BaseScene {
 				));
 			}
 		});
-
 
 		bucketQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
@@ -534,7 +542,7 @@ export default class GameScene extends BaseScene {
 
 		arcadesQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
-			const bucket = this.buckets.find(b => b.name === properties.bucket);
+			const bucket = this.buckets.find(b => b.name === bucketQueue.find(bq => bq.id === (properties.bucket as number))?.name);
 			this.arcades.push(new Arcade(this, o.x ?? 0, o.y ?? 0, o.name, undefined, bucket));
 		});
 
@@ -639,6 +647,13 @@ export default class GameScene extends BaseScene {
 		this.objects = [];
 		this.characters = [];
 		this.soundSources2d = [];
+
+		if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+			this.game.renderer.pipelines.add(
+				'TestPipeline',
+				new WaterFX(this.game)
+			);
+		}
 	}
 
 	public create () {
