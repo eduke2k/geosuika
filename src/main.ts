@@ -14,6 +14,7 @@ import CinematicBarsFX from './shaders/CinematicBarsFX'
 import ScalePostFX from './shaders/ScalePostFX';
 import OptionsScene from './scenes/OptionsScene'
 import { OPTION_KEYS, RESOLUTIONS } from './const/const'
+import SmokeTransition from './shaders/SmokeTransition'
 // import WaterFX from './shaders/WaterFX'
 // import { NATIVE_HEIGHT, NATIVE_WIDTH } from './const/const'
 
@@ -45,7 +46,7 @@ const config: Phaser.Types.Core.GameConfig = {
 	},
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore: Types for pipeline are broken for some reason
-	pipeline: [WarpPostFX, ShockwavePostFx, ChromaticPostFX, CinematicBarsFX, ScalePostFX],
+	pipeline: [WarpPostFX, ShockwavePostFx, ChromaticPostFX, CinematicBarsFX, ScalePostFX, SmokeTransition],
 	physics: {
 		default: 'matter',
 		matter: {

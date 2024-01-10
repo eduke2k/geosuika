@@ -24,6 +24,7 @@ import { SoundSource2d } from '../entities/Sound/SoundSource2d';
 import { PauseSceneInitData } from './PauseScene';
 import { WaterRectangle } from '../entities/WaterRectangle';
 import WaterFX from '../shaders/WaterFX';
+import SmokeTransition from '../shaders/SmokeTransition';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -55,8 +56,8 @@ export default class GameScene extends BaseScene {
 	private playerLight: Phaser.GameObjects.Light | undefined = undefined;
   private breakerSound!: Phaser.Sound.BaseSound | undefined;
   private riserSound!: Phaser.Sound.BaseSound | undefined;
-	private chromaticPostFX!: ChromaticPostFX;
-	private cinematicBarsFX!: CinematicBarsFX;
+	private chromaticPostFX?: ChromaticPostFX;
+	private cinematicBarsFX?: CinematicBarsFX;
 	private waterRectangles: WaterRectangle[] = [];
 
 	// Active map stuff
@@ -142,7 +143,7 @@ export default class GameScene extends BaseScene {
 				this.setTimeScaleFromTween(tween.getValue(), 1, 0.05);
 				this.playerLight?.setRadius((1 - tween.getValue()) * currentPlayerLightRadius);
 				this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix(currentAmbient, '#000000', tween.getValue()).hex()).color);
-				this.chromaticPostFX.setStrength(1 + tween.getValue() * 9);
+				this.chromaticPostFX?.setStrength(1 + tween.getValue() * 9);
 			},
 			onComplete: () => {
 				this.setTimeScale(0.05);
@@ -158,7 +159,7 @@ export default class GameScene extends BaseScene {
 							this.setTimeScaleFromTween(tween.getValue(), 0.05, 1);
 							this.playerLight?.setRadius(tween.getValue() * currentPlayerLightRadius);
 							this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix('#000000', currentAmbient, tween.getValue()).hex()).color);
-							this.chromaticPostFX.setStrength(10 - tween.getValue() * 9);
+							this.chromaticPostFX?.setStrength(10 - tween.getValue() * 9);
 						},
 						onComplete: () => {
 							this.setTimeScale(1);
@@ -167,7 +168,7 @@ export default class GameScene extends BaseScene {
 				} else {
 					this.setTimeScale(1);
 					this.playerLight?.setRadius(currentPlayerLightRadius);
-					this.chromaticPostFX.setStrength(CHROMATIC_BASE_STRENGTH);
+					this.chromaticPostFX?.setStrength(CHROMATIC_BASE_STRENGTH);
 				}
 			}
 		});
@@ -648,12 +649,12 @@ export default class GameScene extends BaseScene {
 		this.characters = [];
 		this.soundSources2d = [];
 
-		if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
-			this.game.renderer.pipelines.add(
-				'TestPipeline',
-				new WaterFX(this.game)
-			);
-		}
+		// if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+		// 	this.game.renderer.pipelines.add(
+		// 		'TestPipeline',
+		// 		new WaterFX(this.game)
+		// 	);
+		// }
 	}
 
 	public create () {
@@ -676,9 +677,9 @@ export default class GameScene extends BaseScene {
 
 		this.loadInWorldLayer('japan');
 
-		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX]);
-		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
-		this.cinematicBarsFX = this.cameras.main.getPostPipeline(CinematicBarsFX) as CinematicBarsFX;
+		this.cameras.main.setPostPipeline([SmokeTransition, CinematicBarsFX]);
+		// this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
+		// this.cinematicBarsFX = this.cameras.main.getPostPipeline(CinematicBarsFX) as CinematicBarsFX;
 
 		const playerCharacter = this.getPlayerCharacter();
 		if (playerCharacter) {
@@ -708,7 +709,7 @@ export default class GameScene extends BaseScene {
 
 		// Update chromaticPostFX center position
 		const normalizedPlayerPosition = getNormalizedRelativePositionToCanvas({ x: player?.getBody()?.position.x ?? 0, y: player?.getBody()?.position.y ?? 0 }, this.cameras.main);
-		this.chromaticPostFX.setCenter(normalizedPlayerPosition.x, normalizedPlayerPosition.y);
+		this.chromaticPostFX?.setCenter(normalizedPlayerPosition.x, normalizedPlayerPosition.y);
 
 		if (!this.ignoreInputs) {
 			if (this.inputController?.justDown(Action.PAUSE)) {
