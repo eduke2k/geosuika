@@ -23,7 +23,6 @@ import { StaticOneWayPlatform } from '../entities/Platforms/StaticOneWayPlatform
 import { SoundSource2d } from '../entities/Sound/SoundSource2d';
 import { PauseSceneInitData } from './PauseScene';
 import { WaterRectangle } from '../entities/WaterRectangle';
-import WaterFX from '../shaders/WaterFX';
 import SmokeTransition from '../shaders/SmokeTransition';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
@@ -677,9 +676,9 @@ export default class GameScene extends BaseScene {
 
 		this.loadInWorldLayer('japan');
 
-		this.cameras.main.setPostPipeline([SmokeTransition, CinematicBarsFX]);
-		// this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
-		// this.cinematicBarsFX = this.cameras.main.getPostPipeline(CinematicBarsFX) as CinematicBarsFX;
+		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX]);
+		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
+		this.cinematicBarsFX = this.cameras.main.getPostPipeline(CinematicBarsFX) as CinematicBarsFX;
 
 		const playerCharacter = this.getPlayerCharacter();
 		if (playerCharacter) {
