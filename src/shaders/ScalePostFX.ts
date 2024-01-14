@@ -5,7 +5,6 @@ uniform sampler2D uMainSampler;
 uniform float uTime;
 uniform float uAmount;
 uniform float uAlpha;
-const vec4 waterColor = vec4(0.5, 0.5, 1.0, 1.0);
 
 varying vec2 outTexCoord;
 const float iterations = 40.;
@@ -13,14 +12,14 @@ const float iterations = 40.;
 void main() {
   vec4 originalTexture = texture2D(uMainSampler, outTexCoord.xy);
 
-  vec4 scaledCol = vec4(0., 0., 0., 0.);
+  vec4 scaledCol = vec4(0.);
   for (float i=0.; i<iterations; i++) {
     float amount = (uAmount + ((1. - (uAmount)) / iterations) * i); // (uAmount + ((1. - uAmount) / 5.) * i
     vec4 scaledTexture = texture2D(uMainSampler, (outTexCoord.xy - 0.5) * amount + 0.5);
     scaledCol += scaledTexture * ((i + 1.) / (iterations + 1.)) / (iterations / 2.) * uAlpha;
   }
 
-  gl_FragColor = waterColor;
+  gl_FragColor = (originalTexture) + scaledCol;
 }
 `;
 

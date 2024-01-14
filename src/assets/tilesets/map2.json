@@ -202,7 +202,7 @@
                         {
                          "name":"bucket",
                          "type":"object",
-                         "value":83
+                         "value":150
                         }],
                  "rotation":0,
                  "type":"arcade",

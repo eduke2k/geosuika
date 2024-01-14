@@ -3,8 +3,9 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json",
     "expandedProjectPaths": [
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets"
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
@@ -27,10 +28,10 @@
         },
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json": {
             "scale": 0.5,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 787,
-                "y": 3816
+                "x": 941,
+                "y": 3754
             }
         },
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_japan": {
@@ -41,11 +42,12 @@
         }
     },
     "openFiles": [
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json"
     ],
     "project": "japan.tiled-project",
     "property.type": "object",
     "recentFiles": [
-        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json",
-        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json"
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json",
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json"
     ]
 }

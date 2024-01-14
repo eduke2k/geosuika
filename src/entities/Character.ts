@@ -19,6 +19,7 @@ export default class Character extends InteractableGameObject {
   protected stepSoundBehaviour?: StepSoundBehaviour;
   protected playerControlled = false;
   protected freezeInputs = false;
+  protected freezeInteract = false;
   public lastState: CharacterStates = 'idle';
   public state: CharacterStates = 'idle';
   public onGround = false;
@@ -128,6 +129,10 @@ export default class Character extends InteractableGameObject {
     this.freezeInputs = value;
   }
 
+  public setFreezeInteract (value: boolean): void {
+    this.freezeInteract = value;
+  }
+
   private getDeaccelerationMultiplier (): number {
     return this.onGround ? 1 : 0;
   }
@@ -185,13 +190,13 @@ export default class Character extends InteractableGameObject {
       }
 
       // Interacting
-      if (this.onGround && this.interactableObjectsInReach[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
+      if (!this.freezeInteract && this.onGround && this.interactableObjectsInReach[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
         const targetObject = this.interactableObjectsInReach[0];
         targetObject.trigger(this);
       }
 
       // Map layer changing mode
-      if (this.getGameScene()?.inputController?.justDown(Action.LAYER_CHANGE)) {
+      if (!this.freezeInteract && this.getGameScene()?.inputController?.justDown(Action.LAYER_CHANGE)) {
         this.getGameScene()?.startLayerChange();
       }
     }

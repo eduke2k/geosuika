@@ -2,11 +2,13 @@ import Phaser from 'phaser'
 import Arcade from '../entities/Arcade';
 import BaseScene from './BaseScene';
 import { ArcadeInfo } from '../entities/HUD/ArcadeInfo';
+import BlinkingText, { BlinkingTextOptions } from '../entities/BlinkingText';
 
 export default class HUDScene extends BaseScene {
 	public debugText!: Phaser.GameObjects.Text;
 	public fpsText!: Phaser.GameObjects.Text;
 	private arcadeInfos: ArcadeInfo[] = [];
+	private blinkingTexts: BlinkingText[] = [];
 
 	constructor() {
 		super({ key: 'hud-scene' })
@@ -21,6 +23,11 @@ export default class HUDScene extends BaseScene {
 
 	public addDebugText (text: string): void {
 		this.debugText.setText(text);
+	}
+
+	public addBlinkingText (text: string, position: Phaser.Types.Math.Vector2Like, options: BlinkingTextOptions): void {
+		const blinkingText = new BlinkingText(this, text, position.x ?? 0, position.y ?? 0, options);
+		this.blinkingTexts.push(blinkingText);
 	}
 
 	public getArcadeInfo (arcade: Arcade): ArcadeInfo {

@@ -50,9 +50,9 @@ export default class BendPostFX extends Phaser.Renderer.WebGL.Pipelines.PostFXPi
   }
 
   onPreRender () {
-      this.set1f('uTime', this.game.loop.time);
-      this.set1f('uSpeed', this.speed);
-      this.set1f('uBendFactor', this.bend);
+    this.set1f('uTime', this.game.loop.time);
+    this.set1f('uSpeed', this.speed);
+    this.set1f('uBendFactor', this.bend);
   }
 
   getBend () {

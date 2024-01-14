@@ -7,7 +7,7 @@ import { BackgroundMusic, BackgroundMusicConfig } from "../../models/BackgroundM
 import { SFX } from "../../models/SFX";
 import { Instrument } from "../../models/Instrument";
 import GameScene from "../../scenes/GameScene";
-import { DroppableSet, FixedMatterCollisionData } from "../../types";
+import { DroppableSet, FixedMatterCollisionData, FontName } from "../../types";
 import BlinkingText from "../BlinkingText";
 import Droppable from "./Droppable";
 import ProgressCircle from "../ProgressCircle";
@@ -23,6 +23,7 @@ import { Action } from "../../models/Input";
 import { duckSet } from "../../config/ducks";
 import { DropBucketShockwave } from "../../models/DropBucketShockwave";
 import BaseScene from "../../scenes/BaseScene";
+import HUDScene from "../../scenes/HUDScene";
 
 export const GAME_OVER_TIME = 3000;
 export const DANGER_SPARK_TIME = 100;
@@ -349,7 +350,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // Reset Camera Distortion for Minigames
     this.getGameScene()?.setChromaticEffect(1, 1000);
 
-    new BlinkingText(this.scene, 'Memory Chamber disconncted', this.x, this.y, { fadeInTime: 250, movementY: 100, fontSize: 24, duration: 1000 });
+    const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
+    if (hudScene) hudScene.addBlinkingText('Memory Chamber disconncted', {x: this.scene.game.canvas.width / 2, y: this.scene.game.canvas.height / 2}, { fontFamily: FontName.LIGHT, fadeInTime: 250, movementY: 100, fontSize: this.getScene().scaled(64), duration: 1000 });
+
+    // new BlinkingText(this.scene, 'Memory Chamber disconncted', this.x, this.y, { fadeInTime: 250, movementY: 100, fontSize: 24, duration: 1000 });
     this.getGameScene()?.bucketUnmountFinished(this);
   }
 
@@ -392,7 +396,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       })
     });
 
-    new BlinkingText(this.scene, 'Memory Chamber ready', this.x, this.y, { fadeInTime: 250, movementY: 100, fontSize: 24, duration: 2000 });
+    const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
+    if (hudScene) hudScene.addBlinkingText('Memory Chamber ready', {x: this.scene.game.canvas.width / 2, y: this.scene.game.canvas.height / 2}, { fontFamily: FontName.LIGHT, fadeInTime: 250, movementY: 100, fontSize: this.getScene().scaled(64), duration: 2000 });
 
     // Make bucket playable
     this.bucketActive = true;

@@ -12,6 +12,7 @@ import PauseScene from './scenes/PauseScene'
 import { DialogScene } from './scenes/DialogScene'
 import CinematicBarsFX from './shaders/CinematicBarsFX'
 import ScalePostFX from './shaders/ScalePostFX';
+import BlackHoleFX from './shaders/BlackHoleFX';
 import OptionsScene from './scenes/OptionsScene'
 import { OPTION_KEYS, RESOLUTIONS } from './const/const'
 import SmokeTransition from './shaders/SmokeTransition';
@@ -44,7 +45,7 @@ const config: Phaser.Types.Core.GameConfig = {
 	},
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore: Types for pipeline are broken for some reason
-	pipeline: { WarpPostFX, ShockwavePostFx, ChromaticPostFX, CinematicBarsFX, ScalePostFX, SmokeTransition },
+	pipeline: { WarpPostFX, ShockwavePostFx, ChromaticPostFX, CinematicBarsFX, ScalePostFX, SmokeTransition, BlackHoleFX },
 	physics: {
 		default: 'matter',
 		matter: {

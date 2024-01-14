@@ -1,5 +1,9 @@
 import { Depths } from "../const/depths";
+import { getRelativePositionToCanvas } from "../functions/helper";
 import { FontName } from "../types";
+import GameObject from "./GameObject";
+
+export type Alignment = 'top-center' | 'bottom-center' | 'center';
 
 export type BlinkingTextOptions = {
   fontFamily?: FontName;
@@ -12,6 +16,9 @@ export type BlinkingTextOptions = {
   depth?: number;
   manualStart?: boolean;
   manualEnd?: boolean;
+  referenceObject?: GameObject;
+  referenceObjectAlignment?: Alignment;
+  updateReferencePosition?: boolean;
 }
 
 export default class BlinkingText extends Phaser.GameObjects.Container {
@@ -26,6 +33,10 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
   private remainingFlashingTime = this.flashingDuration;
   private flashing = false;
   private manualEnd = false;
+  private referenceObject: GameObject | undefined;
+  private referenceObjectAlignment: Alignment;
+  private updateReferencePosition: boolean;
+  private referencePosition: Phaser.Types.Math.Vector2Like;
   // private updateEmitter: Phaser.Events.EventEmitter | null = null;
 
   public constructor(
@@ -47,7 +58,12 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
       if (options.fadeInTime !== undefined) this.fadeInTime = options.fadeInTime;
       if (options.rotation !== undefined) this.rotation = options.rotation;
       if (options.manualEnd) this.manualEnd = options.manualEnd;
+      if (options.referenceObject) this.referenceObject = options.referenceObject;
     }
+
+    this.referenceObjectAlignment = options?.referenceObjectAlignment ? options.referenceObjectAlignment : 'center';
+    this.updateReferencePosition = options?.updateReferencePosition ?? false;
+    this.referencePosition = this.referenceObject ? this.getReferencePosition(this.referenceObject, this.referenceObjectAlignment) : { x: 0, y: 0 };
 
     this.setDepth(options?.depth ?? Depths.TEXT_LAYER);
 
@@ -58,8 +74,10 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
     this.scoreText.alpha = 0;
 
     this.add(this.scoreText);
-    this.setX(this.x);
-    this.setY(this.y);
+    this.setPosition(this.x + (this.referencePosition.x ?? 0), this.y + (this.referencePosition.y ?? 0));
+
+    console.log(this.x + (this.referencePosition.x ?? 0));
+    console.log(this.y + (this.referencePosition.y ?? 0));
 
     if (!options || !options.manualStart) {
       this.start();
@@ -88,8 +106,8 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
     });
 
     this.scene.tweens.add({
-      targets: this,
-      y: { value: this.y - this.movementY, duration: this.duration, ease: 'Quad.easeOut' },
+      targets: this.scoreText,
+      y: { value: -this.movementY, duration: this.duration, ease: 'Quad.easeOut' },
       onComplete: () => {
         if (!this.manualEnd) {
           this.end();
@@ -107,7 +125,23 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
     this.setVisible(!this.visible);
   }
 
+  private getReferencePosition (obj: GameObject, alignment: Alignment): Phaser.Types.Math.Vector2Like {
+    let pos: Phaser.Types.Math.Vector2Like;
+    switch (alignment) {
+      case 'center': pos = obj.getCenter(); break;
+      case 'top-center': pos = obj.getTopCenter(); break;
+      case 'bottom-center': pos = obj.getBottomCenter(); break;
+    }
+
+    return getRelativePositionToCanvas({ x: pos.x ?? 0, y:pos.y ?? 0 }, obj.scene.cameras.main);
+  }
+
   public update (_time: number, delta: number): void {
+    if (this.updateReferencePosition && this.referenceObject) {
+      const pos = this.getReferencePosition(this.referenceObject, this.referenceObjectAlignment);
+      this.setPosition(pos.x, pos.y);
+    }
+
     if (this.flashing) {
       if (this.currentFlashingDelayTime <= 0) {
         this.triggerFlash();

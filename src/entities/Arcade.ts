@@ -2,7 +2,7 @@ import { CATEGORY_OBJECT, CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN } f
 import { BackgroundMusic } from "../models/BackgroundMusic";
 import { Instrument } from "../models/Instrument";
 import HUDScene from "../scenes/HUDScene";
-import BlinkingText from "./BlinkingText";
+import { FontName } from "../types";
 import Character from "./Character";
 import DropBucket from "./DropBucket/DropBucket";
 import { ArcadeInfo } from "./HUD/ArcadeInfo";
@@ -106,6 +106,7 @@ export default class Arcade extends InteractableGameObject {
   public destroy (): void {
     // this.titleTextfield.destroy();
     // this.highscoreTextfield.destroy();
+    this.arcadeInfo?.hide();
     super.destroy();
   }
 
@@ -123,7 +124,8 @@ export default class Arcade extends InteractableGameObject {
     }
 
     if (!this.linkedBucket) {
-      new BlinkingText(this.scene, 'Not connected', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000 });
+      const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
+      if (hudScene) hudScene.addBlinkingText('Not connected', {x: 0, y: 0}, { fontFamily: FontName.LIGHT, fadeInTime: 250, movementY: 16, fontSize: this.getScene().scaled(32), duration: 1000, referenceObject: this, updateReferencePosition: true });
     } else {
       this.isLoading = true;
 

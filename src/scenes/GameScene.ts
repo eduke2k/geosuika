@@ -23,7 +23,7 @@ import { StaticOneWayPlatform } from '../entities/Platforms/StaticOneWayPlatform
 import { SoundSource2d } from '../entities/Sound/SoundSource2d';
 import { PauseSceneInitData } from './PauseScene';
 import { WaterRectangle } from '../entities/WaterRectangle';
-import SmokeTransition from '../shaders/SmokeTransition';
+import BlackHoleFX from '../shaders/BlackHoleFX';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -129,6 +129,7 @@ export default class GameScene extends BaseScene {
 
 	public startLayerChange (fadeIn = false): void {
 		this.riserSound?.play();
+		this.getPlayerCharacter()?.setFreezeInteract(true);
 		const duration = 1000;
 		const currentPlayerLightRadius = this.playerLight?.radius ?? 400;
 		const currentAmbient = Phaser.Display.Color.RGBToString(this.lights.ambientColor.r * 255, this.lights.ambientColor.g * 255, this.lights.ambientColor.b * 255);
@@ -162,9 +163,11 @@ export default class GameScene extends BaseScene {
 						},
 						onComplete: () => {
 							this.setTimeScale(1);
+							this.getPlayerCharacter()?.setFreezeInteract(true);
 						}
 					});
 				} else {
+					this.getPlayerCharacter()?.setFreezeInteract(false);
 					this.setTimeScale(1);
 					this.playerLight?.setRadius(currentPlayerLightRadius);
 					this.chromaticPostFX?.setStrength(CHROMATIC_BASE_STRENGTH);
@@ -676,7 +679,7 @@ export default class GameScene extends BaseScene {
 
 		this.loadInWorldLayer('japan');
 
-		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX]);
+		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX, BlackHoleFX]);
 		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
 		this.cinematicBarsFX = this.cameras.main.getPostPipeline(CinematicBarsFX) as CinematicBarsFX;
 
