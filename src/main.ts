@@ -16,6 +16,7 @@ import BlackHoleFX from './shaders/BlackHoleFX';
 import OptionsScene from './scenes/OptionsScene'
 import { OPTION_KEYS, RESOLUTIONS } from './const/const'
 import SmokeTransition from './shaders/SmokeTransition';
+import LogosScene from './scenes/LogosScene'
 
 const reolsutionIndex = parseInt(localStorage.getItem(OPTION_KEYS.RESOLUTION) ?? '0');
 const resolutionString = RESOLUTIONS[reolsutionIndex];
@@ -64,7 +65,7 @@ const config: Phaser.Types.Core.GameConfig = {
 			// }
 		}
 	},
-	scene: [BootScene, MainMenuScene, GameScene, DialogScene, HUDScene, GameOverScene, PauseScene, OptionsScene]
+	scene: [BootScene, LogosScene, MainMenuScene, GameScene, DialogScene, HUDScene, GameOverScene, PauseScene, OptionsScene]
 }
 
 export default new Phaser.Game(config)

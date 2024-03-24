@@ -47,6 +47,8 @@ import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
 import EarthTextureJPG from './../assets/earth.jpg';
 import NoiseTextureJPG from './../assets/noise.png';
 import LogoPNG from './../assets/logo.png';
+import EdutasticLogoPNG from './../assets/edutastic.png';
+import HeadphonesIconPNG from './../assets/headphones.png';
 
 // Audio SFX
 import HarpSFX from './../assets/sfx/harp.ogg';
@@ -69,6 +71,7 @@ import RiserSFX from './../assets/sfx/riser1sec.ogg';
 import SwitchSFX from './../assets/sfx/switch.ogg';
 import DroneRiseSFX from './../assets/sfx/drone-rise.ogg';
 import ArcadeHummingSFX from './../assets/sfx/arcadehumming.ogg';
+import TriangleSFX from './../assets/sfx/triangle.ogg';
 
 // BGM
 import MenuBGM from './../assets/music/menu.ogg';
@@ -87,6 +90,7 @@ import { bucketSFXConfig } from '../const/bucketSFX';
 import { stepsSFXConfig } from '../const/stepsSFX';
 import { switchSFXConfig } from '../const/switchSFX';
 import { taikoSFXConfig } from '../const/taikoSFX';
+import { triangleSFXConfig } from '../const/triangleSFX';
 import { InputController } from '../models/Input';
 import { gongEffectSFXConfig } from '../const/gongEffectSFX';
 import CirclingDotsFX from '../shaders/CirclingDotsFX';
@@ -168,6 +172,8 @@ export default class BootScene extends BaseScene {
 		this.load.image('texture:earth', EarthTextureJPG);
 		this.load.image('texture:noise', NoiseTextureJPG);
 		this.load.image('logo', LogoPNG);
+		this.load.image('logo-edutastic', EdutasticLogoPNG);
+		this.load.image('icon-headphones', HeadphonesIconPNG);
 
 		// Global BGM
 		this.load.audio('bgm:menu', MenuBGM);
@@ -180,6 +186,7 @@ export default class BootScene extends BaseScene {
 		this.load.audio('sfx:merge', MergeSFX);
 		this.load.audio('sfx:gong', GongSFX);
 		this.load.audio('sfx:gong-effect', GongEffectSFX);
+		this.load.audio('sfx:triangle', TriangleSFX);
 		this.load.audio('sfx:taiko', TaikoSFX);
 		this.load.audio('sfx:ascension', AscensionSFX);
 		this.load.audio('sfx:musicbox', MusicBoxSFX);
@@ -261,6 +268,8 @@ export default class BootScene extends BaseScene {
 		this.registry.set('instrument:piano', new Instrument({ key: 'sfx:piano', octaves: 1, audioMarkerDuration: 6 }));
 		this.registry.set('instrument:merge', new Instrument({ key: 'sfx:merge', octaves: 3, audioMarkerDuration: 4 }));
 		this.registry.set('instrument:gong', new Instrument({ key: 'sfx:gong', octaves: 1, audioMarkerDuration: 8 }));
+
+		this.registry.set('sfx:triangle', new SFX('sfx:triangle', undefined, triangleSFXConfig));
 		this.registry.set('sfx:taiko', new SFX('sfx:taiko', undefined, taikoSFXConfig));
 		this.registry.set('sfx:gong-effect', new SFX('sfx:gong-effect', undefined, gongEffectSFXConfig));
 		this.registry.set('sfx:bucket', new SFX('sfx:bucket', undefined, bucketSFXConfig));
@@ -316,6 +325,7 @@ export default class BootScene extends BaseScene {
 		})
 
     // this.scene.start('main-menu-scene').remove();
-		this.scene.launch('game-scene').launch('hud-scene').remove();
+		this.scene.start('logos-scene').remove();
+		// this.scene.launch('game-scene').launch('hud-scene').remove();
   }
 }

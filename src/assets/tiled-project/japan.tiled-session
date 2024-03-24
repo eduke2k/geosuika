@@ -27,11 +27,11 @@
             "scaleInDock": 1
         },
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json": {
-            "scale": 0.5,
+            "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 941,
-                "y": 3754
+                "x": 323.5,
+                "y": 3884
             }
         },
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_japan": {
@@ -45,7 +45,7 @@
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json"
     ],
     "project": "japan.tiled-project",
-    "property.type": "object",
+    "property.type": "string",
     "recentFiles": [
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json",
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json"

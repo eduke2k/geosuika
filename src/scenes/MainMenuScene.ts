@@ -39,7 +39,8 @@ export default class MainMenuScene extends BaseScene {
 
   private handleMenuAction (key: string): void {
     switch (key) {
-      case 'play': this.startGame(); break;
+      case 'play-story': this.startGame(); break;
+      case 'play-arcade': this.startGame(); break;
       case 'controls': console.log('implement me'); break;
       case 'options': this.showOptions(); break;
       case 'credits': console.log('implement me'); break;
@@ -280,8 +281,9 @@ export default class MainMenuScene extends BaseScene {
     this.cameras.main.fadeIn(duration);
 
     this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: this.scaled(28), textColor: '#888', activeTextColor: '#FFF', alignment: 'center' });
-    this.menu.addItem({ enabled: true, key: 'play', label: 'Play' });
-    this.menu.addItem({ enabled: true, key: 'controls', label: 'Controls' });
+    this.menu.addItem({ enabled: true, key: 'play-story', label: 'Play Story' });
+    this.menu.addItem({ enabled: true, key: 'play-arcade', label: 'Play Arcades' });
+    this.menu.addItem({ enabled: true, key: 'controls', label: 'Controls', padding: 20 });
     this.menu.addItem({ enabled: true, key: 'options', label: 'Options' });
     this.menu.addItem({ enabled: true, key: 'credits', label: 'Credits' });
     this.menu.onActivated = this.handleMenuAction.bind(this);
