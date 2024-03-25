@@ -93,7 +93,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   public lastTierDestroy: boolean;
   public maxTierToDrop: number | 'auto';
   private mergeDisabled: boolean;
-  private targetZoom = 1;
+  // private targetZoom = 1;
   // private baseZoom = 1;
   private bucketMounted = false;
   private bucketActive = false;

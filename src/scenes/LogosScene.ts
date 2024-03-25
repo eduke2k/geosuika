@@ -1,5 +1,4 @@
 import { Action } from '../models/Input';
-import { SFX } from '../models/SFX';
 import { FontName } from '../types';
 import BaseScene from './BaseScene';
 
@@ -19,7 +18,7 @@ export default class LogosScene extends BaseScene {
   private state = State.Init;
   private logoContainer: Phaser.GameObjects.Container | undefined;
   private headphonesContainer: Phaser.GameObjects.Container | undefined;
-  private triangleSFX: SFX | undefined;
+  // private triangleSFX: SFX | undefined;
   private skippableDelayedCall: Phaser.Time.TimerEvent | undefined = undefined;
 
 	constructor() {
@@ -30,8 +29,8 @@ export default class LogosScene extends BaseScene {
     super.create();
     this.cameras.main.fade(0);
 
-    const triangleSFX = this.registry.get('sfx:triangle') as SFX | undefined;
-    if (triangleSFX) this.triangleSFX = triangleSFX;
+    // const triangleSFX = this.registry.get('sfx:triangle') as SFX | undefined;
+    // if (triangleSFX) this.triangleSFX = triangleSFX;
 
     const text1 = this.add.text(0, 0, 'a game made with love by', { fontFamily: FontName.LIGHT, fontSize: this.scaled(18), color: '#888' }).setOrigin(0.5, 0);
     const logo = this.add.image(0, text1.displayHeight + this.scaled(28), 'logo-edutastic').setOrigin(0.5, 0);

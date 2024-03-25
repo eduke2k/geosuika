@@ -16,13 +16,17 @@ import BlackHoleFX from './shaders/BlackHoleFX';
 import OptionsScene from './scenes/OptionsScene'
 import SmokeTransition from './shaders/SmokeTransition';
 import LogosScene from './scenes/LogosScene'
+import { NATIVE_HEIGHT, NATIVE_WIDTH } from './const/const'
 
-const width = 1280;
-const height = 720;
+const width = NATIVE_WIDTH;
+const height = NATIVE_HEIGHT;
+
+console.log(window.top);
+window.top?.postMessage('main.ts', 'http://localhost:8080');
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
-	parent: 'app',
+	parent: 'geosuika',
 	width,
 	height,
 	antialias: true,

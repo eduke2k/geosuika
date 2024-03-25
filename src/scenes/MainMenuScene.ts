@@ -26,19 +26,19 @@ export default class MainMenuScene extends BaseScene {
 		super({ key: 'main-menu-scene' });
 	}
 
-  private handleMenuAction (key: string): void {
-    switch (key) {
-      case 'play-story': this.startGame(); break;
-      case 'play-arcade': this.startGame(); break;
-      case 'controls': console.log('implement me'); break;
-      case 'options': this.showOptions(); break;
-      case 'credits': console.log('implement me'); break;
-    }
-  }
+  // private handleMenuAction (key: string): void {
+  //   switch (key) {
+  //     case 'play-story': this.startGame(); break;
+  //     case 'play-arcade': this.startGame(); break;
+  //     case 'controls': console.log('implement me'); break;
+  //     case 'options': this.showOptions(); break;
+  //     case 'credits': console.log('implement me'); break;
+  //   }
+  // }
 
-  private showOptions (): void {
-    this.scene.launch('options-scene', this);
-  }
+  // private showOptions (): void {
+  //   this.scene.launch('options-scene', this);
+  // }
 
   private startGame (): void {
     this.ignoreInputs = true;
@@ -124,12 +124,11 @@ export default class MainMenuScene extends BaseScene {
     //     this.planetFX?.setIntensity(tween.getValue())
     //   }
     // });
-
   }
 
-  private handleMenuChange (_key: string): void {
-    // nothing
-  }
+  // private handleMenuChange (_key: string): void {
+  //   // nothing
+  // }
 
 	public async create () {
     super.create();

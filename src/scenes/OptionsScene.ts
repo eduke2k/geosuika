@@ -2,7 +2,7 @@ import { Action } from '../models/Input';
 import BaseScene from './BaseScene';
 import { MenuList } from '../models/Menu';
 import { FontName } from '../types';
-import { OPTION_KEYS, RESOLUTIONS } from '../const/const';
+import { OPTION_KEYS } from '../const/const';
 
 export default class OptionsScene extends BaseScene {
   private originalScene: BaseScene | undefined;
@@ -26,7 +26,7 @@ export default class OptionsScene extends BaseScene {
 
     const initialSoundVolume = parseFloat(window.localStorage.getItem(OPTION_KEYS.SFX_VOLUME) as string);
     const initialMusicVolume = parseFloat(window.localStorage.getItem(OPTION_KEYS.MUSIC_VOLUME) as string);
-    const initialResolution = parseInt(window.localStorage.getItem(OPTION_KEYS.RESOLUTION) as string);
+    // const initialResolution = parseInt(window.localStorage.getItem(OPTION_KEYS.RESOLUTION) as string);
     const initialPostFXResolution = parseFloat(window.localStorage.getItem(OPTION_KEYS.POSTFX_RESOLUTION) as string);
 
     this.menu = new MenuList(this, { x: this.scaled(64), y: this.scaled(146), fontSize: this.scaled(28), textColor: '#888', activeTextColor: '#FFF', alignment: 'left' });
@@ -34,7 +34,7 @@ export default class OptionsScene extends BaseScene {
     this.menu.addSliderItem({ enabled: true, suffix: '%', key: 'sfx-volume', label: 'Sound volume', increment: 10, initialValue: initialSoundVolume * 100, maxValue: 100, minValue: 0, onUpdate: this.updateSFXVolume.bind(this) });
     this.menu.addSliderItem({ enabled: true, suffix: '%', key: 'music-volume', label: 'Music volume', increment: 10, initialValue: initialMusicVolume * 100, maxValue: 100, minValue: 0, onUpdate: this.updateMusicVolume.bind(this) });
     this.menu.addSubheadline('separator-gfx', 'Graphics');
-    this.menu.addSelectorItem({ enabled: true, key: 'resolution', label: 'Rendering Resolution', currentIndex: initialResolution, options: RESOLUTIONS, onUpdate: this.updateResolution.bind(this) });
+    // this.menu.addSelectorItem({ enabled: true, key: 'resolution', label: 'Rendering Resolution', currentIndex: initialResolution, options: RESOLUTIONS, onUpdate: this.updateResolution.bind(this) });
     this.menu.addSliderItem({ enabled: true, suffix: '%', key: 'postfx-resolution', label: 'PostFX Resolution', increment: 25, initialValue: initialPostFXResolution * 100, maxValue: 100, minValue: 25, onUpdate: this.updatePostFXResolution.bind(this) });
     this.menu.addItem({ enabled: true, key: 'toggle-fullscreen', label: 'Toggle Fullscreen' });
     this.menu.addItem({ enabled: true, key: 'back', label: 'Back', padding: 30 });
@@ -58,9 +58,9 @@ export default class OptionsScene extends BaseScene {
     window.localStorage.setItem(OPTION_KEYS.MUSIC_VOLUME, (value / 100).toString());
   }
 
-  private updateResolution (value: number): void {
-    window.localStorage.setItem(OPTION_KEYS.RESOLUTION, value.toString())
-  }
+  // private updateResolution (value: number): void {
+  //   window.localStorage.setItem(OPTION_KEYS.RESOLUTION, value.toString())
+  // }
 
   private toggleFullScreen () {
     if (!document.fullscreenElement) {
