@@ -48,6 +48,10 @@ export default class InteractableGameObject extends GameObject {
       this.setVelocityY(-5);
       const sfx = this.scene.registry.get('instrument:musicbox') as Instrument | undefined;
       if (sfx) sfx.playRandomNote(this.getScene(), 0, 0.2);
+
+      const interactablesInRange = this.getGameScene().interactablesInRange;
+      const index = interactablesInRange.findIndex((a) => a === this);
+      if (index === -1) interactablesInRange.push(this);
       // if (this.glowTween) this.glowTween.stop();
       // if (this.scene) this.glowTween = this.scene.tweens.add({ targets: this.glow, outerStrength: 10, ease: 'sine.inout', duration: 250 });
     }
@@ -55,6 +59,9 @@ export default class InteractableGameObject extends GameObject {
 
   public onCollisionEnd (_other: Character): void {
     if (this.isInteractable()) {
+      const interactablesInRange = this.getGameScene().interactablesInRange;
+      const index = interactablesInRange.findIndex((a) => a === this);
+      if (index > -1) interactablesInRange.splice(index, 1);
       // if (this.glowTween) this.glowTween.stop();
       // if (this.scene) this.glowTween = this.scene.tweens.add({ targets: this.glow, outerStrength: 0, ease: 'sine.inout', startDelay: 500, duration: 500 });
     }

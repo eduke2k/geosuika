@@ -24,6 +24,10 @@ import { SoundSource2d } from '../entities/Sound/SoundSource2d';
 import { PauseSceneInitData } from './PauseScene';
 import { WaterRectangle } from '../entities/WaterRectangle';
 import BlackHoleFX from '../shaders/BlackHoleFX';
+import EasterEgg from '../entities/EasterEgg';
+import InteractableGameObject from '../entities/InteractableGameObject';
+import HUDScene from './HUDScene';
+import GenericInteractable from '../entities/GenericInteractable';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -65,6 +69,9 @@ export default class GameScene extends BaseScene {
 	private staticMapCollisions: MatterJS.BodyType[] = [];
 	private staticOneWayPlatforms: StaticOneWayPlatform[] = [];
 	public bokehEffect: Phaser.FX.Bokeh | undefined;
+
+	// Arrays
+	public interactablesInRange: InteractableGameObject[] = [];
 
 	// Layer change stuff
 	// private layerChangeSprites: any[] = [];
@@ -302,6 +309,7 @@ export default class GameScene extends BaseScene {
 	public bucketUnmountFinished (_bucket: DropBucket): void {
 		const playerCharacter = this.getPlayerCharacter();
 		if (playerCharacter) {
+			playerCharacter.isAtArcade = false;
 			this.cameraFollowEntity({ object: playerCharacter });
 		}
 	}
@@ -340,7 +348,6 @@ export default class GameScene extends BaseScene {
 	public pause (): void {
 		if (!this.bokehEffect) this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
 		this.setBokehEffect(2, 100, Phaser.Math.Easing.Sine.InOut, () => {
-			console.log(this.getMountedBucket());
 			const payload: PauseSceneInitData = {
 				bucket: this.getMountedBucket()
 			}
@@ -381,6 +388,22 @@ export default class GameScene extends BaseScene {
 		if (platform) platform.disableCollision();
 	}
 
+	private tileSetLogic (layerData?: Phaser.Tilemaps.LayerData): void {
+		if (!layerData || !this.map) return;
+		const existingLayer = this.tilemapLayers.find(l => l.layer.name === layerData.name);
+
+		if (existingLayer) {
+			existingLayer.setVisible(true);
+		} else {
+			const tileset = this.tilesets[(layerData?.properties as { name: string, value: string }[]).find(k => k.name === 'tileset')?.value ?? ''];
+			const layer = this.map.createLayer(layerData.name, tileset);
+			if (layer) {
+				layer?.setPipeline('Light2D');
+				this.tilemapLayers.push(layer);
+			}
+		}
+	}
+
 	public loadInWorldLayer (layerName: string): void {
 		if (!this.map) {
 			console.error(`Could not load in map layer '${layerName}' because map is not set in GameScenee`);
@@ -389,29 +412,15 @@ export default class GameScene extends BaseScene {
 
 		this.currentMapLayer = layerName;
 
-		const terrainLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_terrain`));
 		// const backgroundLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_background`));
 		// const detailsLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_details`));
 		// const foregroundLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_foreground`));
 		const objectLayer = this.map.objects.find(l => l.name.startsWith(`${layerName}_objects`));
 		const bounds: LevelBounds[] = [];
 
-		// Add available map layers to rendering pipe
-		if (terrainLayer) {
-			const existingLayer = this.tilemapLayers.find(l => l.layer.name === terrainLayer.name);
-
-			if (existingLayer) {
-				existingLayer.setVisible(true);
-			} else {
-				const tileset = this.tilesets[(terrainLayer?.properties as { name: string, value: string }[]).find(k => k.name === 'tileset')?.value ?? ''];
-				console.log(tileset);
-				const layer = this.map.createLayer(terrainLayer.name, tileset);
-				if (layer) {
-					layer?.setPipeline('Light2D');
-					this.tilemapLayers.push(layer);
-				}
-			}
-		}
+		// Add available map layers in correct order to rendering pipe
+		this.tileSetLogic(this.map.layers.find(l => l.name.startsWith(`${layerName}_background`)));
+		this.tileSetLogic(this.map.layers.find(l => l.name.startsWith(`${layerName}_terrain`)));
 
 		// this.tilemapLayers.forEach(tl => {
 		// 	tl.forEachTile(t => {
@@ -476,7 +485,6 @@ export default class GameScene extends BaseScene {
 		const currentBounds = this.getFirstRectWithinBounds(bounds, { x: this.playerCharacter?.getBody()?.position.x ?? 0, y: this.playerCharacter?.getBody()?.position.y ?? 0 });
 		this.cameras.main.setBounds(currentBounds.rect.x, currentBounds.rect.y, currentBounds.rect.width, currentBounds.rect.height);
 		const hex = currentBounds.ambientColor ? `#${currentBounds.ambientColor?.substring(3)}` : '#000000';
-		console.log(hex);
 		this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(hex).color);
 
 		if (objectLayer) {
@@ -486,6 +494,7 @@ export default class GameScene extends BaseScene {
 						case 'character': {	charactersQueue.push(o); break;	}
 						case 'staticObject': { staticObjectsQueue.push(o); break; }
 						case 'object': { objectsQueue.push(o); break; }
+						case 'egg': { arcadesQueue.push(o); break; }
 						case 'bucket': { bucketQueue.push(o); break; }
 						case 'arcade': { arcadesQueue.push(o); break; }
 						case 'soundSource2d': { soundSource2dQueue.push(o); break; }
@@ -506,17 +515,48 @@ export default class GameScene extends BaseScene {
 
 		objectsQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
-			if (o.name === 'smallLamp') {
-				this.objects.push(new SmallLamp(
-					this,
-					o.x ?? 0,
-					o.y ?? 0,
-					{
-						frame: properties.frame ? (properties.frame.toString() as SmallLampFrame) : undefined,
-						ropeLength: properties.ropeLength ? (properties.ropeLength as number) : undefined,
-						constrained: properties.constrained ? (properties.ropeLength as boolean) : undefined,
+			switch (o.name) {
+				case 'generic': {
+					this.objects.push(new GenericInteractable(
+						this,
+						o.x ?? 0,
+						o.y ?? 0,
+						properties.w ? (properties.w as number) : 16,
+						properties.h ? (properties.h as number) : 16,
+						properties.scale ? (properties.scale as number) : 1,
+						properties.name ? (properties.name as string) : '',
+						properties.spriteKey ? (properties.spriteKey as string) : '',
+						properties.frame ? (properties.frame.toString() as string) : 0,
+						properties.message ? (properties.message.toString() as string) : 'Fallback Text',
+						properties.mirror !== undefined ? (properties.mirror as boolean) : false,
+					));
+					break;
+				}
+				case 'smallLamp': {
+					this.objects.push(new SmallLamp(
+						this,
+						o.x ?? 0,
+						o.y ?? 0,
+						{
+							frame: properties.frame ? (properties.frame.toString() as SmallLampFrame) : undefined,
+							ropeLength: properties.ropeLength ? (properties.ropeLength as number) : undefined,
+							constrained: properties.constrained ? (properties.ropeLength as boolean) : undefined,
+						}
+					));
+					break;
+				}
+				case 'egg': {
+					const eggType = properties.type ? (properties.type.toString()) : undefined;
+					if (eggType) {
+						this.objects.push(new EasterEgg(
+							this,
+							o.x ?? 0,
+							o.y ?? 0,
+							eggType,
+						));
 					}
-				));
+					break;
+				}
 			}
 		});
 
@@ -546,7 +586,7 @@ export default class GameScene extends BaseScene {
 		arcadesQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
 			const bucket = this.buckets.find(b => b.name === bucketQueue.find(bq => bq.id === (properties.bucket as number))?.name);
-			this.arcades.push(new Arcade(this, o.x ?? 0, o.y ?? 0, o.name, undefined, bucket));
+			this.arcades.push(new Arcade(this, o.x ?? 0, o.y ?? 0, o.name, undefined, bucket, properties.mirror as boolean));
 		});
 
 		charactersQueue.forEach(o => {
@@ -677,7 +717,7 @@ export default class GameScene extends BaseScene {
 		const playerSpawn = this.map.getObjectLayer('triggers')?.objects.find(o => o.name === 'playerSpawn');
 		achan.setPosition(playerSpawn?.x, playerSpawn?.y);
 
-		this.loadInWorldLayer('japan');
+		this.loadInWorldLayer('street');
 
 		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX, BlackHoleFX]);
 		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
@@ -718,5 +758,8 @@ export default class GameScene extends BaseScene {
 				this.pause();
 			}
 		}
+
+		// Show interaction bubble if interactable is in reach
+		(this.scene.get('hud-scene') as HUDScene).interactionLabel.setAlpha((!this.ignoreInputs && player?.canInteract() && this.interactablesInRange.length > 0) ? 1 : 0);
 	}
 }

@@ -58,7 +58,7 @@ export class MovementBehaviour {
         }
 
         this.character.setVelocityX(newVX);
-        this.addSlideCorrectionForce(delta);
+        // this.addSlideCorrectionForce(delta);
     }
 
     public handleNoMovement (delta: number, accelerationMultiplier: number) {
@@ -72,7 +72,7 @@ export class MovementBehaviour {
         if (originalSign !== newSign) newVX = 0;
 
         this.character.setVelocityX(newVX);
-        this.addSlideCorrectionForce(delta);
+        // this.addSlideCorrectionForce(delta);
     }
 
     public handleFall (): void {

@@ -11,7 +11,7 @@ const ON_GROUND_THRESHOLD = 150;
 const JUMP_BUFFER_TIME = 150;
 const BODY_LABELS_FOR_GROUND_CHECK = ['terrain', 'terrainObject', 'oneway-platform'];
 
-export type CharacterStates = 'idle' | 'run' | 'stop' | 'turn' | 'lookup' | 'lookdown' | 'lookup' | 'jump' | 'fall' | 'floating'
+export type CharacterStates = 'idle' | 'run' | 'stop' | 'turn' | 'lookup' | 'lookdown' | 'lookup' | 'jump' | 'fall' | 'floating' | 'back'
 
 export default class Character extends InteractableGameObject {
   protected shadow: Phaser.FX.Shadow;
@@ -27,14 +27,15 @@ export default class Character extends InteractableGameObject {
   public justLanded = false;
   public justJumped = false;
   public justSlided = false;
-  public maxJumpStrength = 16;
+  public isAtArcade = false;
+  public maxJumpStrength = 13;
   public airControl = 0.1;
   public longPressJumpTime = 0;
   public jumpBufferTime = -1;
   public onGroundThresholdTime = 0;
   public groundNormal: Phaser.Math.Vector2 | undefined;
   public groundBody: MatterJS.BodyType | undefined;
-  public interactableObjectsInReach: InteractableGameObject[] = [];
+  // public interactableObjectsInReach: InteractableGameObject[] = [];
   public sfxBank: SFX | undefined;
   
   constructor(
@@ -69,8 +70,6 @@ export default class Character extends InteractableGameObject {
       if (this.playerControlled) {
         const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs);
         if (gameObjects.length > 0) {
-          
-          this.interactableObjectsInReach.push(...gameObjects.filter(o => o.active));
           gameObjects[0].onCollisionStart(this);
         }
       }
@@ -83,11 +82,6 @@ export default class Character extends InteractableGameObject {
         const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs);
         if (gameObjects.length > 0) {
           gameObjects.filter(o => o.active)[0]?.onCollisionEnd(this);
-
-          gameObjects.forEach(o => {
-            const index = this.interactableObjectsInReach.findIndex(r => r === o)
-            this.interactableObjectsInReach.splice(index, 1);
-          });
         }
       }
     });
@@ -169,6 +163,10 @@ export default class Character extends InteractableGameObject {
     }
   }
 
+  public canInteract (): boolean {
+    return !this.freezeInputs && !this.freezeInteract;
+  }
+
   protected handleInputs (delta: number): void {
     if (!this.movementBehaviour) return;
     const inputsDeactivated = (!this.playerControlled || this.freezeInputs || this.getGameScene()?.ignoreInputs || this.getGameScene()?.getState() !== 'play');
@@ -190,8 +188,8 @@ export default class Character extends InteractableGameObject {
       }
 
       // Interacting
-      if (!this.freezeInteract && this.onGround && this.interactableObjectsInReach[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
-        const targetObject = this.interactableObjectsInReach[0];
+      if (!this.freezeInteract && this.onGround && this.getGameScene().interactablesInRange[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
+        const targetObject = this.getGameScene().interactablesInRange[0];
         targetObject.trigger(this);
       }
 
@@ -208,7 +206,9 @@ export default class Character extends InteractableGameObject {
 
     this.lastState = this.state;
 
-    if (this.onGround) {
+    if (this.isAtArcade) {
+      this.state = 'back';
+    } else if (this.onGround) {
       if (movementVector.x !== 0) {
         if (Math.sign(movementVector.x) === Math.sign(vx)) {
           this.state = 'run';
@@ -237,8 +237,12 @@ export default class Character extends InteractableGameObject {
     // Apply jump break force for low jumps
     if (this.getGameScene()?.inputController?.justUp(Action.JUMP)) {
       const jumpingPowerMultiplier = Math.min(this.longPressJumpTime / JUMP_PRESS_TIME, 1);
-      this.applyForce(new Phaser.Math.Vector2(0, (1 - jumpingPowerMultiplier) * 0.5));
+      this.applyForce(new Phaser.Math.Vector2(0, (1 - jumpingPowerMultiplier) * 0.25));
     }
+    // if (this.getGameScene()?.inputController?.isDown(Action.JUMP) && this.longPressJumpTime < JUMP_PRESS_TIME) {
+    //   this.setVelocityY(-this.maxJumpStrength);
+    //   // this.applyForce(new Phaser.Math.Vector2(0, -1 / delta));
+    // }
 
     // Set sprite flipping depending on movement vector
     if (movementVector.x !== 0) this.direction = movementVector.x > 0 ? 1 : -1;
@@ -273,6 +277,10 @@ export default class Character extends InteractableGameObject {
 
     // per update cycle
     switch (this.state) {
+      case 'back': {
+        this.play({ key: 'back', repeat: -1 }, true);
+        break;
+      }
       case 'run': {
         this.stepSoundBehaviour?.update(this.anims.currentFrame?.index ?? 0);
         this.anims.timeScale = 1;

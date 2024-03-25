@@ -14,15 +14,11 @@ import CinematicBarsFX from './shaders/CinematicBarsFX'
 import ScalePostFX from './shaders/ScalePostFX';
 import BlackHoleFX from './shaders/BlackHoleFX';
 import OptionsScene from './scenes/OptionsScene'
-import { OPTION_KEYS, RESOLUTIONS } from './const/const'
 import SmokeTransition from './shaders/SmokeTransition';
 import LogosScene from './scenes/LogosScene'
 
-const reolsutionIndex = parseInt(localStorage.getItem(OPTION_KEYS.RESOLUTION) ?? '0');
-const resolutionString = RESOLUTIONS[reolsutionIndex];
-const resolution = resolutionString.split('x');
-const width = parseInt(resolution[0]) ?? 1280;
-const height = parseInt(resolution[1]) ?? 720;
+const width = 1280;
+const height = 720;
 
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,

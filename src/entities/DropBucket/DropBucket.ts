@@ -24,6 +24,7 @@ import { duckSet } from "../../config/ducks";
 import { DropBucketShockwave } from "../../models/DropBucketShockwave";
 import BaseScene from "../../scenes/BaseScene";
 import HUDScene from "../../scenes/HUDScene";
+import { easterEggSet } from "../../config/easterEggs";
 
 export const GAME_OVER_TIME = 3000;
 export const DANGER_SPARK_TIME = 100;
@@ -131,7 +132,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.maxTierToDrop = options.maxTierToDrop ?? 'auto';
     this.mergeDisabled = options.disableMerge ?? false;
     this.targetScore = options.targetScore;
-    this.elevatorDistance = options.elevatorDistance ?? 1000;
+    this.elevatorDistance = options.elevatorDistance ?? 0;
     this.visible = false;
     this.bgmKey = options.bgmKey;
 
@@ -1119,6 +1120,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       case 'tetrominos': return tetrominosSet;
       case 'japanFoodSet': return japanFoodSet;
       case 'duckSet': return duckSet;
+      case 'easterEggSet': return easterEggSet;
       default: return flagSet;
     }
   }

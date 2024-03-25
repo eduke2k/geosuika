@@ -4,12 +4,16 @@ import FontFaceObserver from 'fontfaceobserver';
 // Aseprite sprites
 import ArcadePNG from './../assets/arcade.png';
 import ArcadeJSON from './../assets/arcade.json';
+import EggsPNG from './../assets/eggs.png';
+import EggsJSON from './../assets/eggs.json';
 import YatoPNG from './../assets/yato.png';
 import YatoJSON from './../assets/yato.json';
 import DogPNG from './../assets/dog.png';
 import DogJSON from './../assets/dog.json';
 import AchanPNG from './../assets/achan.png';
 import AchanJSON from './../assets/achan.json';
+import CreepyEasterBunnyPNG from './../assets/creepy-easter-bunny.png';
+import CreepyEasterBunnyJSON from './../assets/creepy-easter-bunny.json';
 import FlagsPNG from './../assets/flags.png';
 import FlagsJSON from './../assets/flags.json';
 import TetrominosPNG from './../assets/tetrominos.png';
@@ -25,6 +29,8 @@ import JapanFoodPNG from './../assets/japanFood.png';
 import JapanFoodJSON from './../assets/japanFood.json';
 import DuckSetPNG from './../assets/duckSet.png';
 import DuckSetJSON from './../assets/duckSet.json';
+import EasterEggSetPNG from './../assets/easterEggSet.png';
+import EasterEggSetJSON from './../assets/easterEggSet.json';
 import DangerLinePNG from './../assets/dangerLine.png';
 import DangerLineJSON from './../assets/dangerLine.json';
 import PetalPNG from './../assets/petal.png';
@@ -47,6 +53,7 @@ import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
 import EarthTextureJPG from './../assets/earth.jpg';
 import NoiseTextureJPG from './../assets/noise.png';
 import LogoPNG from './../assets/logo.png';
+import MenuBackground from './../assets/menu-background.jpg';
 import EdutasticLogoPNG from './../assets/edutastic.png';
 import HeadphonesIconPNG from './../assets/headphones.png';
 
@@ -78,8 +85,7 @@ import MenuBGM from './../assets/music/menu.ogg';
 
 // Tiles
 import JapanTilesPNG from './../assets/tilesets/tilesheet_japan.png';
-import JapanTiles2xPNG from './../assets/tilesets/tilesheet_japan_2x.png';
-import MainTilesPNG from './../assets/tilesets/tilesheet_main.png';
+import StreetTilesPNG from './../assets/tilesets/tilesheet_street.png';
 import map2JSON from './../assets/tilesets/map2.json';
 
 import { Instrument } from '../models/Instrument';
@@ -96,22 +102,22 @@ import { gongEffectSFXConfig } from '../const/gongEffectSFX';
 import CirclingDotsFX from '../shaders/CirclingDotsFX';
 import { scaleNumberRange } from '../functions/numbers';
 import BaseScene from './BaseScene';
-import { NATIVE_AR, OPTION_KEYS } from '../const/const';
+import { OPTION_KEYS } from '../const/const';
 
 const skipAnimation = false;
 
-function handleResize() {
-	const canvas = document.getElementsByTagName('canvas')[0];
-	if (canvas) {
-		const width = window.innerWidth;
-		const height = window.innerHeight;
-		const ar = width / height;
-		const canvasWidth = NATIVE_AR >= ar ? width : height * NATIVE_AR;
-		const canvasHeight = NATIVE_AR < ar ? height : width / NATIVE_AR;
-		canvas.style.width = `${canvasWidth}px`;
-		canvas.style.height = `${canvasHeight}px`;
-	}
-}
+// function handleResize() {
+// 	const canvas = document.getElementsByTagName('canvas')[0];
+// 	if (canvas) {
+// 		const width = window.innerWidth;
+// 		const height = window.innerHeight;
+// 		const ar = width / height;
+// 		const canvasWidth = NATIVE_AR >= ar ? width : height * NATIVE_AR;
+// 		const canvasHeight = NATIVE_AR < ar ? height : width / NATIVE_AR;
+// 		canvas.style.width = `${canvasWidth}px`;
+// 		canvas.style.height = `${canvasHeight}px`;
+// 	}
+// }
 
 export default class BootScene extends BaseScene {
 	// private progressBar!: Phaser.GameObjects.Graphics;
@@ -125,9 +131,6 @@ export default class BootScene extends BaseScene {
 	}
 
 	public preload () {
-		window.addEventListener('resize', handleResize);
-		handleResize();
-
 		const postFXResolution = parseFloat(localStorage.getItem(OPTION_KEYS.POSTFX_RESOLUTION) ?? '1');
     this.circlingDotsFX = new CirclingDotsFX(this, 0.05, this.game.canvas.width * postFXResolution, this.game.canvas.height * postFXResolution);
     this.circlingDotsFXImage = this.circlingDotsFX.createShaderImage();
@@ -147,12 +150,15 @@ export default class BootScene extends BaseScene {
 
 		// IMPORTANT: When adding new aseprite sprites, don't forget to load their animations in the create-method.
 		this.load.aseprite('arcade', ArcadePNG, ArcadeJSON);
+		this.load.aseprite('eggs', EggsPNG, EggsJSON);
 		this.load.aseprite('yato', YatoPNG, YatoJSON);
 		this.load.aseprite('dog', DogPNG, DogJSON);
 		this.load.aseprite('achan', AchanPNG, AchanJSON);
+		this.load.aseprite('creepyEasterBunny', CreepyEasterBunnyPNG, CreepyEasterBunnyJSON);
 		this.load.aseprite('flags', FlagsPNG, FlagsJSON);
 		this.load.aseprite('japanFood', JapanFoodPNG, JapanFoodJSON);
 		this.load.aseprite('ducks', DuckSetPNG, DuckSetJSON);
+		this.load.aseprite('easterEggSet', EasterEggSetPNG, EasterEggSetJSON);
 		this.load.aseprite('tetrominos', TetrominosPNG, TetrominosJSON);
 		this.load.aseprite('progressArrow', ProgressArrowPNG, ProgressArrowJSON);
 		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
@@ -172,6 +178,7 @@ export default class BootScene extends BaseScene {
 		this.load.image('texture:earth', EarthTextureJPG);
 		this.load.image('texture:noise', NoiseTextureJPG);
 		this.load.image('logo', LogoPNG);
+		this.load.image('menu-background', MenuBackground);
 		this.load.image('logo-edutastic', EdutasticLogoPNG);
 		this.load.image('icon-headphones', HeadphonesIconPNG);
 
@@ -205,8 +212,8 @@ export default class BootScene extends BaseScene {
 		this.load.json('shapes', TetrominosShapesJSON);
 
 		// load tilesets
-		this.load.image('tilesheet_japan', this.game.canvas.height > 720 ? JapanTiles2xPNG : JapanTilesPNG);
-		this.load.image('tilesheet_main', MainTilesPNG);
+		this.load.image('tilesheet_japan', JapanTilesPNG);
+		this.load.image('tilesheet_street', StreetTilesPNG);
 
 		// load map files
 		this.load.tilemapTiledJSON('map2', map2JSON)
@@ -283,9 +290,11 @@ export default class BootScene extends BaseScene {
 		console.log('---finished loading instruments');
 
 		this.anims.createFromAseprite('dog');
+		this.anims.createFromAseprite('eggs');
 		this.anims.createFromAseprite('flags');
 		this.anims.createFromAseprite('japanFood');
 		this.anims.createFromAseprite('ducks');
+		this.anims.createFromAseprite('easterEggSet');
 		this.anims.createFromAseprite('tetrominos');
 		this.anims.createFromAseprite('progressArrow');
 		this.anims.createFromAseprite('scoreLabel');
@@ -325,7 +334,7 @@ export default class BootScene extends BaseScene {
 		})
 
     // this.scene.start('main-menu-scene').remove();
-		this.scene.start('logos-scene').remove();
-		// this.scene.launch('game-scene').launch('hud-scene').remove();
+		// this.scene.start('logos-scene').remove();
+		this.scene.launch('game-scene').launch('hud-scene').remove();
   }
 }

@@ -3,12 +3,14 @@ import Arcade from '../entities/Arcade';
 import BaseScene from './BaseScene';
 import { ArcadeInfo } from '../entities/HUD/ArcadeInfo';
 import BlinkingText, { BlinkingTextOptions } from '../entities/BlinkingText';
+import { FontName } from '../types';
 
 export default class HUDScene extends BaseScene {
 	public debugText!: Phaser.GameObjects.Text;
 	public fpsText!: Phaser.GameObjects.Text;
 	private arcadeInfos: ArcadeInfo[] = [];
 	private blinkingTexts: BlinkingText[] = [];
+	public interactionLabel!: Phaser.GameObjects.Text;
 
 	constructor() {
 		super({ key: 'hud-scene' })
@@ -18,6 +20,11 @@ export default class HUDScene extends BaseScene {
 		super.create();
 		this.debugText = this.add.text(0, 0, 'Early Preview', { font: "12px Courier", align: "left" });
 		this.fpsText = this.add.text(this.game.canvas.width, 0, '45456456 fps', { font: "12px Courier", align: "right" }).setOrigin(1, 0);
+		this.interactionLabel = this.add.text(this.game.canvas.width / 2, this.game.canvas.height - this.scaled(24), 'Press E to interact', { align: "center" }).setOrigin(0.5, 1);
+    this.interactionLabel.setFontFamily(FontName.REGULAR);
+    this.interactionLabel.setFontSize(`${this.scaled(20)}px`);
+    this.interactionLabel.alpha = 1;
+
     this.scene.bringToTop();
   }
 
@@ -43,6 +50,6 @@ export default class HUDScene extends BaseScene {
 
 	public update (time: number, delta: number): void {
 		this.fpsText.text = `${Math.round(this.game.loop.actualFps)} (${this.game.loop.fpsLimit}) fps\nFrame ${this.game.loop.frame}`;
-		this.arcadeInfos.forEach(a => a.update(time, delta))
+		this.arcadeInfos.forEach(a => a.update(time, delta));
 	}
 }

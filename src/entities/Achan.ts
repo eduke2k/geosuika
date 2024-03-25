@@ -14,7 +14,7 @@ export default class Achan extends Character {
     y: number,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, 'achan', 'achan', 'sfx:achan', options);
+    super(scene, x, y, 'achan', 'creepyEasterBunny', 'sfx:achan', options);
     this.movementBehaviour = new MovementBehaviour(this);
     this.interactable = false;
     this.portraitKey = 'portrait:achan';
@@ -44,17 +44,17 @@ export default class Achan extends Character {
     this.movementBehaviour.acceleration = 4;
     this.airControl = 0.5;
     this.movementBehaviour.deacceleration = 10;
-    this.movementBehaviour.maxSpeed = 6;
+    this.movementBehaviour.maxSpeed = 4;
 
     this.setPlayerControlled(true);
     this.setExistingBody(rect);
-    this.setScale(6);
+    this.setScale(4);
     this.setDepth(Depths.PLAYER_LAYER);
     this.setPosition(x, y);
     this.setFixedRotation();
     this.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
-		this.anims.createFromAseprite('achan');
+		this.anims.createFromAseprite('creepyEasterBunny');
     // this.play({ key: 'achan:idle', repeat: -1 });
   }
 

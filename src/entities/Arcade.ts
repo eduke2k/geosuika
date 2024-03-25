@@ -22,10 +22,11 @@ export default class Arcade extends InteractableGameObject {
     name: string,
     frame?: string | number | undefined,
     bucket?: DropBucket,
+    mirror?: boolean,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
     super(scene, x, y, name, 'arcade', frame, options);
-    this.direction = -1;
+    this.direction = mirror ? -1 : 1;
     this.interactable = true;
     this.name = `${name}-${this.scene.game.getTime()}`;
     this.linkedBucket = bucket;
@@ -42,7 +43,7 @@ export default class Arcade extends InteractableGameObject {
       },
       render: {
         sprite: {
-          xOffset: 0.1, yOffset: 0
+          xOffset: mirror ? -0.2 : 0.2, yOffset: 0
         }
       }
     });
@@ -56,7 +57,7 @@ export default class Arcade extends InteractableGameObject {
     this.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
     // Setup size depending on tier
-    this.setScale(4);
+    this.setScale(3);
     this.setFixedRotation();
 
     if (this.body) this.scene.matter.alignBody(this.body as MatterJS.BodyType, x, y, Phaser.Display.Align.BOTTOM_CENTER);
@@ -92,6 +93,8 @@ export default class Arcade extends InteractableGameObject {
     // this.highscoreTextfield.setText(highscoreText);
     // this.highscoreTextfield.start();
     if (!this.arcadeInfo) this.arcadeInfo = (this.scene.scene.get('hud-scene') as HUDScene).getArcadeInfo(this);
+
+    console.log(this.arcadeInfo);
     this.arcadeInfo.show();
   }
 
@@ -118,9 +121,10 @@ export default class Arcade extends InteractableGameObject {
     // place character
     const referenceBody = referenceCharacter.getBody()
     if (this.body && referenceBody) {
+      if (referenceBody.gameObject) referenceBody.gameObject.isAtArcade = true;
       referenceCharacter.setDirection(this.direction === 1 ? -1 : 1);
       // referenceCharacter.setX((this.body?.position.x ?? 0) - this.width);
-      this.scene.matter.alignBody(referenceBody, this.body.position.x - (this.width / 2), referenceCharacter.body?.position.y ?? 0, Phaser.Display.Align.RIGHT_CENTER);
+      this.scene.matter.alignBody(referenceBody, this.body.position.x + (10 * this.direction), referenceCharacter.body?.position.y ?? 0, this.direction === -1 ? Phaser.Display.Align.RIGHT_CENTER : Phaser.Display.Align.LEFT_CENTER);
     }
 
     if (!this.linkedBucket) {
