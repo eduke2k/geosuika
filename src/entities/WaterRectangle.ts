@@ -10,8 +10,5 @@ export class WaterRectangle {
     this.graphics = scene.add.graphics();
     this.graphics.fillStyle(0x000000, 1);
     this.graphics.fillRect(x, y, w, h);
-
-    // this.graphics.setPostPi(WaterFX);
-    console.log('graphics', this.graphics);
   }
 }

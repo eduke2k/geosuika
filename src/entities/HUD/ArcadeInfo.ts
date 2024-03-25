@@ -38,7 +38,7 @@ export class ArcadeInfo {
 
     this.headline = this.scene.add.text(this.scene.scaled(PADDING_X / 2), this.scene.scaled(PADDING_Y / 2), arcade.linkedBucket?.getBGMConfig()?.title.toUpperCase() ?? 'Unknown Memory'.toUpperCase(), { fontFamily: FontName.LIGHT, fontSize: this.scene.scaled(HEADLINE_SIZE), color: 'white' });
     this.progressLabel = this.scene.add.text(this.scene.scaled((PADDING_X / 2) + 5), this.headline.height, 'Progress:', { fontFamily: FontName.REGULAR, fontSize: this.scene.scaled(24), color: 'grey' });
-    this.progressValue = this.scene.add.text((this.progressLabel.getTopRight().x ?? 0) + this.scene.scaled(16), this.progressLabel.getTopRight().y ?? 0, '0%', { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(PROGRESS_SIZE), color: 'red' });
+    this.progressValue = this.scene.add.text((this.progressLabel.getTopRight().x ?? 0) + this.scene.scaled(16), this.progressLabel.getTopRight().y ?? 0, 'Not implemented yet', { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(PROGRESS_SIZE), color: 'red' });
     // this.loadingValue = this.scene.add.text(this.headline.getBottomRight().x ?? 0, this.progressLabel.getTopRight().y ?? 0, '0%', { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(PROGRESS_SIZE), color: 'white' }).setOrigin(1, 0);
 
     this.graphics = this.scene.add.graphics();
@@ -75,7 +75,9 @@ export class ArcadeInfo {
   }
 
   public show (): void {
+    console.log('arcade info show');
     this.fading = false;
+    this.reveal = undefined;
     this.setVisible(true);
     this.currentFlashingDelayTime = FLASHING_DURATION / 6;
     this.remainingFlashingTime = FLASHING_DURATION;
@@ -97,6 +99,10 @@ export class ArcadeInfo {
       ease: Phaser.Math.Easing.Quadratic.Out,
       onUpdate: (tween => {
         reveal.progress = tween.getValue()
+      }),
+      onComplete: (() => {
+        this.setVisible(false);
+        this.container.clearFX();
       })
     })
   }

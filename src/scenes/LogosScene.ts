@@ -110,7 +110,6 @@ export default class LogosScene extends BaseScene {
     super.update(time, delta);
 
     if (this.inputController?.justDown(Action.CONFIRM)) {
-      console.log(this.skippableDelayedCall?.getProgress());
       this.skippableDelayedCall?.callback();
       this.skippableDelayedCall?.remove();
       this.skippableDelayedCall = undefined;

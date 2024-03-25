@@ -76,9 +76,6 @@ export default class BlinkingText extends Phaser.GameObjects.Container {
     this.add(this.scoreText);
     this.setPosition(this.x + (this.referencePosition.x ?? 0), this.y + (this.referencePosition.y ?? 0));
 
-    console.log(this.x + (this.referencePosition.x ?? 0));
-    console.log(this.y + (this.referencePosition.y ?? 0));
-
     if (!options || !options.manualStart) {
       this.start();
     }

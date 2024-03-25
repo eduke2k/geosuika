@@ -300,7 +300,6 @@ export class MenuList extends Phaser.GameObjects.Container {
   private focusFirstItem(): void {
     if (!this.getFocusedItem()) {
       const index = this.items.findIndex(item => item.enabled);
-      console.log(this.items.findIndex(item => item.enabled));
       if (index > -1) {
         this.items[index].focus();
       }
