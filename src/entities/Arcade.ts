@@ -94,7 +94,6 @@ export default class Arcade extends InteractableGameObject {
     // this.highscoreTextfield.start();
     if (!this.arcadeInfo) this.arcadeInfo = (this.scene.scene.get('hud-scene') as HUDScene).getArcadeInfo(this);
 
-    console.log(this.arcadeInfo);
     this.arcadeInfo.show();
   }
 

@@ -102,7 +102,7 @@ import { gongEffectSFXConfig } from '../const/gongEffectSFX';
 import CirclingDotsFX from '../shaders/CirclingDotsFX';
 import { scaleNumberRange } from '../functions/numbers';
 import BaseScene from './BaseScene';
-import { OPTION_KEYS } from '../const/const';
+import { NATIVE_AR, OPTION_KEYS } from '../const/const';
 
 const skipAnimation = false;
 
@@ -135,7 +135,7 @@ export default class BootScene extends BaseScene {
     this.circlingDotsFX = new CirclingDotsFX(this, 0.05, this.game.canvas.width * postFXResolution, this.game.canvas.height * postFXResolution);
     this.circlingDotsFXImage = this.circlingDotsFX.createShaderImage();
     this.circlingDotsFXImage.setPosition(this.game.canvas.width / 2, this.game.canvas.height / 2);
-    this.circlingDotsFXImage.setDisplaySize(this.game.canvas.width, this.game.canvas.width / (16/9));
+    this.circlingDotsFXImage.setDisplaySize(this.game.canvas.width, this.game.canvas.width / NATIVE_AR);
 
 		this.percentageText = this.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2, '0%', { fontFamily: 'Arial', fontSize: this.scaled(12), color: 'white' }).setOrigin(0.5, 0.5).setAlign('center')
 
@@ -333,8 +333,8 @@ export default class BootScene extends BaseScene {
 			}
 		})
 
-    // this.scene.start('main-menu-scene').remove();
+    this.scene.start('main-menu-scene').remove();
 		// this.scene.start('logos-scene').remove();
-		this.scene.launch('game-scene').launch('hud-scene').remove();
+		// this.scene.launch('game-scene').launch('hud-scene').remove();
   }
 }

@@ -39,7 +39,7 @@ export class Instrument {
         start: this.audioMarkerDuration * i
       }));
     }
-    console.log(`-----registered new instrument: ${this.key}-----`);
+    // console.log(`-----registered new instrument: ${this.key}-----`);
   }
 
   private generateChordIndices (): Record<string, number[]> {

@@ -672,7 +672,7 @@ export default class GameScene extends BaseScene {
 		map.tilesets.forEach(t => {
 			// This will determine if the double resolution tilemap images are being used or not. Double resoluton means the tileset image config needs
 			// to be doubled as well
-			const scale = this.game.canvas.height > 720 ? 2 : 1;
+			const scale = 1;
 			const tileset = map.addTilesetImage(t.name, undefined, map.tileHeight * scale, map.tileHeight * scale, t.tileMargin * scale, t.tileSpacing * scale);
 			if (tileset) this.tilesets[t.name] = tileset;
 		});
