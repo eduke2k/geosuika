@@ -6,6 +6,8 @@ import ArcadePNG from './../assets/arcade.png';
 import ArcadeJSON from './../assets/arcade.json';
 import EggsPNG from './../assets/eggs.png';
 import EggsJSON from './../assets/eggs.json';
+import ShrinesPNG from './../assets/shrines.png';
+import ShrinesJSON from './../assets/shrines.json';
 import YatoPNG from './../assets/yato.png';
 import YatoJSON from './../assets/yato.json';
 import DogPNG from './../assets/dog.png';
@@ -150,6 +152,7 @@ export default class BootScene extends BaseScene {
 
 		// IMPORTANT: When adding new aseprite sprites, don't forget to load their animations in the create-method.
 		this.load.aseprite('arcade', ArcadePNG, ArcadeJSON);
+		this.load.aseprite('shrines', ShrinesPNG, ShrinesJSON);
 		this.load.aseprite('eggs', EggsPNG, EggsJSON);
 		this.load.aseprite('yato', YatoPNG, YatoJSON);
 		this.load.aseprite('dog', DogPNG, DogJSON);
@@ -290,7 +293,7 @@ export default class BootScene extends BaseScene {
 		console.log('---finished loading instruments');
 
 		this.anims.createFromAseprite('dog');
-		this.anims.createFromAseprite('eggs');
+		this.anims.createFromAseprite('shrines');
 		this.anims.createFromAseprite('flags');
 		this.anims.createFromAseprite('japanFood');
 		this.anims.createFromAseprite('ducks');
@@ -333,8 +336,8 @@ export default class BootScene extends BaseScene {
 			}
 		})
 
-    this.scene.start('main-menu-scene').remove();
+    // this.scene.start('main-menu-scene').remove();
 		// this.scene.start('logos-scene').remove();
-		// this.scene.launch('game-scene').launch('hud-scene').remove();
+		this.scene.launch('hud-scene').launch('game-scene').remove();
   }
 }

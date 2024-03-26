@@ -21,12 +21,6 @@ import { NATIVE_HEIGHT, NATIVE_WIDTH } from './const/const'
 const width = NATIVE_WIDTH;
 const height = NATIVE_HEIGHT;
 
-window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'http://localhost:8080'); // Community egg
-window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'https://geotastic.net'); // Community egg
-
-window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'http://localhost:8080'); // Suika egg
-window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'https://geotastic.net'); // Suika egg
-
 const config: Phaser.Types.Core.GameConfig = {
 	type: Phaser.AUTO,
 	parent: 'geosuika',
@@ -58,14 +52,14 @@ const config: Phaser.Types.Core.GameConfig = {
 			},
 			positionIterations: 8,
 			velocityIterations: 8,
-			// debug: {
-			// 	showSensors: true,
-			// 	// showCollisions: true,
-			// 	showVelocity: true,
-			// 	showBounds: true,
-			// 	showSeparation: false,
-			// 	showBody: true,
-			// }
+			debug: {
+				showSensors: true,
+				// showCollisions: true,
+				showVelocity: true,
+				showBounds: true,
+				showSeparation: false,
+				showBody: true,
+			}
 		}
 	},
 	scene: [BootScene, LogosScene, MainMenuScene, GameScene, DialogScene, HUDScene, GameOverScene, PauseScene, OptionsScene]

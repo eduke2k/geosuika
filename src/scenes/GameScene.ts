@@ -28,6 +28,7 @@ import EasterEgg from '../entities/EasterEgg';
 import InteractableGameObject from '../entities/InteractableGameObject';
 import HUDScene from './HUDScene';
 import GenericInteractable from '../entities/GenericInteractable';
+import Shrine, { ShrineTag } from '../entities/Shrine';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -40,7 +41,6 @@ type LevelBounds = {
 	ambientColor?: string;
 	rect: Phaser.Geom.Rectangle;
 }
-
 
 export default class GameScene extends BaseScene {
 	public state: GameSceneState = 'play';
@@ -70,6 +70,24 @@ export default class GameScene extends BaseScene {
 	private staticOneWayPlatforms: StaticOneWayPlatform[] = [];
 	public bokehEffect: Phaser.FX.Bokeh | undefined;
 
+	// Collectibles
+	public collectibles: Record<string, boolean> = {
+		easteregg: false,
+		tentacle: false,
+		geotastic: false,
+		puntoffel: false,
+		elbfoxx: false,
+		achan: false,
+		para: false,
+		lisa: false,
+		spielzwerg: false,
+		ude: false,
+		jenell: false,
+		rbtv: false,
+		renato: false,
+		haon: false
+	};
+
 	// Arrays
 	public interactablesInRange: InteractableGameObject[] = [];
 
@@ -82,6 +100,20 @@ export default class GameScene extends BaseScene {
 
 	public getState (): GameSceneState {
 		return this.state;
+	}
+
+	public setCollected (eggKey: string): void {
+		if (this.collectibles[eggKey] !== undefined) this.collectibles[eggKey] = true;
+
+		const collected = Object.values(this.collectibles).filter(c => c === true).length;
+		const total = Object.keys(this.collectibles).length;
+
+		(this.scene.get('hud-scene') as HUDScene).updateCollectiblesAmount(collected, total);
+
+		if (collected === total) {
+			window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'http://localhost:8080'); // Community egg
+			window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'https://geotastic.net'); // Community egg
+		}
 	}
 
 	public setTimeScaleFromTween (tweenValue: number, start: number, end: number): void {
@@ -134,7 +166,7 @@ export default class GameScene extends BaseScene {
 		});
 	}
 
-	public startLayerChange (fadeIn = false): void {
+	public startLayerChange (target: string): void {
 		this.riserSound?.play();
 		this.getPlayerCharacter()?.setFreezeInteract(true);
 		const duration = 1000;
@@ -154,42 +186,29 @@ export default class GameScene extends BaseScene {
 			},
 			onComplete: () => {
 				this.setTimeScale(0.05);
-				this.nextLayer(1);
+				this.toggleLayer(target);
 
-				if (fadeIn) {
-					this.tweens.addCounter({
-						from: 0,
-						to: 1,
-						duration: duration,
-						ease: Phaser.Math.Easing.Sine.In,
-						onUpdate: (tween) => {
-							this.setTimeScaleFromTween(tween.getValue(), 0.05, 1);
-							this.playerLight?.setRadius(tween.getValue() * currentPlayerLightRadius);
-							this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(chroma.mix('#000000', currentAmbient, tween.getValue()).hex()).color);
-							this.chromaticPostFX?.setStrength(10 - tween.getValue() * 9);
-						},
-						onComplete: () => {
-							this.setTimeScale(1);
-							this.getPlayerCharacter()?.setFreezeInteract(true);
-						}
-					});
-				} else {
-					this.getPlayerCharacter()?.setFreezeInteract(false);
-					this.setTimeScale(1);
-					this.playerLight?.setRadius(currentPlayerLightRadius);
-					this.chromaticPostFX?.setStrength(CHROMATIC_BASE_STRENGTH);
-				}
+				this.getPlayerCharacter()?.setFreezeInteract(false);
+				this.setTimeScale(1);
+				this.playerLight?.setRadius(currentPlayerLightRadius);
+				this.chromaticPostFX?.setStrength(CHROMATIC_BASE_STRENGTH);
 			}
 		});
 	}
 
-	public nextLayer (_direction: -1 | 1) {
-		const newLayer = this.getCurrentMapLayer() === 'main' ? 'japan' : 'main';
+	public toggleLayer (targetLayer: string): void {
 		this.breakerSound?.play();
-
 		this.unloadActiveWorldLayer();
-		this.loadInWorldLayer(newLayer);
+		this.loadInWorldLayer(targetLayer);
 	}
+
+	// public nextLayer (_direction: -1 | 1) {
+	// 	const newLayer = this.getCurrentMapLayer() === 'main' ? 'japan' : 'main';
+	// 	this.breakerSound?.play();
+
+	// 	this.unloadActiveWorldLayer();
+	// 	this.loadInWorldLayer(newLayer);
+	// }
 
 	public endLayerChange (): void {
 		this.state = 'play';
@@ -376,6 +395,9 @@ export default class GameScene extends BaseScene {
 		});
 		// this.scene.get('gameover-scene')?.
 
+		this.petalEmitter.setIntesity(0);
+		this.petalEmitter.resetTint();
+
 		this.setBokehEffect(2, 1000, Phaser.Math.Easing.Sine.InOut);
 		this.ignoreInputs = true;
 		// this.time.delayedCall(1000, () => {
@@ -421,15 +443,7 @@ export default class GameScene extends BaseScene {
 		// Add available map layers in correct order to rendering pipe
 		this.tileSetLogic(this.map.layers.find(l => l.name.startsWith(`${layerName}_background`)));
 		this.tileSetLogic(this.map.layers.find(l => l.name.startsWith(`${layerName}_terrain`)));
-
-		// this.tilemapLayers.forEach(tl => {
-		// 	tl.forEachTile(t => {
-		// 		t.properties.progress = 0;
-		// 		t.alpha = 0;
-		// 		t.properties.originalPixelX = t.x * t.baseWidth;
-		// 		t.properties.originalPixelY = t.y * t.baseHeight;
-		// 	});
-		// });
+		this.tileSetLogic(this.map.layers.find(l => l.name.startsWith(`${layerName}_foreground`)));
 
 		// Generate map collisions from object layer
 		const Body = new Phaser.Physics.Matter.MatterPhysics(this).body;
@@ -484,12 +498,13 @@ export default class GameScene extends BaseScene {
 		// Apply new camera bounds if player character is within one
 		const currentBounds = this.getFirstRectWithinBounds(bounds, { x: this.playerCharacter?.getBody()?.position.x ?? 0, y: this.playerCharacter?.getBody()?.position.y ?? 0 });
 		this.cameras.main.setBounds(currentBounds.rect.x, currentBounds.rect.y, currentBounds.rect.width, currentBounds.rect.height);
+		this.cameras.main.setBackgroundColor('#0a0a0a');
 		const hex = currentBounds.ambientColor ? `#${currentBounds.ambientColor?.substring(3)}` : '#000000';
 		this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(hex).color);
 
 		if (objectLayer) {
 			objectLayer.objects.forEach(o => {
-				if (['bucket', 'arcade', 'character', 'staticObject', 'object', 'soundSource2d', 'waterShader'].includes(o.type) && currentBounds.rect.contains(o.x ?? 0, o.y ?? 0)) {
+				if (['bucket', 'arcade', 'character', 'staticObject', 'object', 'soundSource2d', 'shrine'].includes(o.type) && currentBounds.rect.contains(o.x ?? 0, o.y ?? 0)) {
 					switch (o.type) {
 						case 'character': {	charactersQueue.push(o); break;	}
 						case 'staticObject': { staticObjectsQueue.push(o); break; }
@@ -498,7 +513,7 @@ export default class GameScene extends BaseScene {
 						case 'bucket': { bucketQueue.push(o); break; }
 						case 'arcade': { arcadesQueue.push(o); break; }
 						case 'soundSource2d': { soundSource2dQueue.push(o); break; }
-						case 'waterShader': { waterShaderQueue.push(o); break; }
+						case 'shrine': { objectsQueue.push(o); break; }
 					}
 				}
 			});
@@ -515,7 +530,18 @@ export default class GameScene extends BaseScene {
 
 		objectsQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
+			console.log(properties);
 			switch (o.name) {
+				case 'shrine': {
+					this.objects.push(new Shrine(
+						this,
+						o.x ?? 0,
+						o.y ?? 0,
+						properties.frame ? (properties.frame.toString() as ShrineTag) : 'tori',
+						properties.target ? (properties.target.toString() as string) : '',
+					));
+					break;
+				}
 				case 'generic': {
 					this.objects.push(new GenericInteractable(
 						this,
@@ -528,6 +554,7 @@ export default class GameScene extends BaseScene {
 						properties.spriteKey ? (properties.spriteKey as string) : '',
 						properties.frame ? (properties.frame.toString() as string) : 0,
 						properties.message ? (properties.message.toString() as string) : 'Fallback Text',
+						properties.collectible !== undefined ? (properties.collectible as boolean) : false,
 						properties.mirror !== undefined ? (properties.mirror as boolean) : false,
 					));
 					break;
@@ -701,6 +728,9 @@ export default class GameScene extends BaseScene {
 
 	public create () {
 		super.create();
+
+		// Setup initail HUD
+		(this.scene.get('hud-scene') as HUDScene).updateCollectiblesAmount(0, Object.keys(this.collectibles).length);
 
 		this.breakerSound = this.soundManager?.sound.add('sfx:breaker');
 		this.riserSound = this.soundManager?.sound.add('sfx:riser');

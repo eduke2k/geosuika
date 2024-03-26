@@ -25,6 +25,7 @@ import { DropBucketShockwave } from "../../models/DropBucketShockwave";
 import BaseScene from "../../scenes/BaseScene";
 import HUDScene from "../../scenes/HUDScene";
 import { easterEggSet } from "../../config/easterEggs";
+import FragmentsLabel from "./FragmentsLabel";
 
 export const GAME_OVER_TIME = 3000;
 export const DANGER_SPARK_TIME = 100;
@@ -67,6 +68,8 @@ export enum BucketPhase {
  * Drop Bucket in a classic suikagame style
  */
 export default class DropBucket extends Phaser.Physics.Matter.Image {
+  private lastYPos: number;
+  private lastXPos: number;
   private options: DropBucketOptions;
 	private endY: number;
   private endDroppablesLength = 0;
@@ -87,6 +90,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
   // public effectCircles: TilemapLayerEffectCircle[] = [];
   public dangerLine: Phaser.GameObjects.Sprite;
   public scoreLabel: ScoreLabel;
+  public fragmentsLabel: FragmentsLabel;
   public bucketMenu: BucketMenu;
   public scoreProgressBar: ScoreProgressBar;
   public progressCircle: ProgressCircle;
@@ -135,6 +139,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.elevatorDistance = options.elevatorDistance ?? 0;
     this.visible = false;
     this.bgmKey = options.bgmKey;
+    this.lastXPos = this.body?.position.x ?? 0;
+    this.lastYPos = this.body?.position.y ?? 0;
 
     this.bucketWidth = options.width;
     this.bucketHeight = options.height;
@@ -145,6 +151,11 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     // Create Score Label
 		this.scoreLabel = new ScoreLabel(this.scene, 0, 0);
     this.scoreLabel.visible = true;
+    this.setDepth(Depths.OBJECT_LAYER);
+
+    // Crate Fragments Label
+    this.fragmentsLabel = new FragmentsLabel(this.scene, this.getBGMConfig(), this.targetScore, 0, 0);
+    this.fragmentsLabel.visible = true;
     this.setDepth(Depths.OBJECT_LAYER);
 
     // Create Bucket Menu
@@ -230,6 +241,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.dangerLine.alpha = 0;
     this.scoreLabel.setDepth(2);
     this.scoreLabel.alpha = 0;
+    this.fragmentsLabel.setDepth(3);
+    this.fragmentsLabel.alpha = 0;
   }
 
   public isActive (): boolean {
@@ -293,6 +306,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
         this.progressCircle.alpha = tween.getValue();
         this.dangerLine.alpha = tween.getValue();
         this.scoreLabel.alpha = tween.getValue();
+        this.fragmentsLabel.alpha = tween.getValue();
         this.bucketMenu.alpha = tween.getValue();
         if (this.nextDroppable) this.nextDroppable.alpha = tween.getValue();
       })
@@ -530,6 +544,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       const volume = 0.5 * this.bucketProgressRatio + 0.5;
       instrument.playRandomNoteInChord(this.bgm.getCurrentChord(), this.getScene(), 0, volume);
     }
+    
+    this.fragmentsLabel.rankUp();
   }
 
 	public moveToAbsoluteY (targetY: number, duration = 15000): void {
@@ -634,6 +650,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
     // Do Score calculation
     const scoreObject = this.scoreLabel.grantScore(nextTier);
+    this.fragmentsLabel.updateScore(scoreObject.totalScore);
 
     // Rank up is only available in drop phase
     if (this.currentPhase === BucketPhase.DROP) {
@@ -664,6 +681,12 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
 
     // Trigger Sound Effect
     this.playMergeSound(scoreObject, spawnPosition.x);
+
+    // Special Easter Egg challenge check on last tier. Remove when appropriate
+    if (nextTier === this.getMaxTier() && this.name === 'easterEggArcade') {
+      window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'http://localhost:8080'); // Suika egg
+      window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'https://geotastic.net'); // Suika egg
+    }
 
     if (this.currentPhase === BucketPhase.DESTROY) {
       // this.updateElevatorPosition();
@@ -974,6 +997,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     if (this.dangerLineBody) this.scene.matter.world.remove(this.dangerLineBody);
     if (this.dangerLine) this.dangerLine.destroy();
     this.scoreLabel.destroy();
+    this.fragmentsLabel.destroy();
     this.bucketMenu.destroy();
     this.scoreProgressBar.destroy();
     this.progressCircle.destroy();
@@ -1028,20 +1052,27 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     //   this.scene.cameras.main.setZoom(this.getGameScene().scaled(this.targetZoom));
     // }
 
-    // Set Score position
-    syncTranslation(this.scoreLabel, this.dropSensorBody, this.getBody().angle, { x: (((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) + this.bucketThickness + 32), y: -(this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y) / 2 });
+    // Sync positions ONLY when Bucket has moved
+    if (this.body?.position.x !== this.lastXPos || this.body?.position.y !== this.lastYPos) {
+      console.log('update pos');
+      // Set Score position
+      syncTranslation(this.scoreLabel, this.dropSensorBody, this.getBody().angle, { x: (((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) + this.bucketThickness + 32), y: -(this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y) / 2 });
 
-    // Set Bucket Menu position
-    syncTranslation(this.bucketMenu, this.dropSensorBody, this.getBody().angle, { x: (((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) + this.bucketThickness + 32), y: 100 -(this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y) / 2 });
-    
-    // Set bucket image position
-    syncTranslation(this.bucketImage, this.floorBody, this.getBody().angle);
+      // Set Fragments position
+      syncTranslation(this.fragmentsLabel, this.dropSensorBody, this.getBody().angle, { x: (((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) + this.bucketThickness + 32), y: 50 -(this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y) / 2 });
 
-    // Set score progress position
-    syncTranslation(this.scoreProgressBar, this.leftWallBody, this.getBody().angle);
+      // Set Bucket Menu position
+      syncTranslation(this.bucketMenu, this.dropSensorBody, this.getBody().angle, { x: (((this.dropSensorBody.bounds.max.x - this.dropSensorBody.bounds.min.x) / 2) + this.bucketThickness + 32), y: 150 - (this.dropSensorBody.bounds.max.y - this.dropSensorBody.bounds.min.y) / 2 });
+      
+      // Set bucket image position
+      syncTranslation(this.bucketImage, this.floorBody, this.getBody().angle);
 
-    // Set progress circle position
-    syncTranslation(this.progressCircle, this.floorBody, this.getBody().angle);
+      // Set score progress position
+      syncTranslation(this.scoreProgressBar, this.leftWallBody, this.getBody().angle);
+
+      // Set progress circle position
+      syncTranslation(this.progressCircle, this.floorBody, this.getBody().angle);
+    }
 
     // Set danger line position and appearneace
     this.dangerLine.setX(this.dangerLineBody.position.x);
@@ -1112,6 +1143,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
         });
       }
     }
+
+    // Update position cache
+    this.lastXPos = this.body?.position.x ?? 0;
+    this.lastYPos = this.body?.position.y ?? 0;
   }
 
   public static getDroppableSetfromName (setName: string): DroppableSet {

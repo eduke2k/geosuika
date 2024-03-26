@@ -194,9 +194,9 @@ export default class Character extends InteractableGameObject {
       }
 
       // Map layer changing mode
-      if (!this.freezeInteract && this.getGameScene()?.inputController?.justDown(Action.LAYER_CHANGE)) {
-        this.getGameScene()?.startLayerChange();
-      }
+      // if (!this.freezeInteract && this.getGameScene()?.inputController?.justDown(Action.LAYER_CHANGE)) {
+      //   this.getGameScene()?.startLayerChange();
+      // }
     }
 
     // State Changes

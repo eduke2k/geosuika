@@ -4,6 +4,8 @@ import BaseScene from './BaseScene';
 import { ArcadeInfo } from '../entities/HUD/ArcadeInfo';
 import BlinkingText, { BlinkingTextOptions } from '../entities/BlinkingText';
 import { FontName } from '../types';
+import Character from '../entities/Character';
+import { SpeechBubble } from '../entities/HUD/SpeechBubble';
 
 export default class HUDScene extends BaseScene {
 	public debugText!: Phaser.GameObjects.Text;
@@ -11,6 +13,9 @@ export default class HUDScene extends BaseScene {
 	private arcadeInfos: ArcadeInfo[] = [];
 	private blinkingTexts: BlinkingText[] = [];
 	public interactionLabel!: Phaser.GameObjects.Text;
+	public collectiblesLabel!: Phaser.GameObjects.Text;
+	public collectiblesValue!: Phaser.GameObjects.Text;
+	public speechBubble!: SpeechBubble;
 
 	constructor() {
 		super({ key: 'hud-scene' })
@@ -25,8 +30,26 @@ export default class HUDScene extends BaseScene {
     this.interactionLabel.setFontSize(`${this.scaled(20)}px`);
     this.interactionLabel.alpha = 1;
 
+		this.collectiblesLabel = this.add.text(this.scaled(20), this.scaled(20), 'Collectibles', { align: "left", color: '#8c8c8c' }).setOrigin(0, 0);
+    this.collectiblesLabel.setFontFamily(FontName.REGULAR);
+    this.collectiblesLabel.setFontSize(`${this.scaled(20)}px`);
+
+		this.collectiblesValue = this.add.text(this.scaled(20), this.collectiblesLabel.y + this.collectiblesLabel.height, '0 / 10', { align: "left" }).setOrigin(0, 0);
+    this.collectiblesValue.setFontFamily(FontName.REGULAR);
+    this.collectiblesValue.setFontSize(`${this.scaled(30)}px`);
+
+		this.speechBubble = new SpeechBubble(this);
+
     this.scene.bringToTop();
   }
+
+	public updateCollectiblesAmount (amount: number, total: number): void {
+		this.collectiblesValue.text = `${amount} / ${total}`;
+	}
+
+	public triggerSpeechBubble (referenceObject: Character, text: string): void {
+		this.speechBubble.trigger(referenceObject, text);
+	}
 
 	public addDebugText (text: string): void {
 		this.debugText.setText(text);
@@ -51,5 +74,6 @@ export default class HUDScene extends BaseScene {
 	public update (time: number, delta: number): void {
 		this.fpsText.text = `${Math.round(this.game.loop.actualFps)} (${this.game.loop.fpsLimit}) fps\nFrame ${this.game.loop.frame}`;
 		this.arcadeInfos.forEach(a => a.update(time, delta));
+		this.speechBubble.update(time, delta);
 	}
 }

@@ -33,11 +33,11 @@
             "expandedObjectLayers": [
                 12
             ],
-            "scale": 0.33,
-            "selectedLayer": 3,
+            "scale": 2,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 946.969696969697,
-                "y": 3884.848484848485
+                "x": 3766.25,
+                "y": 1542.5
             }
         },
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_japan": {
@@ -45,6 +45,9 @@
             "scaleInEditor": 1
         },
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_main": {
+            "scaleInDock": 1
+        },
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_street": {
             "scaleInDock": 1
         }
     },
@@ -55,8 +58,8 @@
     "project": "japan.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json",
-        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json"
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json",
+        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json"
     ],
     "tileset.embedInMap": true,
     "tileset.margin": 1,

@@ -48,6 +48,10 @@ export class PetalEmitter {
     this.emitting = intensity > 0;
   }
 
+  public stop (): void {
+    this.setIntesity(0);
+  }
+
   public getIntensity (): number {
     return this.intensity;
   }

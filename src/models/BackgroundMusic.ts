@@ -187,6 +187,21 @@ export class BackgroundMusic {
         scene.load.audio('bgm02-voice', '/bgm/bgm02/voice.ogg');
         break;
       }
+      case 'lumia': {
+        scene.load.audio('lumia-drums', '/bgm/lumia/drums.ogg');
+        scene.load.audio('lumia-bass', '/bgm/lumia/bass.ogg');
+        scene.load.audio('lumia-pads', '/bgm/lumia/pads.ogg');
+        scene.load.audio('lumia-riff3', '/bgm/lumia/riff3.ogg');
+        scene.load.audio('lumia-riff1', '/bgm/lumia/riff1.ogg');
+        scene.load.audio('lumia-music-box', '/bgm/lumia/music-box.ogg');
+        scene.load.audio('lumia-lead1', '/bgm/lumia/lead1.ogg');
+        scene.load.audio('lumia-lead2', '/bgm/lumia/lead2.ogg');
+        scene.load.audio('lumia-cello', '/bgm/lumia/cello.ogg');
+        scene.load.audio('lumia-violin', '/bgm/lumia/violin.ogg');
+        scene.load.audio('lumia-solo', '/bgm/lumia/solo.ogg');
+        scene.load.audio('lumia-voice', '/bgm/lumia/voice.ogg');
+        break;
+      }
     }
 
     const progressCallback = (value: number) => { onProgress(value); }

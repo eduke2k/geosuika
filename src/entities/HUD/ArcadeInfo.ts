@@ -75,7 +75,6 @@ export class ArcadeInfo {
   }
 
   public show (): void {
-    console.log('arcade info show');
     this.fading = false;
     this.reveal = undefined;
     this.setVisible(true);
