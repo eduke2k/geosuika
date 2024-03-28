@@ -3,7 +3,6 @@ import { StepSoundBehaviour } from "../behaviour/StepSoundBehaviour";
 import { getOtherInteractableGameObjectsFromCollisionPairs } from "../functions/helper";
 import { Action } from "../models/Input";
 import { SFX } from "../models/SFX";
-import GameScene from "../scenes/GameScene";
 import InteractableGameObject from "./InteractableGameObject";
 
 const JUMP_PRESS_TIME = 150;
@@ -40,6 +39,7 @@ export default class Character extends InteractableGameObject {
   
   constructor(
     scene: Phaser.Scene,
+    id: number,
     x: number,
     y: number,
     name: string,
@@ -47,7 +47,7 @@ export default class Character extends InteractableGameObject {
     sfxKey: string,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, name, sprite, undefined, options);
+    super(scene, id, x, y, name, sprite, undefined, options);
     this.setBounce(0);
     this.setFriction(0);
     this.setPosition(x, y);
@@ -68,6 +68,7 @@ export default class Character extends InteractableGameObject {
     this.scene.matter.world.on('collisionstart', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
       // Check if player is within reach of interactbale game objects
       if (this.playerControlled) {
+        // console.log('collisionstart', event);
         const gameObjects = getOtherInteractableGameObjectsFromCollisionPairs<this>(this, event.pairs);
         if (gameObjects.length > 0) {
           gameObjects[0].onCollisionStart(this);
@@ -87,7 +88,6 @@ export default class Character extends InteractableGameObject {
     });
 
     this.scene.matter.world.on('collisionactive', (event: Phaser.Physics.Matter.Events.CollisionActiveEvent) => {
-      // console.log('collisionactive', event);
       const terrainCollisions = event.pairs.filter(pair => 
         (BODY_LABELS_FOR_GROUND_CHECK.includes(pair.bodyA.label) && !pair.bodyA.isSensor && pair.bodyB.gameObject === this) ||
         (BODY_LABELS_FOR_GROUND_CHECK.includes(pair.bodyB.label) && !pair.bodyB.isSensor && pair.bodyA.gameObject === this)
@@ -151,7 +151,7 @@ export default class Character extends InteractableGameObject {
         this.getGameScene()?.dropDownOnewayPlatform(this.groundBody.id);
       } else {
         // Regualar jump
-        if (this.sfxBank) this.sfxBank.playRandomSFXFromCategory(this.scene as GameScene, 'jump');
+        // if (this.sfxBank) this.sfxBank.playRandomSFXFromCategory(this.scene as GameScene, 'jump');
         this.setVelocityY(-this.maxJumpStrength);
         this.justJumped = true;
         this.longPressJumpTime = 0;

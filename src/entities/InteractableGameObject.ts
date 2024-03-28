@@ -58,7 +58,6 @@ export default class InteractableGameObject extends GameObject {
   }
 
   public onCollisionEnd (_other?: Character): void {
-    console.log('onCollisionEnd', this.name);
     if (this.isInteractable()) {
       const interactablesInRange = this.getGameScene().interactablesInRange;
       const index = interactablesInRange.findIndex((a) => a === this);
@@ -79,6 +78,7 @@ export default class InteractableGameObject extends GameObject {
       this.onCollisionEnd();
       this.scene.matter.world.remove(this.sensor);
     }
+
     super.destroy();
   }
 

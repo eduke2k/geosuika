@@ -17,6 +17,7 @@ export default class Arcade extends InteractableGameObject {
 
   constructor(
     scene: Phaser.Scene,
+    id: number,
     x: number,
     y: number,
     name: string,
@@ -25,7 +26,7 @@ export default class Arcade extends InteractableGameObject {
     mirror?: boolean,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, name, 'arcade', frame, options);
+    super(scene, id, x, y, name, 'arcade', frame, options);
     this.direction = mirror ? -1 : 1;
     this.interactable = true;
     this.name = `${name}-${this.scene.game.getTime()}`;

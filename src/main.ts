@@ -52,14 +52,14 @@ const config: Phaser.Types.Core.GameConfig = {
 			},
 			positionIterations: 8,
 			velocityIterations: 8,
-			debug: {
-				showSensors: true,
-				// showCollisions: true,
-				showVelocity: true,
-				showBounds: true,
-				showSeparation: false,
-				showBody: true,
-			}
+			// debug: {
+			// 	showSensors: true,
+			// 	// showCollisions: true,
+			// 	showVelocity: true,
+			// 	showBounds: true,
+			// 	showSeparation: false,
+			// 	showBody: true,
+			// }
 		}
 	},
 	scene: [BootScene, LogosScene, MainMenuScene, GameScene, DialogScene, HUDScene, GameOverScene, PauseScene, OptionsScene]

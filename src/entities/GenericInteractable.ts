@@ -7,9 +7,11 @@ import InteractableGameObject from "./InteractableGameObject";
 export default class GenericInteractable extends InteractableGameObject {
   public text: string;
   public collectible: boolean;
+  private light: Phaser.GameObjects.Light | undefined;
 
   constructor(
     scene: Phaser.Scene,
+    id: number,
     x: number,
     y: number,
     w: number,
@@ -21,9 +23,12 @@ export default class GenericInteractable extends InteractableGameObject {
     text: string,
     collectible?: boolean,
     mirror?: boolean,
+    light?: boolean,
+    lightColor?: string,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, name, spriteKey, frame, options);
+    super(scene, id, x, y, name, spriteKey, frame, options);
+    this.id = id;
     this.direction = mirror ? -1 : 1;
     this.interactable = true;
     this.name = name;
@@ -73,6 +78,11 @@ export default class GenericInteractable extends InteractableGameObject {
     });
 
     this.sensor.gameObject = this;
+
+    if (light) {
+      const color = lightColor ? Phaser.Display.Color.HexStringToColor(`#${lightColor.substring(3)}`).color : 0xFFFFFF;
+      this.light = this.scene.lights.addLight(x, y, 250, color, 1);
+    }
   }
   
   private triggerExplodeParticles (): void {
@@ -103,6 +113,11 @@ export default class GenericInteractable extends InteractableGameObject {
     }
   }
 
+  public destroy (): void {
+    if (this.light && this.scene) this.scene.lights.removeLight(this.light);
+    super.destroy();
+  }
+
   public trigger (referenceCharacter: Character): void {
     if (this.text) {
       (this.scene.scene.get('hud-scene') as HUDScene).triggerSpeechBubble(referenceCharacter, this.text);
@@ -112,7 +127,14 @@ export default class GenericInteractable extends InteractableGameObject {
       this.playCollectSound();
       this.getGameScene().setCollected(this.name);
       this.triggerExplodeParticles();
+      this.getGameScene().syncObjectState({ id: this.id, destroyed: true });
+      this.getGameScene().removeFromObjects(this);
       this.destroy();
     }
+  }
+
+  public update (time: number, delta: number): void {
+    super.update(time, delta);
+    if (this.light) this.light.setPosition(this.x, this.y);
   }
 }

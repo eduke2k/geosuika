@@ -9,11 +9,12 @@ const sensorPadding = 20;
 export default class Dog extends Character {
   constructor(
     scene: Phaser.Scene,
+    id: number,
     x: number,
     y: number,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, 'dog', 'flags', '', options);
+    super(scene, id, x, y, 'dog', 'flags', '', options);
     this.movementBehaviour = new MovementBehaviour(this);
     this.setPipeline('Light2D');
     this.interactable = true;

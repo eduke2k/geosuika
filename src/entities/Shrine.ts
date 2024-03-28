@@ -10,13 +10,14 @@ export default class Shrine extends InteractableGameObject {
 
   constructor(
     scene: Phaser.Scene,
+    id: number,
     x: number,
     y: number,
     tag: ShrineTag,
     target: string,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, `shrine`, 'shrine', '', options);
+    super(scene, id, x, y, `shrine`, 'shrine', '', options);
     this.direction = 1;
     this.interactable = true;
     this.tag = tag;

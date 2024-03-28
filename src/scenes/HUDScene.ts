@@ -8,8 +8,8 @@ import Character from '../entities/Character';
 import { SpeechBubble } from '../entities/HUD/SpeechBubble';
 
 export default class HUDScene extends BaseScene {
-	public debugText!: Phaser.GameObjects.Text;
-	public fpsText!: Phaser.GameObjects.Text;
+	public debugText?: Phaser.GameObjects.Text;
+	public fpsText?: Phaser.GameObjects.Text;
 	private arcadeInfos: ArcadeInfo[] = [];
 	private blinkingTexts: BlinkingText[] = [];
 	public interactionLabel!: Phaser.GameObjects.Text;
@@ -23,8 +23,8 @@ export default class HUDScene extends BaseScene {
 
 	public async create () {
 		super.create();
-		this.debugText = this.add.text(0, 0, 'Early Preview', { font: "12px Courier", align: "left" });
-		this.fpsText = this.add.text(this.game.canvas.width, 0, '45456456 fps', { font: "12px Courier", align: "right" }).setOrigin(1, 0);
+		// this.debugText = this.add.text(0, 0, 'Early Preview', { font: "12px Courier", align: "left" });
+		// this.fpsText = this.add.text(this.game.canvas.width, 0, '45456456 fps', { font: "12px Courier", align: "right" }).setOrigin(1, 0);
 		this.interactionLabel = this.add.text(this.game.canvas.width / 2, this.game.canvas.height - this.scaled(24), 'Press E to interact', { align: "center" }).setOrigin(0.5, 1);
     this.interactionLabel.setFontFamily(FontName.REGULAR);
     this.interactionLabel.setFontSize(`${this.scaled(20)}px`);
@@ -47,12 +47,12 @@ export default class HUDScene extends BaseScene {
 		this.collectiblesValue.text = `${amount} / ${total}`;
 	}
 
-	public triggerSpeechBubble (referenceObject: Character, text: string): void {
-		this.speechBubble.trigger(referenceObject, text);
+	public triggerSpeechBubble (referenceObject: Character, text: string, callback?: () => void): void {
+		this.speechBubble.trigger(referenceObject, text, callback);
 	}
 
 	public addDebugText (text: string): void {
-		this.debugText.setText(text);
+		this.debugText?.setText(text);
 	}
 
 	public addBlinkingText (text: string, position: Phaser.Types.Math.Vector2Like, options: BlinkingTextOptions): void {
@@ -72,7 +72,7 @@ export default class HUDScene extends BaseScene {
 	}
 
 	public update (time: number, delta: number): void {
-		this.fpsText.text = `${Math.round(this.game.loop.actualFps)} (${this.game.loop.fpsLimit}) fps\nFrame ${this.game.loop.frame}`;
+		this.fpsText?.setText(`${Math.round(this.game.loop.actualFps)} (${this.game.loop.fpsLimit}) fps\nFrame ${this.game.loop.frame}`);
 		this.arcadeInfos.forEach(a => a.update(time, delta));
 		this.speechBubble.update(time, delta);
 	}

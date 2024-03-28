@@ -10,11 +10,12 @@ import Character from "./Character";
 export default class Achan extends Character {
   constructor(
     scene: GameScene,
+    id: number,
     x: number,
     y: number,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, x, y, 'achan', 'creepyEasterBunny', 'sfx:achan', options);
+    super(scene, id, x, y, 'achan', 'creepyEasterBunny', 'sfx:achan', options);
     this.movementBehaviour = new MovementBehaviour(this);
     this.interactable = false;
     this.portraitKey = 'portrait:achan';

@@ -89,7 +89,7 @@ export class DialogScene extends BaseScene {
     this.twigPointer = -1;
     this.branchPointer++;
     const currentBranch = this.currentTree[this.branchPointer];
-    console.log('showNextBranchInCurrentTree current branch', currentBranch);
+    // console.log('showNextBranchInCurrentTree current branch', currentBranch);
 
     if (!currentBranch) {
       this.closeDialog();
@@ -111,8 +111,8 @@ export class DialogScene extends BaseScene {
     const currentName = branch.side === 'left' ? this.left?.name ?? '???' : this.right?.name ?? '???';
     const currentText = branch.text[this.twigPointer];
 
-    console.log('showNextTwigInBranch current currentName', currentName);
-    console.log('showNextTwigInBranch current currentText', currentText);
+    // console.log('showNextTwigInBranch current currentName', currentName);
+    // console.log('showNextTwigInBranch current currentText', currentText);
 
     if (!currentText) {
       this.showNextBranchInCurrentTree();

@@ -98,7 +98,7 @@ export default class MainMenuScene extends BaseScene {
     this.soundManager?.sound.play('sfx:drone-rise');
 
     this.time.delayedCall(duration, () => {
-      this.scene.launch('game-scene').launch('hud-scene').stop();
+      this.scene.launch('hud-scene').launch('game-scene').stop();
     });
 
     // this.tweens.addCounter({

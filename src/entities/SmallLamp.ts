@@ -24,8 +24,8 @@ export class SmallLamp extends GameObject {
 
   private baseLightRadius = 150;
 
-  public constructor (scene: GameScene, x: number, y: number, options?: SmallLampOptions) {
-    super(scene, x, y, 'smallLamp', 'smallLamp');
+  public constructor (scene: GameScene, id: number, x: number, y: number, options?: SmallLampOptions) {
+    super(scene, id, x, y, 'smallLamp', 'smallLamp');
     this.ropeLength = options?.ropeLength ?? 10;
     const Bodies = new Phaser.Physics.Matter.MatterPhysics(scene).bodies;
     const body = Bodies.rectangle(x, y + (61 / 2) + this.ropeLength, 64, 61, {

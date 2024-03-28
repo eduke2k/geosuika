@@ -25,13 +25,15 @@ export class StaticOneWayPlatform {
   private h: number;
   public body: MatterJS.BodyType;
   private isAbove = false;
+  public ignoreFallThrough = false;
 
-  public constructor (scene: GameScene, x: number, y: number, w: number, h: number) {
+  public constructor (scene: GameScene, x: number, y: number, w: number, h: number, ignoreFallThrough: boolean) {
     this.scene = scene;
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
+    this.ignoreFallThrough = ignoreFallThrough;
     this.body = this.scene.matter.add.rectangle(
       this.x + (this.w / 2),
       this.y + (this.h / 2),

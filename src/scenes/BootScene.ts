@@ -8,12 +8,18 @@ import EggsPNG from './../assets/eggs.png';
 import EggsJSON from './../assets/eggs.json';
 import ShrinesPNG from './../assets/shrines.png';
 import ShrinesJSON from './../assets/shrines.json';
+import JumpingPadPNG from './../assets/jumping-pad.png';
+import JumpingPadJSON from './../assets/jumping-pad.json';
+import CratePNG from './../assets/crate.png';
+import CrateJSON from './../assets/crate.json';
 import YatoPNG from './../assets/yato.png';
 import YatoJSON from './../assets/yato.json';
 import DogPNG from './../assets/dog.png';
 import DogJSON from './../assets/dog.json';
 import AchanPNG from './../assets/achan.png';
 import AchanJSON from './../assets/achan.json';
+import FlameBoyPNG from './../assets/flameboy.png';
+import FlameBoyJSON from './../assets/flameboy.json';
 import CreepyEasterBunnyPNG from './../assets/creepy-easter-bunny.png';
 import CreepyEasterBunnyJSON from './../assets/creepy-easter-bunny.json';
 import FlagsPNG from './../assets/flags.png';
@@ -52,6 +58,7 @@ import PortraitShibaJSON from './../assets/portrait_shiba.json';
 
 // Images
 import JapaneseHouseBucketPNG from './../assets/buckets/japanese_house.png';
+import ArcadeBucketPNG from './../assets/buckets/arcade_machine.png';
 import EarthTextureJPG from './../assets/earth.jpg';
 import NoiseTextureJPG from './../assets/noise.png';
 import LogoPNG from './../assets/logo.png';
@@ -153,10 +160,13 @@ export default class BootScene extends BaseScene {
 		// IMPORTANT: When adding new aseprite sprites, don't forget to load their animations in the create-method.
 		this.load.aseprite('arcade', ArcadePNG, ArcadeJSON);
 		this.load.aseprite('shrines', ShrinesPNG, ShrinesJSON);
+		this.load.aseprite('jumpingPad', JumpingPadPNG, JumpingPadJSON);
+		this.load.aseprite('crate', CratePNG, CrateJSON);
 		this.load.aseprite('eggs', EggsPNG, EggsJSON);
 		this.load.aseprite('yato', YatoPNG, YatoJSON);
 		this.load.aseprite('dog', DogPNG, DogJSON);
 		this.load.aseprite('achan', AchanPNG, AchanJSON);
+		this.load.aseprite('flameboy', FlameBoyPNG, FlameBoyJSON);
 		this.load.aseprite('creepyEasterBunny', CreepyEasterBunnyPNG, CreepyEasterBunnyJSON);
 		this.load.aseprite('flags', FlagsPNG, FlagsJSON);
 		this.load.aseprite('japanFood', JapanFoodPNG, JapanFoodJSON);
@@ -178,6 +188,7 @@ export default class BootScene extends BaseScene {
 
 		// Images
 		this.load.image('bucket:japanese-house', JapaneseHouseBucketPNG);
+		this.load.image('bucket:arcade', ArcadeBucketPNG);
 		this.load.image('texture:earth', EarthTextureJPG);
 		this.load.image('texture:noise', NoiseTextureJPG);
 		this.load.image('logo', LogoPNG);
@@ -294,6 +305,7 @@ export default class BootScene extends BaseScene {
 
 		this.anims.createFromAseprite('dog');
 		this.anims.createFromAseprite('shrines');
+		this.anims.createFromAseprite('jumpingPad');
 		this.anims.createFromAseprite('flags');
 		this.anims.createFromAseprite('japanFood');
 		this.anims.createFromAseprite('ducks');
@@ -336,8 +348,8 @@ export default class BootScene extends BaseScene {
 			}
 		})
 
-    // this.scene.start('main-menu-scene').remove();
+    this.scene.start('main-menu-scene').remove();
 		// this.scene.start('logos-scene').remove();
-		this.scene.launch('hud-scene').launch('game-scene').remove();
+		// this.scene.launch('hud-scene').launch('game-scene').remove();
   }
 }

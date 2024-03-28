@@ -31,7 +31,7 @@ export default class PauseScene extends BaseScene {
       this.menu.addItem({ enabled: true, key: 'retry', label: 'Restart' });
       this.menu.addItem({ enabled: true, key: 'disconnect', label: 'Disconnect' });
     }
-    this.menu.addItem({ enabled: true, key: 'controls', label: 'Controls' });
+    // this.menu.addItem({ enabled: true, key: 'controls', label: 'Controls' });
     this.menu.addItem({ enabled: true, key: 'options', label: 'Options' });
     this.menu.addItem({ enabled: true, key: 'exit', label: 'Exit Game' });
 

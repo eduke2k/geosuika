@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 // import Droppable from '../entities/Droppable';
 import DropBucket from '../entities/DropBucket/DropBucket';
-import { getNormalizedRelativePositionToCanvas, parseTiledProperties } from '../functions/helper';
+import { getNormalizedRelativePositionToCanvas, getRandomId, parseTiledProperties } from '../functions/helper';
 import { scaleNumberRange } from '../functions/numbers';
 import { PetalEmitter } from '../models/PetalEmitter';
 import chroma from 'chroma-js';
@@ -24,11 +24,15 @@ import { SoundSource2d } from '../entities/Sound/SoundSource2d';
 import { PauseSceneInitData } from './PauseScene';
 import { WaterRectangle } from '../entities/WaterRectangle';
 import BlackHoleFX from '../shaders/BlackHoleFX';
-import EasterEgg from '../entities/EasterEgg';
 import InteractableGameObject from '../entities/InteractableGameObject';
 import HUDScene from './HUDScene';
 import GenericInteractable from '../entities/GenericInteractable';
 import Shrine, { ShrineTag } from '../entities/Shrine';
+import { JumpingPad } from '../entities/JumpingPad';
+import { Crate } from '../entities/Crate';
+import { Sensor } from '../entities/Sensor';
+import Flameboy from '../entities/Flameboy';
+import { LocalStorage } from '../models/LocalStorage';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -42,12 +46,37 @@ type LevelBounds = {
 	rect: Phaser.Geom.Rectangle;
 }
 
+type ObjectState = {
+	id: number;
+	x: number;
+	y: number;
+	destroyed: boolean;
+}
+
+type MutateObjectStatePayload = {
+	id: number;
+	x?: number;
+	y?: number;
+	destroyed?: boolean;
+}
+
+type PositionReference = {
+	id: number;
+	x: number;
+	y: number;
+}
+
+export type Snapshot = {
+	collectibles: Record<string, boolean>
+}
+
 export default class GameScene extends BaseScene {
 	public state: GameSceneState = 'play';
 	public buckets: DropBucket[] = [];
 	public arcades: Arcade[] = [];
 	public objects: GameObject[] = [];
 	public characters: Character[] = [];
+	public positions: PositionReference[] = [];
 	public soundSources2d: SoundSource2d[] = [];
 	public playerCharacter: Character | undefined;
 	public petalEmitter = new PetalEmitter(this);
@@ -63,29 +92,37 @@ export default class GameScene extends BaseScene {
 	private cinematicBarsFX?: CinematicBarsFX;
 	private waterRectangles: WaterRectangle[] = [];
 
+	private objectStates: ObjectState[] = [];
+
 	// Active map stuff
 	private currentMap = '';
 	private currentMapLayer = '';
 	private staticMapCollisions: MatterJS.BodyType[] = [];
 	private staticOneWayPlatforms: StaticOneWayPlatform[] = [];
+	private sensors: Sensor[] = [];
 	public bokehEffect: Phaser.FX.Bokeh | undefined;
 
 	// Collectibles
 	public collectibles: Record<string, boolean> = {
-		easteregg: false,
-		tentacle: false,
-		geotastic: false,
-		puntoffel: false,
-		elbfoxx: false,
-		achan: false,
 		para: false,
-		lisa: false,
-		spielzwerg: false,
+		duck: false,
 		ude: false,
+		lisa: false,
 		jenell: false,
-		rbtv: false,
+		arc: false,
+		osaka: false,
+		achan: false,
+		easteregg: false,
+		lumia: false,
+		elbfoxx: false,
 		renato: false,
-		haon: false
+		haon: false,
+		puntoffel: false,
+		geotastic: false,
+		tentacle: false,
+		spielzwerg: false,
+		panda: false,
+		tape: false
 	};
 
 	// Arrays
@@ -102,6 +139,13 @@ export default class GameScene extends BaseScene {
 		return this.state;
 	}
 
+	public generateSnapshot (): string {
+		const snapshot: Snapshot = {
+			collectibles: this.collectibles
+		}
+		return JSON.stringify(snapshot);
+	}
+
 	public setCollected (eggKey: string): void {
 		if (this.collectibles[eggKey] !== undefined) this.collectibles[eggKey] = true;
 
@@ -109,6 +153,8 @@ export default class GameScene extends BaseScene {
 		const total = Object.keys(this.collectibles).length;
 
 		(this.scene.get('hud-scene') as HUDScene).updateCollectiblesAmount(collected, total);
+
+		LocalStorage.setSnapshot(this.generateSnapshot());
 
 		if (collected === total) {
 			window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'http://localhost:8080'); // Community egg
@@ -126,13 +172,6 @@ export default class GameScene extends BaseScene {
 		this.matter.world.engine.timing.timeScale = value;
 		this.anims.globalTimeScale = value;
 	}
-
-	// private getRelativePlayableCharacterPosition (): Phaser.Math.Vector2 {
-	// 	return new Phaser.Math.Vector2(
-	// 		(this.getPlayerCharacter()?.x ?? 0) - this.cameras.main.worldView.x,
-	// 		(this.getPlayerCharacter()?.y ?? 0) - this.cameras.main.worldView.y
-	// 	)
-	// }
 
 	public setCinematicBar (strength: number, duration: number): void {
 		if (!this.cinematicBarsFX) return;
@@ -407,7 +446,7 @@ export default class GameScene extends BaseScene {
 
 	public dropDownOnewayPlatform (bodyId: number): void {
 		const platform = this.staticOneWayPlatforms.find(p => p.body.id === bodyId);
-		if (platform) platform.disableCollision();
+		if (platform && !platform.ignoreFallThrough) platform.disableCollision();
 	}
 
 	private tileSetLogic (layerData?: Phaser.Tilemaps.LayerData): void {
@@ -434,9 +473,6 @@ export default class GameScene extends BaseScene {
 
 		this.currentMapLayer = layerName;
 
-		// const backgroundLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_background`));
-		// const detailsLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_details`));
-		// const foregroundLayer = this.map.layers.find(l => l.name.startsWith(`${layerName}_foreground`));
 		const objectLayer = this.map.objects.find(l => l.name.startsWith(`${layerName}_objects`));
 		const bounds: LevelBounds[] = [];
 
@@ -474,7 +510,14 @@ export default class GameScene extends BaseScene {
 					}
 				} else if (o.type === 'oneway-collision') {
 					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
-						this.staticOneWayPlatforms.push(new StaticOneWayPlatform(this, o.x, o.y, o.width, o.height));
+						this.staticOneWayPlatforms.push(new StaticOneWayPlatform(
+							this,
+							o.x,
+							o.y,
+							o.width,
+							o.height,
+							properties.ignoreFallThrough !== undefined ? (properties.ignoreFallThrough as boolean) : false,
+						));
 					}
 				} else if (o.type === 'bounds') {
 					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
@@ -482,6 +525,22 @@ export default class GameScene extends BaseScene {
 							ambientColor: properties.ambient?.toString(),
 							rect: new Phaser.Geom.Rectangle(o.x, o.y, o.width, o.height)
 						});
+					}
+				} else if (o.type === 'sensor') {
+					if (o.rectangle && o.visible && o.x !== undefined && o.y !== undefined && o.width !== undefined && o.height !== undefined) {
+						this.sensors.push(new Sensor(
+							this,
+							o.id,
+							o.x,
+							o.y,
+							o.width,
+							o.height,
+							{
+								teleportTargetId: properties.teleport !== undefined ? (properties.teleport as number) : undefined,
+								whitelist: properties.whitelist !== undefined ? (properties.whitelist as string).split(',') : undefined,
+								action: properties.action !== undefined ? (properties.action as string) : undefined,
+							}
+						));
 					}
 				}
 			});
@@ -504,7 +563,8 @@ export default class GameScene extends BaseScene {
 
 		if (objectLayer) {
 			objectLayer.objects.forEach(o => {
-				if (['bucket', 'arcade', 'character', 'staticObject', 'object', 'soundSource2d', 'shrine'].includes(o.type) && currentBounds.rect.contains(o.x ?? 0, o.y ?? 0)) {
+				// console.log(o);
+				if (['bucket', 'arcade', 'character', 'staticObject', 'object', 'soundSource2d', 'shrine', 'jumping-pad', 'position'].includes(o.type) && currentBounds.rect.contains(o.x ?? 0, o.y ?? 0)) {
 					switch (o.type) {
 						case 'character': {	charactersQueue.push(o); break;	}
 						case 'staticObject': { staticObjectsQueue.push(o); break; }
@@ -514,6 +574,8 @@ export default class GameScene extends BaseScene {
 						case 'arcade': { arcadesQueue.push(o); break; }
 						case 'soundSource2d': { soundSource2dQueue.push(o); break; }
 						case 'shrine': { objectsQueue.push(o); break; }
+						case 'jumping-pad': { objectsQueue.push(o); break; }
+						case 'position': { this.positions.push({ id: o.id, x: o.x ?? 0, y: o.y ?? 0 }); break; }
 					}
 				}
 			});
@@ -529,59 +591,82 @@ export default class GameScene extends BaseScene {
 		});
 
 		objectsQueue.forEach(o => {
+			// Check for saved states to apply
+			const objectState = this.objectStates.find(s => s.id === o.id);
+			if (objectState?.destroyed) return;
+
+			const id = o.id ?? getRandomId();
+			const posX = objectState?.x ?? o.x ?? 0;
+			const posY = objectState?.y ?? o.y ?? 0;
+
 			const properties = parseTiledProperties(o.properties);
-			console.log(properties);
 			switch (o.name) {
+				case 'crate': {
+					this.objects.push(new Crate(
+						this,
+						id,
+						posX,
+						posY,
+						properties.scale ? (properties.scale as number) : 4,
+					));
+					break;
+				}
+				case 'jumping-pad': {
+					this.objects.push(new JumpingPad(
+						this,
+						id,
+						posX,
+						posY,
+						properties.strength ? (properties.strength as number) : 1,
+					));
+					break;
+				}
 				case 'shrine': {
 					this.objects.push(new Shrine(
 						this,
-						o.x ?? 0,
-						o.y ?? 0,
+						id,
+						posX,
+						posY,
 						properties.frame ? (properties.frame.toString() as ShrineTag) : 'tori',
 						properties.target ? (properties.target.toString() as string) : '',
 					));
 					break;
 				}
 				case 'generic': {
+					const name = properties.name ? (properties.name as string) : '';
+					// skip if already collected
+					if (this.collectibles[name]) break;
 					this.objects.push(new GenericInteractable(
 						this,
-						o.x ?? 0,
-						o.y ?? 0,
+						id,
+						posX,
+						posY,
 						properties.w ? (properties.w as number) : 16,
 						properties.h ? (properties.h as number) : 16,
 						properties.scale ? (properties.scale as number) : 1,
-						properties.name ? (properties.name as string) : '',
+						name,
 						properties.spriteKey ? (properties.spriteKey as string) : '',
 						properties.frame ? (properties.frame.toString() as string) : 0,
 						properties.message ? (properties.message.toString() as string) : 'Fallback Text',
 						properties.collectible !== undefined ? (properties.collectible as boolean) : false,
 						properties.mirror !== undefined ? (properties.mirror as boolean) : false,
+						properties.light !== undefined ? (properties.light as boolean) : false,
+						properties.lightColor !== undefined ? (properties.lightColor as string) : undefined,
 					));
 					break;
 				}
 				case 'smallLamp': {
 					this.objects.push(new SmallLamp(
 						this,
-						o.x ?? 0,
-						o.y ?? 0,
+						id,
+						posX,
+						posY,
 						{
 							frame: properties.frame ? (properties.frame.toString() as SmallLampFrame) : undefined,
 							ropeLength: properties.ropeLength ? (properties.ropeLength as number) : undefined,
 							constrained: properties.constrained ? (properties.ropeLength as boolean) : undefined,
 						}
 					));
-					break;
-				}
-				case 'egg': {
-					const eggType = properties.type ? (properties.type.toString()) : undefined;
-					if (eggType) {
-						this.objects.push(new EasterEgg(
-							this,
-							o.x ?? 0,
-							o.y ?? 0,
-							eggType,
-						));
-					}
 					break;
 				}
 			}
@@ -613,13 +698,34 @@ export default class GameScene extends BaseScene {
 		arcadesQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
 			const bucket = this.buckets.find(b => b.name === bucketQueue.find(bq => bq.id === (properties.bucket as number))?.name);
-			this.arcades.push(new Arcade(this, o.x ?? 0, o.y ?? 0, o.name, undefined, bucket, properties.mirror as boolean));
+			this.arcades.push(new Arcade(this, o.id ? o.id : getRandomId(), o.x ?? 0, o.y ?? 0, o.name, undefined, bucket, properties.mirror as boolean));
 		});
 
 		charactersQueue.forEach(o => {
-			if (o.name === 'dog') {
-				const dog = new Dog(this, o.x ?? 0, o.y ?? 0);
-				this.characters.push(dog);
+			const properties = parseTiledProperties(o.properties);
+
+			switch (o.name) {
+				case 'dog': {
+					const c = new Dog(
+						this,
+						o.id ? o.id : getRandomId(),
+						o.x ?? 0,
+						o.y ?? 0
+					);
+					this.characters.push(c);
+					break;
+				}
+				case 'flameboy': {
+					const c = new Flameboy(
+						this,
+						o.id ? o.id : getRandomId(),
+						o.x ?? 0,
+						o.y ?? 0,
+						properties.direction ? (properties.direction as (1 | -1)) : 1
+					);
+					this.characters.push(c);
+					break;
+				}
 			}
 		});
 
@@ -648,13 +754,54 @@ export default class GameScene extends BaseScene {
 		}
 	}
 
+	public removeFromObjects (object: InteractableGameObject): void {
+		const index = this.objects.findIndex(o => o === object);
+		if (index > -1) this.objects.splice(index, 1);
+		// console.log('spliced object on index', index);
+	}
+
+	public syncObjectState(payload: MutateObjectStatePayload): void {
+		const index = this.objectStates.findIndex(s => s.id === payload.id);
+		if (index === -1) {
+			this.objectStates.push({
+				id: payload.id,
+				x: payload.x ?? 0,
+				y: payload.y ?? 0,
+				destroyed: payload.destroyed !== undefined ? payload.destroyed : false,
+			});
+		} else {
+			if (payload.destroyed !== undefined) this.objectStates[index].destroyed = payload.destroyed;
+			if (payload.x !== undefined) this.objectStates[index].x = payload.x;
+			if (payload.y !== undefined)this.objectStates[index].y = payload.y;
+		}
+	}
+
+	private saveObjectSates (objects: GameObject[]): void {
+		objects.forEach(o => {
+			this.syncObjectState({
+				id: o.id,
+				x: o.body?.position.x ?? 0,
+				y: o.body?.position.y ?? 0,
+				destroyed: false
+			});
+		});
+
+		// console.log('current object state', this.objectStates);
+	}
+
 	public unloadActiveWorldLayer (): void {
+		// Save state of all objects
+		this.saveObjectSates([...this.objects])
+
 		// Remove all static collisions
 		this.matter.world.remove(this.staticMapCollisions);
 		this.staticMapCollisions = [];
 
 		this.staticOneWayPlatforms.forEach(s => s.destroy());
 		this.staticOneWayPlatforms = [];
+
+		this.sensors.forEach(s => s.destroy());
+		this.sensors = [];
 
 		// Remove active tileset
 		this.tilemapLayers.forEach(l => { 
@@ -672,6 +819,8 @@ export default class GameScene extends BaseScene {
 
 		this.objects.forEach(o => {	o.destroy(); });
 		this.objects = [];
+
+		this.positions = [];
 
 		this.soundSources2d.forEach(o => {	o.destroy(); });
 		this.soundSources2d = [];
@@ -729,8 +878,20 @@ export default class GameScene extends BaseScene {
 	public create () {
 		super.create();
 
+		// Load state
+		const snapshotString = LocalStorage.getSnapshot();
+		if (snapshotString) {
+			try {
+				const snapshot = JSON.parse(snapshotString) as Snapshot;
+				this.collectibles = Object.assign(this.collectibles, snapshot.collectibles);
+			} catch (e) {
+				console.error('could not parse snapshot string', e);
+			}
+		}
+
 		// Setup initail HUD
-		(this.scene.get('hud-scene') as HUDScene).updateCollectiblesAmount(0, Object.keys(this.collectibles).length);
+		const collected = Object.values(this.collectibles).filter(c => c === true).length;
+		(this.scene.get('hud-scene') as HUDScene).updateCollectiblesAmount(collected, Object.keys(this.collectibles).length);
 
 		this.breakerSound = this.soundManager?.sound.add('sfx:breaker');
 		this.riserSound = this.soundManager?.sound.add('sfx:riser');
@@ -740,14 +901,15 @@ export default class GameScene extends BaseScene {
 		this.lights.enable();
 		this.playerLight = this.lights.addLight(0, 0, 400, 0xFFFFFF, 2);
 
-		const achan = new Achan(this, 0, 0);
+		const achan = new Achan(this, getRandomId(), 0, 0);
 		this.playerCharacter = achan;
 
 		this.map = this.loadMap('map2');
 		const playerSpawn = this.map.getObjectLayer('triggers')?.objects.find(o => o.name === 'playerSpawn');
 		achan.setPosition(playerSpawn?.x, playerSpawn?.y);
 
-		this.loadInWorldLayer('street');
+		const properties = playerSpawn ? parseTiledProperties(playerSpawn.properties) : undefined;
+		this.loadInWorldLayer(properties?.layer ? (properties.layer as string) : 'street');
 
 		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX, BlackHoleFX]);
 		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;

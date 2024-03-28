@@ -24,6 +24,7 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
   private currentCharacterIndex = 0;
   private nextCharacterTimerEvent: Phaser.Time.TimerEvent | undefined;
   private hideBubbleTimerEvent: Phaser.Time.TimerEvent | undefined;
+	public finishedCallback: (() => void) | undefined;
 
   public constructor (scene: BaseScene) {
     super(scene, 0, 0);
@@ -51,7 +52,8 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
     this.revealNextCharacter();
   }
 
-  public trigger (reference: GameObject, text: string): void {
+  public trigger (reference: GameObject, text: string, callback?: () => void): void {
+    if (callback) this.finishedCallback = callback;
     this.graphics.clear();
 
     if (this.nextCharacterTimerEvent) { this.nextCharacterTimerEvent.destroy(); this.nextCharacterTimerEvent = undefined; }
@@ -95,6 +97,7 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
         if (this.targetTextIndex + 1 === this.targetTexts.length) {
           this.isShowing = false;
           this.setVisible(false);
+          if (this.finishedCallback) this.finishedCallback();
         } else {
           this.triggerTextIndex(this.targetTextIndex + 1);
         }

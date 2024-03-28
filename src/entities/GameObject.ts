@@ -4,9 +4,11 @@ import GameScene from "../scenes/GameScene";
 
 export default class GameObject extends Phaser.Physics.Matter.Sprite {
   protected direction: 1 | -1 = 1;
+  public id: number;
 
   constructor(
     scene: Phaser.Scene,
+    id: number,
     x: number,
     y: number,
     name: string,
@@ -17,6 +19,7 @@ export default class GameObject extends Phaser.Physics.Matter.Sprite {
     super(scene.matter.world, x, y, spriteKey, frame, options);
     this.direction = 1;
     this.name = name;
+    this.id = id;
 
     this.setDepth(Depths.OBJECT_LAYER);
 

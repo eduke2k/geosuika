@@ -1,4 +1,4 @@
-const PREFIX = 'geosuika';
+const PREFIX = 'eastersuika';
 
 export class LocalStorage {
   public static setHighscore (key: string, highscore: number): void {
@@ -7,5 +7,12 @@ export class LocalStorage {
 
   public static getHighscore (key: string): number {
     return parseInt(localStorage.getItem(`${PREFIX}:highscore:${key}`) ?? '0');
+  }
+
+  public static setSnapshot (snapshot: string): void {
+    localStorage.setItem(`${PREFIX}:snapshot`, snapshot);
+  }
+  public static getSnapshot (): string | null {
+    return localStorage.getItem(`${PREFIX}:snapshot`);
   }
 }
