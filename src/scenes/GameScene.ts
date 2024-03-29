@@ -156,7 +156,7 @@ export default class GameScene extends BaseScene {
 
 		LocalStorage.setSnapshot(this.generateSnapshot());
 
-		if (collected === total) {
+		if (collected === 10) {
 			window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'http://localhost:8080'); // Community egg
 			window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'https://geotastic.net'); // Community egg
 		}
