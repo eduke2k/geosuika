@@ -26,6 +26,7 @@ import BaseScene from "../../scenes/BaseScene";
 import HUDScene from "../../scenes/HUDScene";
 import { easterEggSet } from "../../config/easterEggs";
 import FragmentsLabel from "./FragmentsLabel";
+import { communitySet } from "../../config/communitySet";
 
 export const GAME_OVER_TIME = 3000;
 export const DANGER_SPARK_TIME = 100;
@@ -1156,6 +1157,7 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
       case 'japanFoodSet': return japanFoodSet;
       case 'duckSet': return duckSet;
       case 'easterEggSet': return easterEggSet;
+      case 'communitySet': return communitySet;
       default: return flagSet;
     }
   }

@@ -557,9 +557,10 @@ export default class GameScene extends BaseScene {
 		// Apply new camera bounds if player character is within one
 		const currentBounds = this.getFirstRectWithinBounds(bounds, { x: this.playerCharacter?.getBody()?.position.x ?? 0, y: this.playerCharacter?.getBody()?.position.y ?? 0 });
 		this.cameras.main.setBounds(currentBounds.rect.x, currentBounds.rect.y, currentBounds.rect.width, currentBounds.rect.height);
-		this.cameras.main.setBackgroundColor('#0a0a0a');
-		const hex = currentBounds.ambientColor ? `#${currentBounds.ambientColor?.substring(3)}` : '#000000';
-		this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor(hex).color);
+		this.cameras.main.setBackgroundColor('#090618');
+		// const hex = currentBounds.ambientColor ? `#${currentBounds.ambientColor?.substring(3)}` : '#000000';
+		// console.log(hex);
+		this.lights.setAmbientColor(Phaser.Display.Color.HexStringToColor('#00007f').color);
 
 		if (objectLayer) {
 			objectLayer.objects.forEach(o => {
@@ -899,7 +900,7 @@ export default class GameScene extends BaseScene {
 
 		// Enable Lights
 		this.lights.enable();
-		this.playerLight = this.lights.addLight(0, 0, 400, 0xFFFFFF, 2);
+		this.playerLight = this.lights.addLight(0, 0, 600, 0xFFFFFF, 2.5);
 
 		const achan = new Achan(this, getRandomId(), 0, 0);
 		this.playerCharacter = achan;

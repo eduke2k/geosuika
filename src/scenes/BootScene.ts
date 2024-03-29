@@ -39,6 +39,8 @@ import DuckSetPNG from './../assets/duckSet.png';
 import DuckSetJSON from './../assets/duckSet.json';
 import EasterEggSetPNG from './../assets/easterEggSet.png';
 import EasterEggSetJSON from './../assets/easterEggSet.json';
+import CommunitySetPNG from './../assets/communitySet.png';
+import CommunitySetJSON from './../assets/communitySet.json';
 import DangerLinePNG from './../assets/dangerLine.png';
 import DangerLineJSON from './../assets/dangerLine.json';
 import PetalPNG from './../assets/petal.png';
@@ -172,6 +174,7 @@ export default class BootScene extends BaseScene {
 		this.load.aseprite('japanFood', JapanFoodPNG, JapanFoodJSON);
 		this.load.aseprite('ducks', DuckSetPNG, DuckSetJSON);
 		this.load.aseprite('easterEggSet', EasterEggSetPNG, EasterEggSetJSON);
+		this.load.aseprite('communitySet', CommunitySetPNG, CommunitySetJSON);
 		this.load.aseprite('tetrominos', TetrominosPNG, TetrominosJSON);
 		this.load.aseprite('progressArrow', ProgressArrowPNG, ProgressArrowJSON);
 		this.load.aseprite('scoreLabel', ScoreLabelPNG, ScoreLabelJSON);
@@ -310,6 +313,7 @@ export default class BootScene extends BaseScene {
 		this.anims.createFromAseprite('japanFood');
 		this.anims.createFromAseprite('ducks');
 		this.anims.createFromAseprite('easterEggSet');
+		this.anims.createFromAseprite('communitySet');
 		this.anims.createFromAseprite('tetrominos');
 		this.anims.createFromAseprite('progressArrow');
 		this.anims.createFromAseprite('scoreLabel');

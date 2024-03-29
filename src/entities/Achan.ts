@@ -45,7 +45,7 @@ export default class Achan extends Character {
     this.movementBehaviour.acceleration = 4;
     this.airControl = 0.5;
     this.movementBehaviour.deacceleration = 10;
-    this.movementBehaviour.maxSpeed = 4;
+    this.movementBehaviour.maxSpeed = 5;
 
     this.setPlayerControlled(true);
     this.setExistingBody(rect);

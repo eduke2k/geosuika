@@ -50,8 +50,8 @@ const config: Phaser.Types.Core.GameConfig = {
 			gravity: {
 				y: 2
 			},
-			positionIterations: 8,
-			velocityIterations: 8,
+			// positionIterations: 8,
+			// velocityIterations: 8,
 			// debug: {
 			// 	showSensors: true,
 			// 	// showCollisions: true,
