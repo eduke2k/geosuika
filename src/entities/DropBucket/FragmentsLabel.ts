@@ -46,6 +46,12 @@ export default class FragmentsLabel extends Phaser.GameObjects.Container {
     this.updateText();
   }
 
+  public reset (): void {
+    this.unlocked = 0;
+    this.totalScore = 0;
+    this.updateScore(0);
+  }
+
   public updateScore (score: number): void {
     this.totalScore = score;
     const absoluteScoreRatio = this.totalScore / this.targetScore;

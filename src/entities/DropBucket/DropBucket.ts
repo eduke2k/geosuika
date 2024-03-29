@@ -900,12 +900,19 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     }
   }
 
+  public giveUp (): void {
+    [...this.droppables].forEach(d => { this.explode(d); });
+    this.droppables = [];
+    this.handleDestroyedPhaseProgress();
+  }
+
   public restartBucket (): void {
     this.getGameScene()?.getPlayerCharacter()?.sfxBank?.playRandomSFXFromCategory(this.getScene(), 'restart');
 
     this.resetEffects();
     this.bgm?.reset();
     // this.scoreProgressBar.setProgress(0);
+    this.fragmentsLabel.reset();
     this.getGameScene()?.petalEmitter.setIntesity(0);
     this.getGameScene()?.petalEmitter.resetTint();
     this.bucketProgressRatio = 0;

@@ -1,3 +1,4 @@
+import GameScene from "../../scenes/GameScene";
 import { FontName } from "../../types";
 import DropBucket from "./DropBucket";
 
@@ -7,6 +8,7 @@ export default class BucketMenu extends Phaser.GameObjects.Container {
   private bucket: DropBucket;
   private menuItems: { label: string, key: string}[] = [
     { label: 'Restart', key: 'restart' },
+    { label: 'Give Up', key: 'giveup' },
     { label: 'Leave', key: 'leave' },
   ];
 
@@ -18,9 +20,9 @@ export default class BucketMenu extends Phaser.GameObjects.Container {
     super(bucket.scene, x, y);
     this.bucket = bucket;
     let yIncrement = 0;
-    this.menuItems.forEach((item, i) => {
+    this.menuItems.forEach((item) => {
       const text = item;
-      const t = this.scene.add.text(0, yIncrement * i, text.label.toUpperCase(), { fontFamily: FontName.LIGHT, fontSize: '24px', align: "center" }).setOrigin(0, 0.5);
+      const t = this.scene.add.text(0, yIncrement + (this.scene as GameScene).scaled(10), text.label.toUpperCase(), { fontFamily: FontName.LIGHT, fontSize: '24px', align: "center" }).setOrigin(0, 0.5);
       this.add(t);
       const hitbox = new Phaser.Geom.Rectangle(0, 0, t.getBounds().width, t.getBounds().height);
 
@@ -44,6 +46,7 @@ export default class BucketMenu extends Phaser.GameObjects.Container {
   private handleAction (key: string): void {
     switch (key) {
       case 'restart': this.bucket.restartBucket(); break;
+      case 'giveup': this.bucket.giveUp(); break;
       case 'leave': this.bucket.unmountBucket(); break;
     }
   }

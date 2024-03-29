@@ -3,6 +3,7 @@ import GameScene from './GameScene';
 import { LocalStorage } from '../models/LocalStorage';
 import { BackgroundMusicConfig } from '../models/BackgroundMusic';
 import BaseScene from './BaseScene';
+import { FontName } from '../types';
 const MENU_ITEM_GAP = 0;
 
 export default class GameOverScene extends BaseScene {
@@ -29,18 +30,18 @@ export default class GameOverScene extends BaseScene {
 		this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
     this.container = this.add.container(0, 0);
 
-    this.gameOverText = this.add.text(0, 0, 'The Memory faded...', { font: "48px Kumar One", align: "center" });
+    this.gameOverText = this.add.text(0, 0, 'The Memory faded...', { fontFamily: FontName.LIGHT, fontSize: this.scaled(48), color: 'white', align: 'center' });
     this.gameOverText.setOrigin(0.5, 0.5);
     this.container.add(this.gameOverText);
 
     // const rect = this.add.rectangle(0, this.gameOverText.y +  this.gameOverText.height + 50, 500, 100, 0x000000).setOrigin(0.5, 0.5);
     // this.container.add(rect);
 
-    this.scoreHeadlineText = this.add.text(0, this.gameOverText.y + this.gameOverText.height + 50 , 'FINAL SCORE', { font: "18px Kumar One", align: "center" });
+    this.scoreHeadlineText = this.add.text(0, this.gameOverText.y + this.gameOverText.height + 50 , 'FINAL SCORE', { fontFamily: FontName.REGULAR, fontSize: this.scaled(18), color: 'white', align: 'center' });
     this.scoreHeadlineText.setOrigin(0.5, 0.5);
     this.container.add(this.scoreHeadlineText);
 
-    this.scoreText = this.add.text(0, this.scoreHeadlineText.y + this.scoreHeadlineText.height + 10, this.score.toLocaleString(), { font: "48px Kumar One", align: "center" });
+    this.scoreText = this.add.text(0, this.scoreHeadlineText.y + this.scoreHeadlineText.height + 10, this.score.toLocaleString(), { fontFamily: FontName.BOLD, fontSize: this.scaled(48), color: 'white', align: 'center' });
     this.scoreText.setOrigin(0.5, 0.5);
     this.container.add(this.scoreText);
 
@@ -67,7 +68,7 @@ export default class GameOverScene extends BaseScene {
 
     menuItems.forEach((item) => {
       const text = item;
-      const t = this.add.text(0, y, text.label.toUpperCase(), { font: "32px Kumar One", align: "center" });
+      const t = this.add.text(0, y, text.label.toUpperCase(), { fontFamily: FontName.LIGHT, fontSize: this.scaled(32), color: 'white', align: 'center' });
       t.setOrigin(0.5, 0.5);
 
       this.container.add(t);
