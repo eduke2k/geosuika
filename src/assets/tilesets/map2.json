@@ -3314,7 +3314,7 @@
                         {
                          "name":"message",
                          "type":"string",
-                         "value":"A panda. Classic! That should cover all panda enthusiasts among you.\n"
+                         "value":"A panda. Classic! That should cover all panda enthusiasts among you"
                         }, 
                         {
                          "name":"mirror",

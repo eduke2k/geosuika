@@ -33,11 +33,11 @@
             "expandedObjectLayers": [
                 12
             ],
-            "scale": 0.75,
+            "scale": 0.25,
             "selectedLayer": 8,
             "viewCenter": {
-                "x": 1297.3333333333335,
-                "y": 2184
+                "x": 2748,
+                "y": 1404
             }
         },
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json#tilesheet_japan": {

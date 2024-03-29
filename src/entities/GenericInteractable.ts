@@ -129,6 +129,7 @@ export default class GenericInteractable extends InteractableGameObject {
       this.triggerExplodeParticles();
       this.getGameScene().syncObjectState({ id: this.id, destroyed: true });
       this.getGameScene().removeFromObjects(this);
+      (this.scene.scene.get('hud-scene') as HUDScene).showImage(this.texture.key, this.frame.name);
       this.destroy();
     }
   }

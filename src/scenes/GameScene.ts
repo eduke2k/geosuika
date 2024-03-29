@@ -919,6 +919,10 @@ export default class GameScene extends BaseScene {
 		const playerCharacter = this.getPlayerCharacter();
 		if (playerCharacter) {
 			this.cameraFollowEntity({ object: playerCharacter, instant: true });
+
+			this.time.delayedCall(2000, () => {
+				(this.scene.get('hud-scene') as HUDScene).triggerSpeechBubble(playerCharacter, 'Time to unravel all the secrets in here!\nWASD to run, Space to jump.\nOn some platforms, I can fall down by pressing Down + Jump.\nEscape to pause and to find the game settings.');
+			});
 		}
 
 		// Camera Settings

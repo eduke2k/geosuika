@@ -6,6 +6,7 @@ import BlinkingText, { BlinkingTextOptions } from '../entities/BlinkingText';
 import { FontName } from '../types';
 import Character from '../entities/Character';
 import { SpeechBubble } from '../entities/HUD/SpeechBubble';
+const LABEL_PADDING = 40;
 
 export default class HUDScene extends BaseScene {
 	public debugText?: Phaser.GameObjects.Text;
@@ -30,11 +31,11 @@ export default class HUDScene extends BaseScene {
     this.interactionLabel.setFontSize(`${this.scaled(20)}px`);
     this.interactionLabel.alpha = 1;
 
-		this.collectiblesLabel = this.add.text(this.scaled(20), this.scaled(20), 'Collectibles', { align: "left", color: '#8c8c8c' }).setOrigin(0, 0);
+		this.collectiblesLabel = this.add.text(this.scaled(LABEL_PADDING), this.scaled(LABEL_PADDING), 'Collectibles', { align: "left", color: '#8c8c8c' }).setOrigin(0, 0);
     this.collectiblesLabel.setFontFamily(FontName.REGULAR);
     this.collectiblesLabel.setFontSize(`${this.scaled(20)}px`);
 
-		this.collectiblesValue = this.add.text(this.scaled(20), this.collectiblesLabel.y + this.collectiblesLabel.height, '0 / 10', { align: "left" }).setOrigin(0, 0);
+		this.collectiblesValue = this.add.text(this.scaled(LABEL_PADDING), this.collectiblesLabel.y + this.collectiblesLabel.height, '', { align: "left" }).setOrigin(0, 0);
     this.collectiblesValue.setFontFamily(FontName.REGULAR);
     this.collectiblesValue.setFontSize(`${this.scaled(30)}px`);
 
@@ -42,6 +43,30 @@ export default class HUDScene extends BaseScene {
 
     this.scene.bringToTop();
   }
+
+	public showImage (spriteKey: string, frame: number | string): void {
+		const image = this.add.image(this.game.canvas.width / 2, 225, spriteKey, frame).setOrigin(0.5, 0.5).setScale(6).setAlpha(0);
+		this.tweens.add({
+      targets: image,
+      alpha: 1,
+			y: 200,
+      duration: 2000,
+      ease: Phaser.Math.Easing.Elastic.Out,
+    });
+
+		this.time.delayedCall(4000, () => {
+			this.tweens.add({
+				targets: image,
+				alpha: 0,
+				scale: 1,
+				x: LABEL_PADDING,
+				y: LABEL_PADDING,
+				rotation: 10,
+				duration: 1000,
+				ease: Phaser.Math.Easing.Quadratic.In,
+			});
+		});
+	}
 
 	public updateCollectiblesAmount (amount: number, total: number): void {
 		this.collectiblesValue.text = `${amount} / ${total}`;
