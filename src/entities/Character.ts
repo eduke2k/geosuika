@@ -107,6 +107,10 @@ export default class Character extends InteractableGameObject {
     scene.add.existing(this);
   }
 
+  public kick (): void {
+    console.log('kick not implemented for this character');
+  }
+
   public getBody (): MatterJS.BodyType | null {
     return this.body as MatterJS.BodyType | null;
   }
@@ -197,6 +201,11 @@ export default class Character extends InteractableGameObject {
       // if (!this.freezeInteract && this.getGameScene()?.inputController?.justDown(Action.LAYER_CHANGE)) {
       //   this.getGameScene()?.startLayerChange();
       // }
+
+      // Kick
+      if (!this.freezeInteract && this.getGameScene()?.inputController?.justDown(Action.LAYER_CHANGE)) {
+        // this.getGameScene()?.getPlayerCharacter()?.kick();
+      }
     }
 
     // State Changes

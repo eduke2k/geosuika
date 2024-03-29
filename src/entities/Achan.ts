@@ -59,6 +59,40 @@ export default class Achan extends Character {
     // this.play({ key: 'achan:idle', repeat: -1 });
   }
 
+  public kick (): void {
+    console.log('kick!');
+
+    const rect = this.scene.matter.add.rectangle(this.x, this.y + (5 * this.scale), 8 * this.scale, 16 * this.scale, {
+      restitution: 0,
+      friction: 0,
+      frictionAir: 0,
+      frictionStatic: 0,
+      isStatic: true,
+      collisionFilter: {
+        group: 0,
+        category: CATEGORY_PLAYER,
+        mask: CATEGORY_TERRAIN | CATEGORY_TERRAIN_OBJECT
+      }
+    });
+    rect.label = 'kick';
+
+    const kickLength = this.getGameScene().scaled(28);
+    const Body = new Phaser.Physics.Matter.MatterPhysics(this.getGameScene()).body;
+
+    this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 200,
+      ease: Phaser.Math.Easing.Quadratic.In,
+      onUpdate: ((tween) => {
+        Body.setPosition(rect, { x: this.x + (kickLength * tween.getValue() * this.direction), y: this.y + (5 * this.scale) }, true)
+      }),
+      onComplete: (() => {
+        this.scene.matter.world.remove(rect);
+      })
+    });
+  }
+
   public update (time: number, delta: number) {
     super.update(time, delta);
 
