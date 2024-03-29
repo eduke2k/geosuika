@@ -87,7 +87,7 @@
                  "value":"tilesheet_japan"
                 }],
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -170,7 +170,7 @@
                  "value":"tilesheet_japan"
                 }],
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -253,7 +253,7 @@
                  "value":"tilesheet_japan"
                 }],
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -2033,7 +2033,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -2115,7 +2115,7 @@
                  "value":"tilesheet_street"
                 }],
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -2198,7 +2198,7 @@
                  "value":"tilesheet_street"
                 }],
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -2281,7 +2281,7 @@
                  "value":"tilesheet_street"
                 }],
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -5010,7 +5010,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -5034,12 +5034,12 @@
                  "type":"trigger",
                  "visible":true,
                  "width":0,
-                 "x":2064,
-                 "y":1244
+                 "x":1344,
+                 "y":2368
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }],
