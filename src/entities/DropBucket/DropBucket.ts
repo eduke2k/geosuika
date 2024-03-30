@@ -27,6 +27,7 @@ import HUDScene from "../../scenes/HUDScene";
 import { easterEggSet } from "../../config/easterEggs";
 import FragmentsLabel from "./FragmentsLabel";
 import { communitySet } from "../../config/communitySet";
+import { LocalStorage } from "../../models/LocalStorage";
 
 export const GAME_OVER_TIME = 3000;
 export const DANGER_SPARK_TIME = 100;
@@ -684,12 +685,13 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.playMergeSound(scoreObject, spawnPosition.x);
 
     // Special Easter Egg challenge check on last tier. Remove when appropriate
-    console.log('merge', nextTier);
-    console.log('getMaxTier', this.getMaxTier());
-    console.log('name', this.name);
+    console.log(`next tier ${nextTier}, maxTier: ${this.getMaxTier()}, name: ${this.name}`);
     if (nextTier === this.getMaxTier() && this.name === 'easterEggBucket') {
-      window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'http://localhost:8080'); // Suika egg
-      window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'https://geotastic.net'); // Suika egg
+      console.log('reached full egg');
+      this.getGameScene().hasReachedFullEgg = true;
+      console.log('has reached full egg', this.getGameScene().hasReachedFullEgg);
+      LocalStorage.setSnapshot(this.getGameScene().generateSnapshot());
+      this.getGameScene().postMessage('1283e10231901c1794851f21eb7bba8d');
     }
 
     if (this.currentPhase === BucketPhase.DESTROY) {

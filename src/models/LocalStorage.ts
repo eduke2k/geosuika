@@ -10,6 +10,7 @@ export class LocalStorage {
   }
 
   public static setSnapshot (snapshot: string): void {
+    console.log('setting snapshot', snapshot);
     localStorage.setItem(`${PREFIX}:snapshot`, snapshot);
   }
   public static getSnapshot (): string | null {

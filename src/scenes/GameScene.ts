@@ -67,7 +67,8 @@ type PositionReference = {
 }
 
 export type Snapshot = {
-	collectibles: Record<string, boolean>
+	collectibles?: Record<string, boolean>;
+	hasReachedFullEgg?: boolean;
 }
 
 export default class GameScene extends BaseScene {
@@ -125,6 +126,9 @@ export default class GameScene extends BaseScene {
 		tape: false
 	};
 
+	// Trophy State
+	public hasReachedFullEgg = false;
+
 	// Arrays
 	public interactablesInRange: InteractableGameObject[] = [];
 
@@ -141,9 +145,23 @@ export default class GameScene extends BaseScene {
 
 	public generateSnapshot (): string {
 		const snapshot: Snapshot = {
-			collectibles: this.collectibles
+			collectibles: this.collectibles,
+			hasReachedFullEgg: this.hasReachedFullEgg
 		}
 		return JSON.stringify(snapshot);
+	}
+
+	public postMessage (message: string): void {
+		console.log('posting message to window.top', message);
+		window.top?.postMessage(message, 'http://localhost:8080');
+		window.top?.postMessage(message, 'https://geotastic.net');
+	}
+
+	public checkCollectedState (): void {
+		const collected = Object.values(this.collectibles).filter(c => c === true).length;
+		if (collected >= 10) {
+      this.postMessage('cc92527dd58d73706274f048de679f22');
+		}
 	}
 
 	public setCollected (eggKey: string): void {
@@ -156,10 +174,7 @@ export default class GameScene extends BaseScene {
 
 		LocalStorage.setSnapshot(this.generateSnapshot());
 
-		if (collected === 10) {
-			window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'http://localhost:8080'); // Community egg
-			window.top?.postMessage('cc92527dd58d73706274f048de679f22', 'https://geotastic.net'); // Community egg
-		}
+		this.checkCollectedState();
 	}
 
 	public setTimeScaleFromTween (tweenValue: number, start: number, end: number): void {
@@ -885,10 +900,15 @@ export default class GameScene extends BaseScene {
 			try {
 				const snapshot = JSON.parse(snapshotString) as Snapshot;
 				this.collectibles = Object.assign(this.collectibles, snapshot.collectibles);
+				this.hasReachedFullEgg = snapshot.hasReachedFullEgg ?? false;
 			} catch (e) {
 				console.error('could not parse snapshot string', e);
 			}
 		}
+
+		// Trophy checker on startup
+		this.checkCollectedState();
+		if (this.hasReachedFullEgg) this.postMessage('1283e10231901c1794851f21eb7bba8d');
 
 		// Setup initail HUD
 		const collected = Object.values(this.collectibles).filter(c => c === true).length;
