@@ -684,7 +684,10 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.playMergeSound(scoreObject, spawnPosition.x);
 
     // Special Easter Egg challenge check on last tier. Remove when appropriate
-    if (nextTier === this.getMaxTier() && this.name === 'easterEggArcade') {
+    console.log('merge', nextTier);
+    console.log('getMaxTier', this.getMaxTier());
+    console.log('name', this.name);
+    if (nextTier === this.getMaxTier() && this.name === 'easterEggBucket') {
       window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'http://localhost:8080'); // Suika egg
       window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'https://geotastic.net'); // Suika egg
     }

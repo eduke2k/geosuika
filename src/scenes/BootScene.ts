@@ -280,6 +280,7 @@ export default class BootScene extends BaseScene {
 		super.create();
 	
 		console.log('--- Creating Boot Scene ---');
+		console.log('--- Version: 0.0.3 ---');
 		this.initSettings();
 
     await new FontFaceObserver('Barlow Condensed Light').load();

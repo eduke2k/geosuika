@@ -109,9 +109,10 @@ export const controlMapping: Record<string, { keyboard: number[], gamepad: numbe
         gamepad: [GamePadButtonId.BUTTON_A],
         keyboard: []
     },
-    // [Action.DEBUG1]: [
-    //     Phaser.Input.Keyboard.KeyCodes.ONE
-    // ],
+    [Action.DEBUG1]: {
+        gamepad: [],
+        keyboard: [Phaser.Input.Keyboard.KeyCodes.ONE]
+    },
     // [Action.DEBUG2]: [
     //     Phaser.Input.Keyboard.KeyCodes.TWO
     // ],

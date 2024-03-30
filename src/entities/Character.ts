@@ -191,6 +191,13 @@ export default class Character extends InteractableGameObject {
         this.jump();
       }
 
+      // Debug1 
+      // if (this.getGameScene()?.inputController?.justDown(Action.DEBUG1)) {
+      //   console.log('posting message', '1283e10231901c1794851f21eb7bba8d');
+      //   window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'http://localhost:8080'); // Suika egg
+      //   window.top?.postMessage('1283e10231901c1794851f21eb7bba8d', 'https://geotastic.net'); // Suika egg
+      // }
+
       // Interacting
       if (!this.freezeInteract && this.onGround && this.getGameScene().interactablesInRange[0] && this.getGameScene()?.inputController?.justDown(Action.INTERACT)) {
         const targetObject = this.getGameScene().interactablesInRange[0];
