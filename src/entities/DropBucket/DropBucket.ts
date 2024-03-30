@@ -685,11 +685,8 @@ export default class DropBucket extends Phaser.Physics.Matter.Image {
     this.playMergeSound(scoreObject, spawnPosition.x);
 
     // Special Easter Egg challenge check on last tier. Remove when appropriate
-    console.log(`next tier ${nextTier}, maxTier: ${this.getMaxTier()}, name: ${this.name}`);
     if (nextTier === this.getMaxTier() && this.name === 'easterEggBucket') {
-      console.log('reached full egg');
       this.getGameScene().hasReachedFullEgg = true;
-      console.log('has reached full egg', this.getGameScene().hasReachedFullEgg);
       LocalStorage.setSnapshot(this.getGameScene().generateSnapshot());
       this.getGameScene().postMessage('1283e10231901c1794851f21eb7bba8d');
     }
