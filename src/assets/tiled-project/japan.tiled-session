@@ -3,11 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json",
+    "activeFile": "",
     "expandedProjectPaths": [
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets"
     ],
-    "file.lastUsedOpenFilter": "All Files (*)",
+    "exportAsImage.drawTileGrid": false,
+    "exportAsImage.includeBackgroundColor": false,
+    "exportAsImage.useCurrentScale": false,
+    "exportAsImage.visibleLayersOnly": true,
+    "file.lastUsedOpenFilter": "Alle Dateien (*)",
     "fileStates": {
         "": {
             "scaleInDock": 1
@@ -51,9 +55,17 @@
             "scaleInDock": 1
         }
     },
+    "frame.defaultDuration": 250,
     "last.imagePath": "C:/Users/Edu/Documents/geosuika/src/assets/tilesets",
+    "map.fixedSize": true,
+    "map.height": 25,
+    "map.layerDataFormat": 1,
+    "map.orientation": 1,
+    "map.renderOrder": 2,
+    "map.tileHeight": 24,
+    "map.tileWidth": 24,
+    "map.width": 25,
     "openFiles": [
-        "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json"
     ],
     "project": "japan.tiled-project",
     "property.type": "int",
@@ -61,11 +73,16 @@
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map2.json",
         "C:/Users/Edu/Documents/geosuika/src/assets/tilesets/map.json"
     ],
+    "resizeMap.removeObjects": true,
     "tileset.embedInMap": true,
+    "tileset.lastUsedFilter": "Tiled Tileset Dateien (*.tsx *.xml)",
     "tileset.margin": 1,
     "tileset.spacing": 2,
     "tileset.tileSize": {
         "height": 64,
         "width": 64
-    }
+    },
+    "tileset.transparentColor": "#ff00ff",
+    "tileset.type": 0,
+    "tileset.useTransparentColor": true
 }

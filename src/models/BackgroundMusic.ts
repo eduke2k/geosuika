@@ -160,46 +160,46 @@ export class BackgroundMusic {
   //   });
   // }
 
-  public static preloadByBGMKey (scene: Phaser.Scene, key: string, onProgress: (value: number) => void, onComplete: () => void): void {
+  public static preloadByBGMKey (scene: Phaser.Scene, key: string, onProgress: (value: number) => void, onComplete: () => void, onError: () => void): void {
     switch (key) {
       case 'bgm01': {
-        scene.load.audio('bgm01-drums', '/bgm/bgm01/drums.ogg');
-        scene.load.audio('bgm01-bass', '/bgm/bgm01/bass.ogg');
-        scene.load.audio('bgm01-pads', '/bgm/bgm01/pads.ogg');
-        scene.load.audio('bgm01-melody01', '/bgm/bgm01/melody01.ogg');
-        scene.load.audio('bgm01-melody02', '/bgm/bgm01/melody02.ogg');
-        scene.load.audio('bgm01-lofi01', '/bgm/bgm01/lofi01.ogg');
-        scene.load.audio('bgm01-lofi02', '/bgm/bgm01/lofi02.ogg');
-        scene.load.audio('bgm01-lofi03', '/bgm/bgm01/lofi03.ogg');
-        scene.load.audio('bgm01-lofi04', '/bgm/bgm01/lofi04.ogg');
-        scene.load.audio('bgm01-voice', '/bgm/bgm01/vocals.ogg');
+        scene.load.audio('bgm01-drums', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/drums.ogg');
+        scene.load.audio('bgm01-bass', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/bass.ogg');
+        scene.load.audio('bgm01-pads', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/pads.ogg');
+        scene.load.audio('bgm01-melody01', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/melody01.ogg');
+        scene.load.audio('bgm01-melody02', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/melody02.ogg');
+        scene.load.audio('bgm01-lofi01', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/lofi01.ogg');
+        scene.load.audio('bgm01-lofi02', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/lofi02.ogg');
+        scene.load.audio('bgm01-lofi03', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/lofi03.ogg');
+        scene.load.audio('bgm01-lofi04', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/lofi04.ogg');
+        scene.load.audio('bgm01-voice', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm01/vocals.ogg');
         break;
       }
       case 'bgm02': {
-        scene.load.audio('bgm02-drums', '/bgm/bgm02/drums.ogg');
-        scene.load.audio('bgm02-bass', '/bgm/bgm02/bass.ogg');
-        scene.load.audio('bgm02-pads', '/bgm/bgm02/pads.ogg');
-        scene.load.audio('bgm02-melody', '/bgm/bgm02/melody.ogg');
-        scene.load.audio('bgm02-lofi01', '/bgm/bgm02/lofi01.ogg');
-        scene.load.audio('bgm02-lofi02', '/bgm/bgm02/lofi02.ogg');
-        scene.load.audio('bgm02-lofi03', '/bgm/bgm02/lofi03.ogg');
-        scene.load.audio('bgm02-lofi04', '/bgm/bgm02/lofi04.ogg');
-        scene.load.audio('bgm02-voice', '/bgm/bgm02/voice.ogg');
+        scene.load.audio('bgm02-drums', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/drums.ogg');
+        scene.load.audio('bgm02-bass', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/bass.ogg');
+        scene.load.audio('bgm02-pads', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/pads.ogg');
+        scene.load.audio('bgm02-melody', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/melody.ogg');
+        scene.load.audio('bgm02-lofi01', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/lofi01.ogg');
+        scene.load.audio('bgm02-lofi02', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/lofi02.ogg');
+        scene.load.audio('bgm02-lofi03', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/lofi03.ogg');
+        scene.load.audio('bgm02-lofi04', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/lofi04.ogg');
+        scene.load.audio('bgm02-voice', 'https://geotastic.b-cdn.net/geosuika/bgm/bgm02/voice.ogg');
         break;
       }
       case 'lumia': {
-        scene.load.audio('lumia-drums', '/bgm/lumia/drums.ogg');
-        scene.load.audio('lumia-bass', '/bgm/lumia/bass.ogg');
-        scene.load.audio('lumia-pads', '/bgm/lumia/pads.ogg');
-        scene.load.audio('lumia-riff3', '/bgm/lumia/riff3.ogg');
-        scene.load.audio('lumia-riff1', '/bgm/lumia/riff1.ogg');
-        scene.load.audio('lumia-music-box', '/bgm/lumia/music-box.ogg');
-        scene.load.audio('lumia-lead1', '/bgm/lumia/lead1.ogg');
-        scene.load.audio('lumia-lead2', '/bgm/lumia/lead2.ogg');
-        scene.load.audio('lumia-cello', '/bgm/lumia/cello.ogg');
-        scene.load.audio('lumia-violin', '/bgm/lumia/violin.ogg');
-        scene.load.audio('lumia-solo', '/bgm/lumia/solo.ogg');
-        scene.load.audio('lumia-voice', '/bgm/lumia/voice.ogg');
+        scene.load.audio('lumia-drums', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/drums.ogg');
+        scene.load.audio('lumia-bass', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/bass.ogg');
+        scene.load.audio('lumia-pads', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/pads.ogg');
+        scene.load.audio('lumia-riff3', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/riff3.ogg');
+        scene.load.audio('lumia-riff1', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/riff1.ogg');
+        scene.load.audio('lumia-music-box', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/music-box.ogg');
+        scene.load.audio('lumia-lead1', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/lead1.ogg');
+        scene.load.audio('lumia-lead2', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/lead2.ogg');
+        scene.load.audio('lumia-cello', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/cello.ogg');
+        scene.load.audio('lumia-violin', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/violin.ogg');
+        scene.load.audio('lumia-solo', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/solo.ogg');
+        scene.load.audio('lumia-voice', 'https://geotastic.b-cdn.net/geosuika/bgm/lumia/voice.ogg');
         break;
       }
     }
@@ -209,10 +209,19 @@ export class BackgroundMusic {
       onComplete();
       scene.load.off('complete', completeCallback);
       scene.load.off('progress', progressCallback);
+      scene.load.off('progress', errorCallback);
     }
+
+    const errorCallback = () => {
+      onError();
+      scene.load.off('complete', completeCallback);
+      scene.load.off('progress', progressCallback);
+      scene.load.off('progress', errorCallback);
+    };
 
     scene.load.on('complete', completeCallback);
     scene.load.on('progress', progressCallback);
+    scene.load.on('loaderror', errorCallback);
     scene.load.start();
   }
 }

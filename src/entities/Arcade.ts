@@ -151,6 +151,13 @@ export default class Arcade extends InteractableGameObject {
           this.isLoading = false;
           this.linkedBucket?.mountBucket();
           this.arcadeInfo?.fadeOut();
+        },
+        () => {
+          this.getGameScene()?.getPlayerCharacter()?.setFreezeInputs(false);
+          if (referenceBody) referenceBody.gameObject.isAtArcade = false;
+          this.isLoading = false;
+          const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
+          if (hudScene) hudScene.addBlinkingText('Loading Error', {x: 0, y: 0}, { fontFamily: FontName.LIGHT, fadeInTime: 250, movementY: 16, fontSize: this.getScene().scaled(32), duration: 1000, referenceObject: this, updateReferencePosition: true });    
         }
       );
 
