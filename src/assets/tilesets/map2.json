@@ -1369,7 +1369,7 @@
                         {
                          "name":"message",
                          "type":"string",
-                         "value":"It's a frog... or a girl wearing a frog suit.\nWho am I to judge?\n"
+                         "value":"It's a frog... or a girl wearing a frog suit.\nWho am I to judge?"
                         }, 
                         {
                          "name":"mirror",
@@ -1432,7 +1432,7 @@
                         {
                          "name":"message",
                          "type":"string",
-                         "value":"If there's something you can always countn on, it's black hats.\nI'll stick with masks though."
+                         "value":"If there's something you can always count on, it's black hats.\nI'll stick with masks though."
                         }, 
                         {
                          "name":"mirror",
