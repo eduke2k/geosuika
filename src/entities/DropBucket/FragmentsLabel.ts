@@ -50,6 +50,7 @@ export default class FragmentsLabel extends Phaser.GameObjects.Container {
     this.unlocked = 0;
     this.totalScore = 0;
     this.updateScore(0);
+    this.updateText();
   }
 
   public updateScore (score: number): void {
