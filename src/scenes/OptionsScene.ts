@@ -85,7 +85,7 @@ export default class OptionsScene extends BaseScene {
   public update (time: number, delta: number): void {
     super.update(time, delta);
     if (!this.ignoreInputs) {
-      if (this.inputController?.justDown(Action.BACK)) {
+      if (this.inputController?.justDown(Action.BACK) || this.inputController?.justDown(Action.PAUSE)) {
         this.back();
       } else if (this.inputController?.justDown(Action.DOWN)) {
         this.menu?.nextItem();
@@ -102,6 +102,7 @@ export default class OptionsScene extends BaseScene {
   }
 
   public init (originalScene: BaseScene) {
+    this.scene.bringToTop();
     this.originalScene = originalScene;
   }
 }

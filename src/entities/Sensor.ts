@@ -65,6 +65,7 @@ export class Sensor {
         if (this.action === 'credits') {
           this.scene.cameras.main.fadeOut(2000);
           this.scene.time.delayedCall(2000, () => {
+            this.scene.exit(true);
             this.scene.scene.start('main-menu-scene').stop('game-scene').stop('pause-scene').stop('hud-scene');
           });
         }

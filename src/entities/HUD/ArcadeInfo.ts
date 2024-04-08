@@ -2,6 +2,7 @@ import { LocalStorage } from "../../models/LocalStorage";
 import BaseScene from "../../scenes/BaseScene";
 import { FontName } from "../../types";
 import Arcade from "../Arcade";
+import DropBucket from "../DropBucket/DropBucket";
 
 const PADDING_X = 36;
 const PADDING_Y = 20;
@@ -36,9 +37,9 @@ export class ArcadeInfo {
     this.arcade = arcade;
     this.scene = scene;
 
-    this.headline = this.scene.add.text(this.scene.scaled(PADDING_X / 2), this.scene.scaled(PADDING_Y / 2), arcade.linkedBucket?.getBGMConfig()?.title.toUpperCase() ?? 'Unknown Memory'.toUpperCase(), { fontFamily: FontName.LIGHT, fontSize: this.scene.scaled(HEADLINE_SIZE), color: 'white' });
-    this.progressLabel = this.scene.add.text(this.scene.scaled((PADDING_X / 2) + 5), this.headline.height, 'Progress:', { fontFamily: FontName.REGULAR, fontSize: this.scene.scaled(24), color: 'grey' });
-    this.progressValue = this.scene.add.text((this.progressLabel.getTopRight().x ?? 0) + this.scene.scaled(16), this.progressLabel.getTopRight().y ?? 0, 'Not implemented yet', { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(PROGRESS_SIZE), color: 'red' });
+    this.headline = this.scene.add.text(this.scene.scaled(PADDING_X / 2), this.scene.scaled(PADDING_Y / 2), DropBucket.getBGMConfigByKey(this.arcade.bucketConfig?.bgmKey)?.title.toUpperCase() ?? 'Unknown Memory'.toUpperCase(), { fontFamily: FontName.LIGHT, fontSize: this.scene.scaled(HEADLINE_SIZE), color: 'white' });
+    this.progressLabel = this.scene.add.text(this.scene.scaled((PADDING_X / 2) + 5), this.headline.height, 'Status:', { fontFamily: FontName.REGULAR, fontSize: this.scene.scaled(24), color: 'grey' });
+    this.progressValue = this.scene.add.text((this.progressLabel.getTopRight().x ?? 0) + this.scene.scaled(16), this.progressLabel.getTopRight().y ?? 0, 'Idle', { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(PROGRESS_SIZE), color: '#a1a1a1' });
     // this.loadingValue = this.scene.add.text(this.headline.getBottomRight().x ?? 0, this.progressLabel.getTopRight().y ?? 0, '0%', { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(PROGRESS_SIZE), color: 'white' }).setOrigin(1, 0);
 
     this.graphics = this.scene.add.graphics();
@@ -46,12 +47,13 @@ export class ArcadeInfo {
     this.graphics.fillStyle(0x000000, 1);
 
     this.firstBoxHeight = (this.progressValue.getBottomLeft().y ?? 0) + this.scene.scaled(PADDING_Y);
+    // this.firstBoxHeight = (this.headline.getBottomLeft().y ?? 0) + this.scene.scaled(PADDING_Y);
     this.totalBoxWidth = this.headline.width + this.scene.scaled(PADDING_X);
 
 		this.graphics.fillRect(0, 0, this.totalBoxWidth, this.firstBoxHeight);
 
     const secondBoxStartY = this.firstBoxHeight + this.scene.scaled(GAP);
-    const highscore = LocalStorage.getHighscore(this.arcade.linkedBucket?.name ?? '')
+    const highscore = LocalStorage.getHighscore(this.arcade.bucketConfig?.name ?? '')
     const highscoreText = highscore > 0 ? `${highscore.toString()}` : 'No Highscore';
     this.allTimeHighscoreLabel = this.scene.add.text(this.scene.scaled((PADDING_X / 2) + 5), secondBoxStartY + this.scene.scaled(PADDING_Y / 2), 'All time best'.toUpperCase(), { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(HIGHSCORE_LABEL_SIZE), color: 'grey' });
     this.allTimeHighscoreValue = this.scene.add.text(this.scene.scaled((PADDING_X / 2) + 5), this.allTimeHighscoreLabel.getBottomLeft().y ?? 0, highscoreText, { fontFamily: FontName.BOLD, fontSize: this.scene.scaled(HIGHSCORE_VALUE_SIZE), color: 'white' });
@@ -88,6 +90,7 @@ export class ArcadeInfo {
   }
 
   public fadeOut (): void {
+    this.progressValue.setText('Starting...');
     this.reveal = this.container.postFX.addReveal(0.05, 1, 1);
     this.reveal.progress = 1;
     const reveal = this.reveal;
@@ -102,11 +105,29 @@ export class ArcadeInfo {
       onComplete: (() => {
         this.setVisible(false);
         this.container.clearFX();
+        this.updateLoadingPercentage(0);
+        this.resetProgressValue();
       })
     })
   }
 
+  public resetProgressValue (): void {
+    this.progressValue.setText('Idle');
+    this.progressValue.setColor('#a1a1a1');
+  }
+
+  public setProgressLoading (percentage?: number): void {
+    if (!percentage) {
+      this.progressValue.setText(`Loading`);
+    } else {
+      this.progressValue.setText(`Loading (${percentage}%)`);
+    }
+    this.progressValue.setColor(percentage !== 100 ? '#34b388' : '#49b528');
+  }
+
   public updateLoadingPercentage (percentage: number): void {
+    this.setProgressLoading(percentage);
+
     this.loadingBar.clear();
     this.loadingBar.fillStyle(0x1a1a1a, 1);
 		this.loadingBar.fillRect(0, 0, this.totalBoxWidth * (percentage / 100), this.firstBoxHeight);

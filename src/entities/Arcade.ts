@@ -1,6 +1,8 @@
 import { CATEGORY_OBJECT, CATEGORY_PLAYER, CATEGORY_SENSOR, CATEGORY_TERRAIN } from "../const/collisions";
 import { BackgroundMusic } from "../models/BackgroundMusic";
+import { Action } from "../models/Input";
 import { Instrument } from "../models/Instrument";
+import { BucketConfig } from "../scenes/GameScene";
 import HUDScene from "../scenes/HUDScene";
 import { FontName } from "../types";
 import Character from "./Character";
@@ -10,8 +12,10 @@ import InteractableGameObject from "./InteractableGameObject";
 
 export default class Arcade extends InteractableGameObject {
   public linkedBucket: DropBucket | undefined;
+  public bucketConfig: BucketConfig | undefined;
   private isLoading = false;
   private arcadeInfo: ArcadeInfo | undefined;
+  private spriteName: string;
   // private titleTextfield: HoverText;
   // private highscoreTextfield: HoverText;
 
@@ -22,15 +26,18 @@ export default class Arcade extends InteractableGameObject {
     y: number,
     name: string,
     frame?: string | number | undefined,
-    bucket?: DropBucket,
+    bucketConfig?: BucketConfig,
     mirror?: boolean,
+    spriteName?: string,
     options?: Phaser.Types.Physics.Matter.MatterBodyConfig | undefined
   ) {
-    super(scene, id, x, y, name, 'arcade', frame, options);
+    super(scene, id, x, y, name, spriteName ?? 'arcadeJapan', frame, options);
     this.direction = mirror ? -1 : 1;
     this.interactable = true;
     this.name = `${name}-${this.scene.game.getTime()}`;
-    this.linkedBucket = bucket;
+    // this.linkedBucket = bucket;
+    this.bucketConfig = bucketConfig;
+    this.spriteName = spriteName ?? 'arcadeJapan';
 
     // Setup physics
     const Bodies = new Phaser.Physics.Matter.MatterPhysics(scene).bodies;
@@ -76,7 +83,8 @@ export default class Arcade extends InteractableGameObject {
 
     this.sensor.gameObject = this;
 
-    this.play({ key: 'arcade:idle', repeat: -1 });
+    this.anims.createFromAseprite(this.spriteName);
+    this.play({ key: 'idle', repeat: -1 });
 
     // this.titleTextfield = new HoverText(this.scene, this.linkedBucket?.getBGMConfig()?.title ?? '???', this.x, this.y - (this.displayHeight / 2) - 64, { fontFamily: FontName.REGULAR, fontSize: 24, movementY: 16, duration: 250 });
     
@@ -113,8 +121,36 @@ export default class Arcade extends InteractableGameObject {
     super.destroy();
   }
 
+  public onUnmount (): void {
+    this.play({ key: 'idle', repeat: -1 });
+    this.linkedBucket?.destroy();
+  }
+
+  private mountBucket (config: BucketConfig): DropBucket {
+   return new DropBucket({
+      scene: this.getGameScene(),
+      active: config.active ?? false,
+      x: config.x,
+      y: config.y,
+      name: config.name,
+      width: config.width ?? 470,
+      height: config.height ?? 535,
+      thickness: config.thickness ?? 64,
+      bgmKey: config.bgmKey ?? 'bgm01',
+      gameOverThreshold: config.gameOverThreshold ?? 535,
+      maxTierToDrop: config.maxTierToDrop,
+      disableMerge: config.disableMerge ?? false,
+      droppableSet: DropBucket.getDroppableSetfromName(config.droppableSet ?? 'flagSet'),
+      image: config.image ?? '',
+      targetScore: config.targetScore ?? 2000,
+      elevatorDistance: config.elevatorDistance
+    });
+  }
+
   public trigger (referenceCharacter: Character): void {
     if (this.isLoading) return;
+    this.play({ key: 'loading', repeat: -1 });
+
     // this.titleTextfield.end();
     // this.highscoreTextfield.end();
 
@@ -127,10 +163,13 @@ export default class Arcade extends InteractableGameObject {
       this.scene.matter.alignBody(referenceBody, this.body.position.x + (10 * this.direction), referenceCharacter.body?.position.y ?? 0, this.direction === -1 ? Phaser.Display.Align.RIGHT_CENTER : Phaser.Display.Align.LEFT_CENTER);
     }
 
-    if (!this.linkedBucket) {
+    if (!this.bucketConfig) {
       const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
       if (hudScene) hudScene.addBlinkingText('Not connected', {x: 0, y: 0}, { fontFamily: FontName.LIGHT, fadeInTime: 250, movementY: 16, fontSize: this.getScene().scaled(32), duration: 1000, referenceObject: this, updateReferencePosition: true });
+      if (referenceBody) referenceBody.gameObject.isAtArcade = false;
+      this.play({ key: 'idle', repeat: -1 });
     } else {
+      this.linkedBucket = this.mountBucket(this.bucketConfig);
       this.isLoading = true;
 
       // This freeze inputs of player character
@@ -138,6 +177,8 @@ export default class Arcade extends InteractableGameObject {
 
       // const loadingText = new BlinkingText(this.scene, '0%', this.x, this.y - (this.displayHeight / 2) - 16, { fontSize: 24, movementY: 16, duration: 1000, manualEnd: true });
       
+      this.arcadeInfo?.setProgressLoading();
+
       BackgroundMusic.preloadByBGMKey(
         this.scene,
         this.linkedBucket.bgmKey,
@@ -151,6 +192,7 @@ export default class Arcade extends InteractableGameObject {
           this.isLoading = false;
           this.linkedBucket?.mountBucket();
           this.arcadeInfo?.fadeOut();
+          this.play({ key: 'on', repeat: -1 });
         },
         () => {
           this.getGameScene()?.getPlayerCharacter()?.setFreezeInputs(false);
@@ -158,11 +200,32 @@ export default class Arcade extends InteractableGameObject {
           this.isLoading = false;
           const hudScene = this.scene.scene.get('hud-scene') as HUDScene | undefined;
           if (hudScene) hudScene.addBlinkingText('Loading Error', {x: 0, y: 0}, { fontFamily: FontName.LIGHT, fadeInTime: 250, movementY: 16, fontSize: this.getScene().scaled(32), duration: 1000, referenceObject: this, updateReferencePosition: true });    
+          this.play({ key: 'idle', repeat: -1 });
         }
       );
 
       const sfx = this.scene.registry.get('instrument:confirm') as Instrument | undefined;
       if (sfx) sfx.playRandomNote(this.getScene(), 0, 0.5);
+    }
+  }
+
+  public update (time: number, delta: number): void {
+    super.update(time, delta);
+
+    if (this.linkedBucket) this.linkedBucket.update(time, delta);
+
+    if (this.isLoading && !this.getGameScene()?.getPlayerCharacter()?.canInteract()) {
+      if (this.getGameScene().inputController?.justDown(Action.CANCEL)) {
+        const playerCharacter = this.getGameScene()?.getPlayerCharacter();
+        if (playerCharacter) {
+          playerCharacter.setFreezeInputs(false);
+          playerCharacter.isAtArcade = false;
+        }
+        this.arcadeInfo?.fadeOut();
+        this.scene.load.reset();
+        this.scene.load.removeAllListeners();
+        this.isLoading = false;
+      }
     }
   }
 }

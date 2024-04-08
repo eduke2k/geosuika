@@ -5,7 +5,7 @@ export const communitySet: DroppableSet = {
   tierScales: [
     32,
     42,
-    62,
+    55,
     72,
     92,
     120,
