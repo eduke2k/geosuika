@@ -2,8 +2,12 @@ import Phaser from 'phaser'
 import FontFaceObserver from 'fontfaceobserver';
 
 // Aseprite sprites
-import ArcadePNG from './../assets/arcade.png';
-import ArcadeJSON from './../assets/arcade.json';
+import ArcadeJapanPNG from './../assets/arcadeJapan.png';
+import ArcadeJapanJSON from './../assets/arcadeJapan.json';
+import ArcadeEasterPNG from './../assets/arcadeEaster.png';
+import ArcadeEasterJSON from './../assets/arcadeEaster.json';
+import ArcadeLumiaPNG from './../assets/arcadeLumia.png';
+import ArcadeLumiaJSON from './../assets/arcadeLumia.json';
 import EggsPNG from './../assets/eggs.png';
 import EggsJSON from './../assets/eggs.json';
 import ShrinesPNG from './../assets/shrines.png';
@@ -160,7 +164,9 @@ export default class BootScene extends BaseScene {
 		// );
 
 		// IMPORTANT: When adding new aseprite sprites, don't forget to load their animations in the create-method.
-		this.load.aseprite('arcade', ArcadePNG, ArcadeJSON);
+		this.load.aseprite('arcadeJapan', ArcadeJapanPNG, ArcadeJapanJSON);
+		this.load.aseprite('arcadeEaster', ArcadeEasterPNG, ArcadeEasterJSON);
+		this.load.aseprite('arcadeLumia', ArcadeLumiaPNG, ArcadeLumiaJSON);
 		this.load.aseprite('shrines', ShrinesPNG, ShrinesJSON);
 		this.load.aseprite('jumpingPad', JumpingPadPNG, JumpingPadJSON);
 		this.load.aseprite('crate', CratePNG, CrateJSON);

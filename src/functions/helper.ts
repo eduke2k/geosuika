@@ -82,6 +82,12 @@ export const generateChordProgressionFromPattern = (pattern: BGMPatternConfig): 
   return chordProgression;
 }
 
+export function getOtherFromCollision (gameObject: any, pair: Phaser.Types.Physics.Matter.MatterCollisionData): Phaser.Physics.Matter.Sprite | undefined {
+  if (pair.bodyA.gameObject !== gameObject) return pair.bodyA.gameObject;
+  if (pair.bodyB.gameObject !== gameObject) return pair.bodyB.gameObject;
+  return;
+}
+
 export function getOtherGameObject (gameObject: GameObject, pair: Phaser.Types.Physics.Matter.MatterCollisionData): GameObject | undefined {
   if (pair.bodyA.gameObject instanceof GameObject && pair.bodyA.gameObject !== gameObject) return pair.bodyA.gameObject;
   if (pair.bodyB.gameObject instanceof GameObject  && pair.bodyB.gameObject !== gameObject) return pair.bodyB.gameObject;

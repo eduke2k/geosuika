@@ -179,7 +179,7 @@ export const lumiaBGMConfig: BackgroundMusicConfig = {
   key: 'lumia',
   artist: 'Annoying Edu',
   songTitle: 'Lumia\'s Quest Theme',
-  title: 'Memories of Hope',
+  title: 'Memories of Fire',
   year: 2024,
   audioKeys: [
     {

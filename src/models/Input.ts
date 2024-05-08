@@ -86,7 +86,6 @@ export const controlMapping: Record<string, { keyboard: number[], gamepad: numbe
     [Action.BACK]: {
         gamepad: [ GamePadButtonId.BUTTON_B],
         keyboard: [
-            Phaser.Input.Keyboard.KeyCodes.ESC,
             Phaser.Input.Keyboard.KeyCodes.TAB
         ]
     },
@@ -94,7 +93,6 @@ export const controlMapping: Record<string, { keyboard: number[], gamepad: numbe
         gamepad: [ GamePadButtonId.BUTTON_START],
         keyboard: [
             Phaser.Input.Keyboard.KeyCodes.ESC,
-            Phaser.Input.Keyboard.KeyCodes.TAB
         ]
     },
     [Action.DROP_PIECE]: {

@@ -36,6 +36,18 @@ export class MenuItem {
         align: "center" 
       }
     );
+
+    const config: Phaser.Types.Input.InputConfiguration = {
+      hitArea: new Phaser.Geom.Rectangle(0, 0, this.text.getBounds().width, this.text.getBounds().height),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+      useHandCursor: true
+    }
+
+    this.text.setInteractive(config);
+    this.text.on('pointerover', () => { this.text.setTint(0x7878ff); this.parent.focusItem(this) });
+    this.text.on('pointerout', () => { this.text.clearTint(); });
+    this.text.on('pointerdown', () => { this.text.setTint(0xff0000); });
+    this.text.on('pointerup', () => { this.text.clearTint(); this.parent.executeAction() });
     
     switch (this.parent.alignment) {
       case 'center': this.text.setOrigin(0.5, 0); break;
@@ -43,6 +55,14 @@ export class MenuItem {
       case 'right': this.text.setOrigin(1, 0); break;
     }
     parent.add(this.text);
+  }
+
+  public disableInteractivity (): void {
+    this.text.disableInteractive();
+  }
+
+  public enableInteractivity (): void {
+    this.text.setInteractive();
   }
 
   public focus (): void {
@@ -218,6 +238,7 @@ export type MenuOptions = {
  */
 export class MenuList extends Phaser.GameObjects.Container {
   private gap = 8;
+  public disabled = true;
   public scene: BaseScene;
   private items: (MenuItem | SliderMenuItem | SelectorMenuItem | MenuSubheadline)[] = [];
   public fontSize: number;
@@ -247,6 +268,15 @@ export class MenuList extends Phaser.GameObjects.Container {
     if (taikoSFX) this.taikoSFX = taikoSFX;
 
     scene.add.existing(this);
+  }
+
+  public setDisabled (value: boolean): void {
+    this.disabled = value;
+    if (this.disabled) {
+      this.items.forEach(i => i.disableInteractivity());
+    } else {
+      this.items.forEach(i => i.enableInteractivity());
+    }
   }
 
   private getNextItemYPosition (extraPadding = 0): number {
@@ -318,7 +348,7 @@ export class MenuList extends Phaser.GameObjects.Container {
     this.items.forEach(item => { item.blur(); });
   }
 
-  private focusItem(item: MenuItem): void {
+  public focusItem(item: MenuItem): void {
     this.unfocusAllItems();
     item.focus();
   }

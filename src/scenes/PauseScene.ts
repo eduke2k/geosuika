@@ -25,11 +25,11 @@ export default class PauseScene extends BaseScene {
     this.background.fillStyle(0x000000, 0.6);
 		this.background.fillRect(0, 0, this.game.canvas.width, this.game.canvas.height);
 
-    this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: 28, alignment: 'left', textColor: '#888', activeTextColor: '#FFF' });
+    this.menu = new MenuList(this, { x: this.game.canvas.width / 2, y: 0, fontSize: 28, alignment: 'center', textColor: '#888', activeTextColor: '#FFF' });
     this.menu.addItem({ enabled: true, key: 'continue', label: 'Continue' });
     if (this.bucket) {
-      this.menu.addItem({ enabled: true, key: 'retry', label: 'Restart' });
-      this.menu.addItem({ enabled: true, key: 'disconnect', label: 'Disconnect' });
+      this.menu.addItem({ enabled: true, key: 'retry', label: 'Restart Arcade' });
+      this.menu.addItem({ enabled: true, key: 'disconnect', label: 'Leave Arcade' });
     }
     // this.menu.addItem({ enabled: true, key: 'controls', label: 'Controls' });
     this.menu.addItem({ enabled: true, key: 'options', label: 'Options' });
@@ -50,22 +50,38 @@ export default class PauseScene extends BaseScene {
     }
   }
 
+  public blur (): void {
+    super.blur();
+    this.menu?.setDisabled(true);
+  }
+
+  public focus (): void {
+    super.focus();
+    this.menu?.setDisabled(false);
+  }
+
   private showOptions (): void {
     this.scene.launch('options-scene', this);
   }
 
   private continue (): void {
     const gameScene = this.scene.get('game-scene') as GameScene | undefined;
-    this.scene.resume('game-scene');
+    // this.scene.resume('game-scene');
     if (gameScene) gameScene.continue();
     this.scene.stop();
   }
 
   private exit (): void {
-    this.cameras.main.fadeOut(1000);
-    this.time.delayedCall(1000, () => {
-      this.scene.start('main-menu-scene').stop('game-scene').stop('pause-scene').stop('hud-scene');
-    });
+    this.menu?.setDisabled(true);
+    const gameScene = this.scene.get('game-scene') as GameScene | undefined;
+    this.continue();
+    gameScene?.exit();
+    // if (gameScene && gameScene.gameMode === GameMode.NORMAL) LocalStorage.setSnapshot(gameScene.generateSnapshot());
+
+    // this.cameras.main.fadeOut(1000);
+    // this.time.delayedCall(1000, () => {
+    //   this.scene.start('main-menu-scene').stop('game-scene').stop('pause-scene').stop('hud-scene');
+    // });
   }
 
   private disconnect (): void {
@@ -119,6 +135,7 @@ export default class PauseScene extends BaseScene {
   }
 
   public init (data: PauseSceneInitData) {
+    this.scene.bringToTop();
     this.bucket = data.bucket;
   }
 }

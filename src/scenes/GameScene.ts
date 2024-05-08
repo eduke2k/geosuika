@@ -33,6 +33,7 @@ import { Crate } from '../entities/Crate';
 import { Sensor } from '../entities/Sensor';
 import Flameboy from '../entities/Flameboy';
 import { LocalStorage } from '../models/LocalStorage';
+import Droppable from '../entities/DropBucket/Droppable';
 // import BendPostFX from '../shaders/BendPostFX';
 // import BarrelPostFX from '../shaders/BarrelPostFX';
 // import { WarpPostFX } from '../shaders/WarpPostFX/WarpPostFX.js';
@@ -66,18 +67,53 @@ type PositionReference = {
 	y: number;
 }
 
+export type BucketConfig = {
+	id: number;
+	name: string;
+	x: number;
+	y: number;
+	active?: boolean;
+	bgmKey?: string;
+	droppableSet?: string;
+	elevatorDistance?: number;
+	gameOverThreshold?: number;
+	height?: number;
+	width?: number;
+	image?: string;
+	targetScore?: number;
+	thickness?: number;
+	maxTierToDrop?: number;
+	disableMerge?: boolean;
+}
+
 export type Snapshot = {
 	collectibles?: Record<string, boolean>;
+	objectState?: ObjectState[];
 	hasReachedFullEgg?: boolean;
+	playerPos?: { x: number, y: number, layer: string };
+}
+
+export type GameSceneData = {
+	gameMode: GameMode;
+}
+
+export enum GameMode {
+	NORMAL = 'normal',
+	ARCADE = 'arcade'
+}
+
+export type GenerateSnapshotParams = {
+	resetPlayerPos?: boolean;
 }
 
 export default class GameScene extends BaseScene {
 	public state: GameSceneState = 'play';
-	public buckets: DropBucket[] = [];
+	// public buckets: DropBucket[] = [];
 	public arcades: Arcade[] = [];
 	public objects: GameObject[] = [];
 	public characters: Character[] = [];
 	public positions: PositionReference[] = [];
+	public bucketConfigs: BucketConfig[] = [];
 	public soundSources2d: SoundSource2d[] = [];
 	public playerCharacter: Character | undefined;
 	public petalEmitter = new PetalEmitter(this);
@@ -92,8 +128,10 @@ export default class GameScene extends BaseScene {
 	private chromaticPostFX?: ChromaticPostFX;
 	private cinematicBarsFX?: CinematicBarsFX;
 	private waterRectangles: WaterRectangle[] = [];
+	public gameMode: GameMode = GameMode.NORMAL;
 
 	private objectStates: ObjectState[] = [];
+	public droppables: Droppable[] = [];
 
 	// Active map stuff
 	private currentMap = '';
@@ -102,6 +140,8 @@ export default class GameScene extends BaseScene {
 	private staticOneWayPlatforms: StaticOneWayPlatform[] = [];
 	private sensors: Sensor[] = [];
 	public bokehEffect: Phaser.FX.Bokeh | undefined;
+
+	private startingLayerName = 'street';
 
 	// Collectibles
 	public collectibles: Record<string, boolean> = {
@@ -143,10 +183,26 @@ export default class GameScene extends BaseScene {
 		return this.state;
 	}
 
-	public generateSnapshot (): string {
+	public generateSnapshot (props?: GenerateSnapshotParams): string {
+		this.saveObjectSates([...this.objects]);
+
 		const snapshot: Snapshot = {
 			collectibles: this.collectibles,
-			hasReachedFullEgg: this.hasReachedFullEgg
+			hasReachedFullEgg: this.hasReachedFullEgg,
+			objectState: this.objectStates,
+		}
+
+		const player = this.getPlayerCharacter();
+		const resetPlayerPos = (props && props.resetPlayerPos) ?? false;
+
+		if (resetPlayerPos) {
+			snapshot.playerPos = undefined;
+		} else if (player &&  player.body) {
+			snapshot.playerPos = {
+				x: player.body.position.x,
+				y: player.body.position.y,
+				layer: this.currentMapLayer
+			}
 		}
 		return JSON.stringify(snapshot);
 	}
@@ -155,13 +211,6 @@ export default class GameScene extends BaseScene {
 		console.log('posting message to window.top', message);
 		window.top?.postMessage(message, 'http://localhost:8080');
 		window.top?.postMessage(message, 'https://geotastic.net');
-	}
-
-	public checkCollectedState (): void {
-		const collected = Object.values(this.collectibles).filter(c => c === true).length;
-		if (collected >= 10) {
-      this.postMessage('cc92527dd58d73706274f048de679f22');
-		}
 	}
 
 	public setCollected (eggKey: string): void {
@@ -173,8 +222,6 @@ export default class GameScene extends BaseScene {
 		(this.scene.get('hud-scene') as HUDScene).updateCollectiblesAmount(collected, total);
 
 		LocalStorage.setSnapshot(this.generateSnapshot());
-
-		this.checkCollectedState();
 	}
 
 	public setTimeScaleFromTween (tweenValue: number, start: number, end: number): void {
@@ -359,7 +406,7 @@ export default class GameScene extends BaseScene {
 	}
 
 	public getMountedBucket (): DropBucket | undefined {
-		return this.buckets.find(b => b.isMounted());
+		return this.arcades.find(b => b.linkedBucket)?.linkedBucket;
 	}
 
 	public unmountBucket (): void {
@@ -426,11 +473,14 @@ export default class GameScene extends BaseScene {
 			}
 			this.scene.launch('pause-scene', payload);
 			this.scene.pause();
+			(this.scene.get('hud-scene') as HUDScene).scene.pause();
 		});
 		this.ignoreInputs = true;
 	}
 
 	public continue (): void {
+		this.scene.resume();
+		(this.scene.get('hud-scene') as HUDScene).scene.resume();
 		this.ignoreInputs = false;
 		this.setBokehEffect(0, 100, Phaser.Math.Easing.Sine.InOut, () => {
 			this.bokehEffect?.destroy();
@@ -477,6 +527,35 @@ export default class GameScene extends BaseScene {
 				layer?.setPipeline('Light2D');
 				this.tilemapLayers.push(layer);
 			}
+		}
+	}
+
+  public exit (finished?: boolean): void {
+    if (this.gameMode === GameMode.NORMAL) LocalStorage.setSnapshot(this.generateSnapshot({ resetPlayerPos: finished }));
+
+    this.cameras.main.fadeOut(1000);
+    this.time.delayedCall(1000, () => {
+      this.scene.start('main-menu-scene').stop('game-scene').stop('pause-scene').stop('hud-scene');
+    });
+  }
+
+	private tiledBucketToBucketConfig (o: Phaser.Types.Tilemaps.TiledObject): BucketConfig {
+		const properties = parseTiledProperties(o.properties);
+		return {
+			active: (properties?.active as boolean) ?? false,
+			bgmKey: (properties?.bgmKey as string) ?? '',
+			droppableSet: (properties?.droppableSet as string) ?? '',
+			elevatorDistance: (properties?.elevatorDistance as number) ?? '',
+			gameOverThreshold: (properties?.gameOverThreshold as number) ?? '',
+			height: (properties?.height as number) ?? '',
+			width: (properties?.width as number) ?? '',
+			id: o.id,
+			image: (properties?.image as string) ?? '',
+			name: o.name,
+			targetScore: (properties?.targetScore as number) ?? '',
+			thickness: (properties?.thickness as number) ?? '',
+			x: o.x ?? 0,
+			y: o.y ?? 0
 		}
 	}
 
@@ -563,7 +642,7 @@ export default class GameScene extends BaseScene {
 
 		const staticObjectsQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const charactersQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
-		const bucketQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
+		// const bucketQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const arcadesQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const objectsQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
 		const soundSource2dQueue: Phaser.Types.Tilemaps.TiledObject[] = [];
@@ -586,7 +665,8 @@ export default class GameScene extends BaseScene {
 						case 'staticObject': { staticObjectsQueue.push(o); break; }
 						case 'object': { objectsQueue.push(o); break; }
 						case 'egg': { arcadesQueue.push(o); break; }
-						case 'bucket': { bucketQueue.push(o); break; }
+						case 'bucket': { this.bucketConfigs.push(this.tiledBucketToBucketConfig(o)); break; }
+						// case 'bucket': { bucketQueue.push(o); break; }
 						case 'arcade': { arcadesQueue.push(o); break; }
 						case 'soundSource2d': { soundSource2dQueue.push(o); break; }
 						case 'shrine': { objectsQueue.push(o); break; }
@@ -688,33 +768,45 @@ export default class GameScene extends BaseScene {
 			}
 		});
 
-		bucketQueue.forEach(o => {
-			const properties = parseTiledProperties(o.properties);
-			this.buckets.push(
-				new DropBucket({
-				scene: this,
-				active: Boolean(properties.active),
-				x: o.x ?? 0,
-				y: o.y ?? 0,
-				name: o.name,
-				width: properties.width ? parseInt(properties.width.toString()) : 470,
-				height: properties.height ? parseInt(properties.height.toString()) : 535,
-				thickness: properties.thickness ? parseInt(properties.thickness.toString()) : 64,
-				bgmKey: properties.bgmKey ? properties.bgmKey.toString() : 'bgm01',
-				gameOverThreshold: properties.gameOverThreshold ? parseInt(properties.gameOverThreshold.toString()) : 535,
-				maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
-				disableMerge: Boolean(properties.disableMerge),
-				droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
-				image: properties.image ? properties.image as string : '',
-				targetScore: properties.targetScore ? parseInt(properties.targetScore.toString()) : 2000,
-				elevatorDistance: properties.elevatorDistance ? parseInt(properties.elevatorDistance.toString()) : undefined
-			}));
-		});
+		// bucketQueue.forEach(o => {
+		// 	const properties = parseTiledProperties(o.properties);
+		// 	this.buckets.push(
+		// 		new DropBucket({
+		// 		scene: this,
+		// 		active: Boolean(properties.active),
+		// 		x: o.x ?? 0,
+		// 		y: o.y ?? 0,
+		// 		name: o.name,
+		// 		width: properties.width ? parseInt(properties.width.toString()) : 470,
+		// 		height: properties.height ? parseInt(properties.height.toString()) : 535,
+		// 		thickness: properties.thickness ? parseInt(properties.thickness.toString()) : 64,
+		// 		bgmKey: properties.bgmKey ? properties.bgmKey.toString() : 'bgm01',
+		// 		gameOverThreshold: properties.gameOverThreshold ? parseInt(properties.gameOverThreshold.toString()) : 535,
+		// 		maxTierToDrop: properties.maxTierToDrop ? parseInt(properties.maxTierToDrop.toString()) : undefined,
+		// 		disableMerge: Boolean(properties.disableMerge),
+		// 		droppableSet: DropBucket.getDroppableSetfromName(properties.droppableSet ? properties.droppableSet.toString() : 'flagSet'),
+		// 		image: properties.image ? properties.image as string : '',
+		// 		targetScore: properties.targetScore ? parseInt(properties.targetScore.toString()) : 2000,
+		// 		elevatorDistance: properties.elevatorDistance ? parseInt(properties.elevatorDistance.toString()) : undefined
+		// 	}));
+		// });
 
 		arcadesQueue.forEach(o => {
 			const properties = parseTiledProperties(o.properties);
-			const bucket = this.buckets.find(b => b.name === bucketQueue.find(bq => bq.id === (properties.bucket as number))?.name);
-			this.arcades.push(new Arcade(this, o.id ? o.id : getRandomId(), o.x ?? 0, o.y ?? 0, o.name, undefined, bucket, properties.mirror as boolean));
+			const bucketConfig = this.bucketConfigs.find(c => c.id === (properties.bucket as number));
+			// const bucket = this.buckets.find(b => b.name === bucketQueue.find(bq => bq.id === (properties.bucket as number))?.name);
+			this.arcades.push(
+				new Arcade(
+					this,
+					o.id ? o.id : getRandomId(),
+					o.x ?? 0, o.y ?? 0,
+					o.name,
+					undefined,
+					bucketConfig,
+					properties.mirror as boolean,
+					properties.sprite as string
+				)
+			);
 		});
 
 		charactersQueue.forEach(o => {
@@ -801,13 +893,11 @@ export default class GameScene extends BaseScene {
 				destroyed: false
 			});
 		});
-
-		// console.log('current object state', this.objectStates);
 	}
 
 	public unloadActiveWorldLayer (): void {
 		// Save state of all objects
-		this.saveObjectSates([...this.objects])
+		LocalStorage.setSnapshot(this.generateSnapshot());
 
 		// Remove all static collisions
 		this.matter.world.remove(this.staticMapCollisions);
@@ -830,8 +920,10 @@ export default class GameScene extends BaseScene {
 		this.characters.forEach(a => {	a.destroy(); });
 		this.characters = [];
 
-		this.buckets.forEach(b => {	b.destroy(); });
-		this.buckets = [];
+		// this.buckets.forEach(b => {	b.destroy(); });
+		// this.buckets = [];
+
+		this.bucketConfigs = [];
 
 		this.objects.forEach(o => {	o.destroy(); });
 		this.objects = [];
@@ -874,41 +966,40 @@ export default class GameScene extends BaseScene {
 		return map;
 	}
 
-	public init () {
+	public init (data: GameSceneData) {
 		// Clear arrays. Those might still be filled with obsolete data from an earlier game scene instance
 		this.tilemapLayers = [];
-		this.buckets = [];
+		// this.buckets = [];
+		this.bucketConfigs = [];
 		this.arcades = [];
 		this.objects = [];
 		this.characters = [];
 		this.soundSources2d = [];
 
-		// if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
-		// 	this.game.renderer.pipelines.add(
-		// 		'TestPipeline',
-		// 		new WaterFX(this.game)
-		// 	);
-		// }
+		this.gameMode = data.gameMode;
 	}
 
 	public create () {
 		super.create();
+		this.objectStates = [];
+
+		let playerPos: { x: number, y: number, layer: string } | undefined = undefined;
 
 		// Load state
-		const snapshotString = LocalStorage.getSnapshot();
-		if (snapshotString) {
-			try {
-				const snapshot = JSON.parse(snapshotString) as Snapshot;
-				this.collectibles = Object.assign(this.collectibles, snapshot.collectibles);
-				this.hasReachedFullEgg = snapshot.hasReachedFullEgg ?? false;
-			} catch (e) {
-				console.error('could not parse snapshot string', e);
+		if (this.gameMode === GameMode.NORMAL) {
+			const snapshotString = LocalStorage.getSnapshot();
+			if (snapshotString) {
+				try {
+					const snapshot = JSON.parse(snapshotString) as Snapshot;
+					this.collectibles = Object.assign(this.collectibles, snapshot.collectibles);
+					this.hasReachedFullEgg = snapshot.hasReachedFullEgg ?? false;
+					this.objectStates = snapshot.objectState ?? [];
+					playerPos = snapshot.playerPos;
+				} catch (e) {
+					console.error('could not parse snapshot string', e);
+				}
 			}
 		}
-
-		// Trophy checker on startup
-		this.checkCollectedState();
-		if (this.hasReachedFullEgg) this.postMessage('1283e10231901c1794851f21eb7bba8d');
 
 		// Setup initail HUD
 		const collected = Object.values(this.collectibles).filter(c => c === true).length;
@@ -927,10 +1018,12 @@ export default class GameScene extends BaseScene {
 
 		this.map = this.loadMap('map2');
 		const playerSpawn = this.map.getObjectLayer('triggers')?.objects.find(o => o.name === 'playerSpawn');
-		achan.setPosition(playerSpawn?.x, playerSpawn?.y);
 
-		const properties = playerSpawn ? parseTiledProperties(playerSpawn.properties) : undefined;
-		this.loadInWorldLayer(properties?.layer ? (properties.layer as string) : 'street');
+		console.log(playerPos, playerSpawn);
+		achan.setPosition(playerPos?.x ?? playerSpawn?.x, playerPos?.y ?? playerSpawn?.y);
+
+		this.startingLayerName = this.gameMode === GameMode.ARCADE ? 'arcades' : playerPos?.layer ?? this.startingLayerName;
+		this.loadInWorldLayer(playerPos?.layer ?? this.startingLayerName);
 
 		this.cameras.main.setPostPipeline([ChromaticPostFX, CinematicBarsFX, BlackHoleFX]);
 		this.chromaticPostFX = this.cameras.main.getPostPipeline(ChromaticPostFX) as ChromaticPostFX;
@@ -940,9 +1033,11 @@ export default class GameScene extends BaseScene {
 		if (playerCharacter) {
 			this.cameraFollowEntity({ object: playerCharacter, instant: true });
 
-			this.time.delayedCall(2000, () => {
-				(this.scene.get('hud-scene') as HUDScene).triggerSpeechBubble(playerCharacter, 'Time to unravel all the secrets in here!\nWASD to run, Space to jump.\nOn some platforms, I can fall down by pressing Down + Jump.\nEscape to pause and to find the game settings.');
-			});
+			if (!LocalStorage.getSnapshot()) {
+				this.time.delayedCall(2000, () => {
+					(this.scene.get('hud-scene') as HUDScene).triggerSpeechBubble(playerCharacter, 'Time to unravel all the secrets in here!\nWASD to run, Space to jump.\nOn some platforms, I can fall down by pressing Down + Jump.\nEscape to pause and to find the game settings.');
+				});
+			}
 		}
 
 		// Camera Settings
@@ -961,7 +1056,6 @@ export default class GameScene extends BaseScene {
 		this.playerCharacter?.update(time, delta);
 		this.characters.forEach(c => c.update(time, delta));
 		this.arcades.forEach(a => a.update(time, delta));
-		this.buckets.forEach(a => a.update(time, delta));
 		this.objects.forEach(a => a.update(time, delta));
 		this.soundSources2d.forEach(s => s.update(time, delta));
 		this.staticOneWayPlatforms.forEach(a => { if (this.playerCharacter) a.update(this.playerCharacter) });

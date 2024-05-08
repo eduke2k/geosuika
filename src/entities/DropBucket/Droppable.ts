@@ -1,5 +1,7 @@
 import { CATEGORY_BUCKET, CATEGORY_DROPPABLES } from "../../const/collisions";
-import { SingleDroppableConfig } from "../../types";
+import { getOtherFromCollision, getRandomId } from "../../functions/helper";
+import { FixedMatterCollisionData, SingleDroppableConfig } from "../../types";
+import GameObject from "../GameObject";
 import DropBucket from "./DropBucket";
 
 export type DroppableParams = {
@@ -11,7 +13,7 @@ export type DroppableParams = {
   y: number;
 }
 
-export default class Droppable extends Phaser.Physics.Matter.Sprite {
+export default class Droppable extends GameObject {
   private tier: number;
   private config: SingleDroppableConfig;
   private tethered = false;
@@ -53,7 +55,21 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
       }
       case 'fromVerts': {
         const verts = droppableConfig.verts;
-        return scene.matter.add.fromVertices(x, y, verts, { collisionFilter, label: 'verts-droppable', render: { sprite: { xOffset: droppableConfig.offsetX ?? 0, yOffset: droppableConfig.offsetY ?? 0 }}});
+        return scene.matter.add.fromVertices(
+          x,
+          y,
+          verts,
+          {
+            collisionFilter,
+            label: 'verts-droppable',
+            render: {
+              sprite: {
+                xOffset: droppableConfig.offsetX ?? 0,
+                yOffset: droppableConfig.offsetY ?? 0
+              }
+            }
+          }
+        );
       }
     }
   }
@@ -75,7 +91,8 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
   }
 
   constructor(params: DroppableParams, droppableConfig: SingleDroppableConfig, body: MatterJS.BodyType) {
-    super(params.scene.matter.world, params.x, params.y, params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].spriteKey);
+    super(params.scene, getRandomId(), params.x, params.y, 'droppable', params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].spriteKey);
+
     this.setExistingBody(body);
     this.tier = params.tierIndex;
     this.parentBucket = params.bucket;
@@ -83,6 +100,7 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     this.config = droppableConfig;
     this.birthTime = this.scene.time.now;
     this.shadow = this.postFX.addShadow(0, 1, 0.05, 0.8, 0x000000, 4);
+    
 
     // Trigger animation in sprite
     this.play({ key: params.bucket.getDroppableSet().droppableConfigs[params.tierIndex].animationKey, repeat: -1 });
@@ -110,9 +128,16 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     // Add collide event to log first collision of this Droppable and init some Bucket logic (e.g. enable next Droppable)
     this.initCollideCallbacks(body);
 
+    // Add droppable to game scene
+    this.getGameScene()?.droppables.push(this);
+
     // Add to scene render list
     params.scene.add.existing(this);
   }
+
+  // public onCollide (pair: Phaser.Types.Physics.Matter.MatterCollisionData): void {
+  //   console.log(pair);
+  // }
 
   public setDestroyable (): void {
     const config: Phaser.Types.Input.InputConfiguration = {
@@ -147,10 +172,29 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     }
   }
 
+  // Collision logic for this specific droppable
   private handleCollision (event: Phaser.Types.Physics.Matter.MatterCollisionData): void {
-    if (!this.hasCollided && !event.bodyA.isSensor) {
-      this.hasCollided = true;
-      // this.parentBucket.initNextDroppable();
+		if (!this.parentBucket.isMounted() || !this.parentBucket.isActive() || !event.bodyA! || !event.bodyB || !this) return;
+    const other = getOtherFromCollision(this, event);
+
+    if (other instanceof Droppable) {
+			this.parentBucket.tryMergeDroppables(this, other);
+		}
+
+    // The merge could remove this droppable. So we only apply this logic if it still exists
+    if (this && this.body) {
+      const v = this.getBody().speed
+
+      if ((!event.bodyA.isSensor && !event.bodyB.isSensor) && (v > 2)) {
+        // Get contact point. Typings of MatterJS are broken.
+        const contactVertex = (event as FixedMatterCollisionData).contacts.filter(c => c !== undefined)[0].vertex;
+        this.parentBucket.playCollisionSound(this, v, contactVertex);
+      }
+
+      if (!this.hasCollided && !event.bodyA.isSensor) {
+        this.hasCollided = true;
+        // this.parentBucket.initNextDroppable();
+      }
     }
   }
 
@@ -168,6 +212,14 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
       body.bounds.max.x - body.bounds.min.x,
       body.bounds.max.y - body.bounds.min.y,
     );
+  }
+
+  public destroy (): void {
+    // Add droppable to game scene
+    const index = this.getGameScene()?.droppables.findIndex(d => d === this);
+    if (index !== undefined && index > -1) this.getGameScene()?.droppables.splice(index, 1);
+
+    super.destroy();
   }
 
   public untether (): void {
@@ -205,4 +257,8 @@ export default class Droppable extends Phaser.Physics.Matter.Sprite {
     }
     return;
   }
+
+  // public update (_time: number, _delta: number): void {
+  //   console.log(this.getBody().speed);
+  // }
 }

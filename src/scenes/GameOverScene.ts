@@ -26,6 +26,9 @@ export default class GameOverScene extends BaseScene {
 
 	public async create () {
     super.create();
+
+    let menuStartingY = 0;
+
     this.cameras.main.alpha = 0;
 		this.bokehEffect = this.cameras.main.postFX.addBokeh(0, 0, 0);
     this.container = this.add.container(0, 0);
@@ -45,6 +48,21 @@ export default class GameOverScene extends BaseScene {
     this.scoreText.setOrigin(0.5, 0.5);
     this.container.add(this.scoreText);
 
+    menuStartingY = this.scoreText.y;
+
+    if (this.bgmConfig) {
+      const songHeadline = this.add.text(0, this.scoreText.y + this.scoreText.height + 50 , 'Original Song', { fontFamily: FontName.REGULAR, fontSize: this.scaled(18), color: 'white', align: 'center' });
+      songHeadline.setOrigin(0.5, 0.5);
+      this.container.add(songHeadline);
+  
+      const songTitle = this.add.text(0, songHeadline.y + songHeadline.height + 5 , this.bgmConfig.songTitle, { fontFamily: FontName.BOLD, fontSize: this.scaled(28), color: 'white', align: 'center' });
+      songTitle.setOrigin(0.5, 0.5);
+      this.container.add(songTitle);
+
+      menuStartingY = songTitle.y;
+    }
+
+
     if (this.bucketKey) {
       const highscore = LocalStorage.getHighscore(this.bucketKey);
       if (this.score > highscore) {
@@ -52,18 +70,16 @@ export default class GameOverScene extends BaseScene {
       }
     }
 
-    let y = this.scoreText.y + 100;
+    let y = menuStartingY + this.scaled(75);
 
     const menuItems = [...this.baseMenuItems];
 
-    if (this.bgmConfig) {
-      if (this.bgmConfig.ytLink) {
-        menuItems.unshift({
-          key: 'yt',
-          label: 'Full Song on Youtube',
-          url: this.bgmConfig.ytLink
-        });
-      }
+    if (this.bgmConfig && this.bgmConfig.ytLink) {
+      menuItems.unshift({
+        key: 'yt',
+        label: 'Full Song on Youtube',
+        url: this.bgmConfig.ytLink
+      });
     }
 
     menuItems.forEach((item) => {
